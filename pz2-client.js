@@ -11,197 +11,21 @@
  * https://github.com/ssp/pazpar2-js-client
  */
 
-var usesessions = (typeof(useServiceProxy) !== 'undefined' && useServiceProxy ? false: true);
+var pz2client = (function () {
 
-var actualPazpar2Path = '/pazpar2/search.pz2';
-if (typeof(pazpar2Path) !== 'undefined') {
-	actualPazpar2Path = pazpar2Path;
-}
-
-var showResponseType = '';
-
-/*	Maintain a list of all facet types so we can loop over it.
-	Don't forget to also set termlist attributes in the corresponding
-	metadata tags for the service.
-
-	It is crucial for the date histogram that 'filterDate' is the last item in this list.
+/*
+	Status variables
 */
-var termLists = {
-	'xtargets': {'maxFetch': 25, 'minDisplay': 1},
-	'medium': {'maxFetch': 12, 'minDisplay': 1},
-	'language': {'maxFetch': 5, 'minDisplay': 1}, // excluding the unknown item and with +2 'wiggle room'
-	// 'author': {'maxFetch': 10, 'minDisplay': 1},
-	'filterDate': {'maxFetch': 10, 'minDisplay': 5}
-};
-
-
-/*	localise
-	Return localised term using the passed dictionary
-		or the one stored in localisations variable.
-	The localisation dictionary has ISO 639-1 language codes as keys.
-	For each of them there can be a dictionary with terms for that language.
-	In case the language dictionary is not present, the default ('de') is used.
-	input:	term - string to localise
-			externalDictionary (optional) - localisation dictionary
-	output:	localised string
-*/
-function localise (term, externalDictionary) {
-	var dictionary = localisations;
-	if (externalDictionary) {
-		dictionary = externalDictionary;
-	}
-
-	if (!pageLanguage) {
-		pageLanguage = jQuery('html')[0].getAttribute('lang');
-		if (!pageLanguage) {
-			pageLanguage = 'de';
-		}
-	}
-
-	var languageCode = pageLanguage;
-	if (dictionary[pageLanguage] === null) {
-		languageCode = 'de';
-	}
-
-	var localised = dictionary[languageCode][term];
-	if (localised === undefined) {
-		localised = term;
-		// console.log('No localisation for: "' + term + '"');
-	}
-
-	return localised;
-}
-
-
-
-/*	overrideLocalisation
-	Overwrites localisations in the appropriate localisation dictionaries.
-	Exists for easy overriding of localisations from TYPO3.
-	input:	languageCode - string ISO 639-1 localisation language code or 'default' (which is mapped to 'en')
-			key - key in the localisation dictionary to override
-			localisedString - string
-*/
-function overrideLocalisation (languageCode, key, localisedString) {
-	// First figure out the correct object to override the localisation in.
-	var localisationObject = localisations;
-	var match = key.match(/^(link-description|media-type|catalogue-name)-(.*)/);
-	if (match) {
-		if (match[1] === 'link-description') {
-			localisationObject = linkDescriptions;
-		}
-		else if (match[1] === 'media-type') {
-			localisationObject = mediaTypeNames;
-		}
-		else if (match[1] === 'catalogue-name') {
-			localisationObject = catalogueNames;
-		}
-		key = match[2];
-	}
-
-	// Then override the localisation if the language exists.
-	if (languageCode === 'default') {
-		languageCode = 'en';
-	}
-	if (localisationObject[languageCode]) {
-		localisationObject[languageCode][key] = localisedString;
-	}
-}
-
-
-function initialiseService () {
-	if (usesessions) {
-		initialisePazpar2();
-	}
-	else {
-		initialiseServiceProxy();
-	}
-}
-
-
-function initialisePazpar2 () {
-	if (pz2InitTimeout !== undefined) {
-		clearTimeout(pz2InitTimeout);
-		pz2InitTimeout = undefined;
-	}
-	my_paz.init(undefined, my_paz.serviceId);
-}
-
-
-function initialiseServiceProxy () {
-	jQuery.get(serviceProxyAuthPath, function () {
-		pz2Initialised = true;
-		my_oninit();
-	});
-}
-
-
-function my_errorHandler (error) {
-	var errorCode = parseInt(error.code);
-
-	if (errorCode === 1 && this.request.status === 417) {
-		// The Pazpar2 session has expired: create a new one.
-		initialisePazpar2();
-	}
-	else if (errorCode === 100 && this.request.status === 417) {
-		// The Service Proxy session has expired / cookie got lost: create a new one.
-		initialiseServiceProxy();
-	}
-	else if (this.request.status === 503) {
-		// The service is unavailable: Disable the search form.
-		var jRecordCount = jQuery('.pz2-recordCount');
-		jRecordCount.empty();
-		var message = localise('Suche momentan nicht verfügbar.');
-		jRecordCount.text(message);
-		jRecordCount.addClass('pz2-noResults');
-
-		if (pz2InitTimeout !== undefined) {
-			clearTimeout(pz2InitTimeout);
-		}
-		pz2InitTimeout = setTimeout(initialisePazpar2, 15000);
-	}
-
-
-	// If  the error happens while loading, clear the current search term,
-	// to allow restarting the search.
-	if (my_paz.activeClients > 0) {
-		curSearchTerm = null;
-	}
-}
-
-
-
-/*	Create a parameters array and pass it to the pz2's constructor.
-	Then register the form submit event with the pz2.search function.
-	autoInit is set to true on default.
-*/
-my_paz = new pz2( {"onshow": my_onshow,
-					"showtime": 1000,//each timer (show, stat, term, bytarget) can be specified this way
-					"pazpar2path": actualPazpar2Path,
-					"oninit": my_oninit,
-					"onstat": my_onstat,
-/* We are not using pazpar2’s termlists but create our own.
-					"onterm": my_onterm,
-					"termlist": termListNames.join(","),
-*/
-					"onbytarget": my_onbytarget,
-	 				"usesessions" : usesessions,
-					"showResponseType": showResponseType,
-					"serviceId": (typeof(my_serviceID) !== 'undefined') ? my_serviceID : null,
-					"errorhandler": my_errorHandler
-} );
-
-
-
-// Status variables
+var my_paz = undefined; // client from pz2.js
 var domReadyFired = false;
 var pz2Initialised = false;
 var pz2InitTimeout = undefined;
 var pageLanguage = undefined;
 var institutionName = undefined;
 var allTargetsActive = true;
-var curPage = 1;
+var f = 1;
 var recPerPage = 100;
-var fetchRecords = 1500;
+var curPage = 1;
 var curDetRecId = '';
 var curDetRecData = null;
 var curSort = [];
@@ -217,106 +41,453 @@ var displayHitListUpToDate = []; // list filtered for all conditions but the dat
 var targetStatus = {};
 
 
-/* Default settings that can be overwritten. */
 
-// Default sort order.
-var displaySort =  [];
-// Use Google Books for cover art when an ISBN or OCLC number is known?
-var useGoogleBooks = false;
-// Use Google Maps to display the region covered by records?
-var useMaps = false;
-// Query ZDB-JOP for availability information based for items with ISSN?
-// ZDB-JOP needs to be reverse-proxied to /zdb/ (passing on the client IP)
-// or /zdb-local/ (passing on the server’s IP) depending on ZDBUseClientIP.
-var useZDB = false;
-var ZDBUseClientIP = true;
-// The maximum number of authors to display in the short result.
-var maxAuthors = 3;
-// Display year facets using a histogram graphic?
-var useHistogramForYearFacets = true;
-// Name of the site that can be used, e.g. for file names of downloaded files.
-var siteName = undefined;
-// Add COinS elements to our results list for the benefit of zotero >= 3?
-var provideCOinSExport = true;
-// Whether to include a link to Karlsruher Virtueller Katalog along with the export links.
-var showKVKLink = false;
-// List of export formats we provide links for. An empty list suppresses the
-// creation of export links. Supported list items are: 'ris', 'bibtex',
-// 'ris-inline' and 'bibtex-inline'.
-var exportFormats = [];
-// Offer submenus with items for each location in the export links?
-var showExportLinksForEachLocation = false;
-// Function used to trigger search (to be overwritten by pazpar2-neuwerbungen).
-var triggerSearchFunction = triggerSearchForForm;
-// Show keywords field in extended search and display linked keywords in detail view?
-var useKeywords = false;
-// Object of URLs for form field autocompletion.
-var autocompleteURLs = {};
-// Function called to set up autocomplete for form fields.
-var autocompleteSetupFunction = autocompleteSetupArray;
-
-
-/*	my_oninit
-	Callback for pz2.js called when initialisation is complete.
+/*
+	pz2.js Callbacks
 */
-function my_oninit(data) {
-	my_paz.stat();
-	my_paz.bytarget();
-	pz2Initialised = true;
+var callbacks = {
 
-	// Clean up potentially existing error messages from previously failed intialisations.
-	var jRecordCount = jQuery('.pz2-recordCount');
-	jRecordCount.empty();
-	jRecordCount.removeClass('pz2-noResults');
+	init: function (data) {
+		my_paz.stat();
+		my_paz.bytarget();
+		pz2Initialised = true;
 
-	// Process Information from pazpar2-access if it is available.
-	if (data) {
-		var accessRightsTags = data.getElementsByTagName('accessRights');
-		if (accessRightsTags.length > 0) {
-			var accessRights = accessRightsTags[0];
-			var institutionNameTags = accessRights.getElementsByTagName('institutionName');
-			var institutionName = undefined;
-			if (institutionNameTags.length > 0) {
-				var institution = institutionNameTags[0].textContent;
-				if (institution) {
-					institutionName = institution;
+		// Clean up potentially existing error messages from previously failed intialisations.
+		var jRecordCount = jQuery('.pz2-recordCount');
+		jRecordCount.empty();
+		jRecordCount.removeClass('pz2-noResults');
+
+		// Process Information from pazpar2-access if it is available.
+		if (data) {
+			var accessRightsTags = data.getElementsByTagName('accessRights');
+			if (accessRightsTags.length > 0) {
+				var accessRights = accessRightsTags[0];
+				var institutionNameTags = accessRights.getElementsByTagName('institutionName');
+				var institutionName = undefined;
+				if (institutionNameTags.length > 0) {
+					var institution = institutionNameTags[0].textContent;
+					if (institution) {
+						institutionName = institution;
+					}
+				}
+
+				var allTargetsActiveTags = accessRights.getElementsByTagName('allTargetsActive');
+				var allTargetsActive = undefined;
+				if (allTargetsActiveTags.length > 0) {
+					allTargetsActive = (parseInt(allTargetsActiveTags[0].textContent) === 1);
+				}
+
+			}
+
+			if (institutionName !== undefined) {
+				var accessMessage = undefined;
+				if (institutionName === 'Gastzugang') {
+					accessMessage = localise('Gastzugang');
+				}
+				else {
+					accessMessage =  localise('Zugang über:') + ' ' + institutionName;
+				}
+
+				var accessNote = undefined;
+				if (allTargetsActive === false) {
+					accessNote = localise('Nicht alle Datenbanken verfügbar.');
+				}
+
+				jQuery(document).ready(function () {
+						var jAccessNote = jQuery('.pz2-accessNote');
+						jAccessNote.text(accessMessage);
+						if (accessNote !== undefined) {
+							jAccessNote.attr({'title': accessNote});
+						}
+					});
+			}
+		}
+
+		config.triggerSearchFunction(null);
+	},
+
+
+	/*	show
+		Callback for pazpar2 when data become available.
+		Goes through the records and adds them to hitList.
+		Regenerates displayHitList(UpToDate) and triggers redisplay.
+		input:	data - result data passed from pazpar2
+	*/
+	show: function (data) {
+
+		/*	extractNewestDates
+			Looks for the 'date' array in the passed record and returns an array
+			of integers containing the numbers represented by the last four
+			consecutive digits in each member.
+			input:	array (possibly a pazpar2 record or a record’s location element
+			output:	array of integers
+		*/
+		var extractNewestDates = function (record) {
+			var result = [];
+
+			if (record['md-date']) {
+				for (var dateIndex in record['md-date']) {
+					var dateParts = record['md-date'][dateIndex].match(/[0-9]{4}/g);
+					if (dateParts && dateParts.length > 0) {
+						var parsedDate = parseInt(dateParts[dateParts.length - 1], 10);
+						if (!isNaN(parsedDate)) {
+							result.push(parsedDate);
+						}
+					}
 				}
 			}
+			return result;
+		};
 
-			var allTargetsActiveTags = accessRights.getElementsByTagName('allTargetsActive');
-			var allTargetsActive = undefined;
-			if (allTargetsActiveTags.length > 0) {
-				allTargetsActive = (parseInt(allTargetsActiveTags[0].textContent) === 1);
+
+		for (var hitNumber in data.hits) {
+			var hit = data.hits[hitNumber];
+			var hitID = hit.recid[0];
+			if (hitID) {
+				var oldHit = hitList[hitID];
+				if (oldHit) {
+					hit.detailsDivVisible = oldHit.detailsDivVisible;
+					if (oldHit.location.length === hit.location.length) {
+						// preserve old details Div, if the location info hasn't changed
+						hit.detailsDiv = hitList[hitID].detailsDiv;
+					}
+				}
+
+				// Make sure the 'medium' field exists by setting it to 'other' if necessary.
+				if (!hit['md-medium']) {
+					hit['md-medium'] = ['other'];
+				}
+
+				// Create the integer 'filterDate' field for faceting.
+				hit['md-filterDate'] = extractNewestDates(hit);
+
+				// If there is no title information but series information, use the
+				// first series field for the title.
+				if (!(hit['md-title'] || hit['md-multivolume-title']) && hit['md-series-title']) {
+					hit['md-multivolume-title'] = [hit['md-series-title'][0]];
+				}
+
+				// If there is no language information, set the language code to zzz
+				// (undefined) to ensure we get a facet for this case as well.
+				if (!hit['md-language']) {
+					hit['md-language'] = ['zzz'];
+				}
+
+				// Sort the location array to have the newest item first
+				hit.location.sort(function (a, b) {
+						var aDates = extractNewestDates(a);
+						var bDates = extractNewestDates(b);
+
+						if (aDates.length > 0 && bDates.length > 0) {
+							return bDates[0] - aDates[0];
+						}
+						else if (aDates.length > 0 && bDates.length === 0) {
+							return -1;
+						}
+						else if (aDates.length === 0 && bDates.length > 0) {
+							return -1;
+						}
+						else {
+							return 0;
+						}
+					});
+
+				hitList[hitID] = hit;
 			}
-
 		}
 
-		if (institutionName !== undefined) {
-			var accessMessage = undefined;
-			if (institutionName === 'Gastzugang') {
-				accessMessage = localise('Gastzugang');
+		updateAndDisplay();
+	},
+
+
+	/*	stat
+		Callback for pazpar2 status information. Updates the progress bar, pagers and
+			and status information.
+		input:	data - object with status information from pazpar2
+	*/
+	stat: function (data) {
+		var progress = (data.clients[0] - data.activeclients[0]) / data.clients[0] * 100;
+		updateProgressBar(progress);
+
+		updatePagers();
+
+		// Create markup with status information.
+		var statDiv = document.getElementById('pz2-stat');
+		if (statDiv) {
+			jQuery(statDiv).empty();
+
+			var heading = document.createElement('h4');
+			statDiv.appendChild(heading);
+			heading.appendChild(document.createTextNode(localise('Status:')));
+
+			var statusText = localise('Aktive Abfragen:') + ' '
+					+ data.activeclients + '/' + data.clients + ' – '
+					+ localise('Geladene Datensätze:') + ' '
+					+ data.records + '/' + data.hits;
+			statDiv.appendChild(document.createTextNode(statusText));
+		}
+	},
+
+
+	/*	bytarget
+		Callback for target status information. Updates the status display.
+		input:	data - list coming from pazpar2
+	*/
+	bytarget: function (data) {
+		var targetDiv = document.getElementById('pz2-targetView');
+		jQuery(targetDiv).empty();
+
+		var table = document.createElement('table');
+		targetDiv.appendChild(table);
+
+		var caption = document.createElement('caption');
+		table.appendChild(caption);
+		caption.appendChild(document.createTextNode(localise('Übertragungsstatus')));
+		var closeLink = document.createElement('a');
+		caption.appendChild(closeLink);
+		closeLink.setAttribute('href', '#');
+		closeLink.onclick = toggleStatus;
+		closeLink.appendChild(document.createTextNode(localise('[ausblenden]')));
+
+		var thead = document.createElement('thead');
+		table.appendChild(thead);
+		var tr = document.createElement('tr');
+		thead.appendChild(tr);
+		var td = document.createElement('th');
+		tr.appendChild(td);
+		td.appendChild(document.createTextNode(localise('Datenbank')));
+		td.id = 'pz2-target-name';
+		td = document.createElement('th');
+		tr.appendChild(td);
+		td.appendChild(document.createTextNode(localise('Geladen')));
+		td.id = 'pz2-target-loaded';
+		td = document.createElement('th');
+		tr.appendChild(td);
+		td.appendChild(document.createTextNode(localise('Treffer')));
+		td.id = 'pz2-target-hits';
+		td = document.createElement('th');
+		tr.appendChild(td);
+		jQuery(td).addClass('pz2-target-status');
+		td.appendChild(document.createTextNode(localise('Status')));
+		td.id = 'pz2-target-status';
+
+		var tbody = document.createElement('tbody');
+		table.appendChild(tbody);
+
+		for (var i = 0; i < data.length; i++ ) {
+			tr = document.createElement('tr');
+			tbody.appendChild(tr);
+			td = document.createElement('th');
+			tr.appendChild(td);
+			td.appendChild(document.createTextNode(localise(data[i].name, 'catalogueNames')));
+			td.title = data[i].id;
+			td.setAttribute('headers', 'pz2-target-name');
+			td = document.createElement('td');
+			tr.appendChild(td);
+			td.appendChild(document.createTextNode(data[i].records));
+			td.setAttribute('headers', 'pz2-target-loaded');
+			td = document.createElement('td');
+			tr.appendChild(td);
+			var hitCount = data[i].hits;
+			if (hitCount === -1) {
+				hitCount = '?';
+			}
+			td.appendChild(document.createTextNode(hitCount));
+			td.setAttribute('headers', 'pz2-target-hits');
+			td = document.createElement('td');
+			tr.appendChild(td);
+			td.appendChild(document.createTextNode(localise(data[i].state)));
+			if (parseInt(data[i].diagnostic) !== 0) {
+				td.setAttribute('title', localise('Code') + ': ' + data[i].diagnostic);
+			}
+			td.setAttribute('headers', 'pz2-target-status');
+
+			targetStatus[data[i].name] = data[i];
+		}
+
+		if (my_paz.activeClients === 0) {
+			// Update the facet when no more clients are active, to ensure result
+			// counts and overflow indicators are up to date.
+			updateFacetLists();
+			// Update result count
+			updatePagers();
+		}
+
+	},
+
+
+	error: function (error) {
+		var errorCode = parseInt(error.code);
+
+		if (errorCode === 1 && this.request.status === 417) {
+			// The Pazpar2 session has expired: create a new one.
+			initialisePazpar2();
+		}
+		else if (errorCode === 100 && this.request.status === 417) {
+			// The Service Proxy session has expired / cookie got lost: create a new one.
+			initialiseServiceProxy();
+		}
+		else if (this.request.status === 503) {
+			// The service is unavailable: Disable the search form.
+			var jRecordCount = jQuery('.pz2-recordCount');
+			jRecordCount.empty();
+			var message = localise('Suche momentan nicht verfügbar.');
+			jRecordCount.text(message);
+			jRecordCount.addClass('pz2-noResults');
+
+			if (pz2InitTimeout !== undefined) {
+				clearTimeout(pz2InitTimeout);
+			}
+			pz2InitTimeout = setTimeout(initialisePazpar2, 15000);
+		}
+
+		// If  the error happens while loading, clear the current search term,
+		// to allow restarting the search.
+		if (my_paz.activeClients > 0) {
+			curSearchTerm = null;
+		}
+	},
+
+
+	/*	term
+		pazpar2 callback for receiving facet data.
+			Stores facet data and recreates facets on page.
+		input:	data - Array with facet information.
+	*/
+	term: function (data) {
+		facetData = data;
+	}
+};
+
+
+
+/*
+	Initialisation
+*/
+
+/*	pz2ClientDomReady
+	Called when the page is loaded. Sets up JavaScript-based search mechanism.
+	Needs to be defined before init.
+*/
+var pz2ClientDomReady = function ()  {
+	domReadyFired = true;
+
+	jQuery('.pz2-searchForm').each( function(index, form) {
+			form.onsubmit = onFormSubmitEventHandler;
+			if (jQuery('form.pz2-searchForm').hasClass('pz2-extended')) {
+				jQuery('.pz2-extendedLink', form).click(removeExtendedSearch);
 			}
 			else {
-				accessMessage =  localise('Zugang über:') + ' ' + institutionName;
+				jQuery('.pz2-extendedLink', form).click(addExtendedSearch);
 			}
-
-			var accessNote = undefined;
-			if (allTargetsActive === false) {
-				accessNote = localise('Nicht alle Datenbanken verfügbar.');
-			}
-
-			jQuery(document).ready(function () {
-					var jAccessNote = jQuery('.pz2-accessNote');
-					jAccessNote.text(accessMessage);
-					if (accessNote !== undefined) {
-						jAccessNote.attr({'title': accessNote});
-					}
-				});
 		}
+	);
+
+	jQuery('.pz2-recordCount').click(toggleStatus);
+
+	jQuery('.pz2-sort, .pz2-perPage').attr('onchange', 'onSelectDidChange');
+	jQuery('#pazpar2').removeClass('pz2-noJS');
+
+	setupAutocomplete();
+
+	config.triggerSearchFunction(null);
+};
+
+
+
+/*	init
+	Initialises the pz2.js client.
+	Needs to be called by the webpage to start things off.
+	Relies on pz2ClientDomReady being defined.
+
+	input:	setup - object with values to override the default values if config
+*/
+var init = function (setup) {
+	// Override parameters passed in setup.
+	for (var key in setup) {
+		config[key] = setup[key];
 	}
-	
-	triggerSearchFunction(null);
-}
+
+	my_paz = new pz2( {
+		pazpar2path: config.pazpar2Path,
+		serviceId: config.serviceID,
+		usesessions: usesessions(),
+		oninit: callbacks.init,
+		onshow: callbacks.show,
+		showtime: 1000, //each timer (show, stat, term, bytarget) can be specified this way
+		onbytarget: callbacks.bytarget,
+		onstat: callbacks.stat,
+		errorhandler: callbacks.error,
+		/* We are not using pazpar2’s termlists but create our own.
+			onterm: callbacks.term,
+			termlist: termListNames.join(","),
+		*/
+		showResponseType: config.showResponseType
+	});
+
+	jQuery().ready(pz2ClientDomReady);
+};
+
+
+
+/*	initialiseService
+	Runs initialisation for pazpar2 or Service Proxy.
+*/
+var initialiseService = function () {
+	if (usesessions()) {
+		initialisePazpar2();
+	}
+	else {
+		initialiseServiceProxy();
+	}
+};
+
+
+
+/*	initialisePazpar2
+*/
+var initialisePazpar2 = function () {
+	if (pz2InitTimeout !== undefined) {
+		clearTimeout(pz2InitTimeout);
+		pz2InitTimeout = undefined;
+	}
+
+	if (my_paz) {
+		my_paz.init(undefined, my_paz.serviceId);
+	}
+	else {
+		this.init();
+	}
+};
+
+
+
+/*	initialiseServiceProxy
+*/
+var initialiseServiceProxy = function () {
+	jQuery.get(config.serviceProxyAuthPath, function () {
+		pz2Initialised = true;
+		callbacks.init();
+	});
+};
+
+
+
+/*	pz2
+	Returns the pz2 object.
+*/
+var getPz2 = function () {
+	return my_paz;
+};
+
+
+
+/*	usesessions
+	Returns whether to use sessions or not.
+*/
+var usesessions = function () {
+	return (typeof(config.useServiceProxy) !== 'undefined' && config.useServiceProxy ? false: true);
+};
 
 
 
@@ -325,7 +496,7 @@ function my_oninit(data) {
 	input:	* info - the DOM element to insert
 			* container - the DOM element to insert info to
 */
-function appendInfoToContainer (info, container) {
+var appendInfoToContainer = function (info, container) {
 	if (info !== undefined && container !== undefined ) {
 		if (info.constructor !== Array) {
 			// info is a single item
@@ -337,7 +508,7 @@ function appendInfoToContainer (info, container) {
 			}
 		}
 	}
-}
+};
 
 
 
@@ -348,7 +519,7 @@ function appendInfoToContainer (info, container) {
 	input:	link - DOM a element
 	output:	DOM element of the link passed in
 */
-function turnIntoNewWindowLink (link) {
+var turnIntoNewWindowLink = function (link) {
 	if (link) {
 		link.setAttribute('target', 'pz2-linkTarget');
 		jQuery(link).addClass('pz2-newWindowLink');
@@ -364,7 +535,7 @@ function turnIntoNewWindowLink (link) {
 			piwikTracker.addListener(link);
 		}
 	}
-}
+};
 
 
 
@@ -376,7 +547,7 @@ function turnIntoNewWindowLink (link) {
 			record - pazpar2 record
 	output:	array with content of the field in the record
 */
-function fieldContentsInRecord (fieldName, record) {
+var fieldContentsInRecord = function (fieldName, record) {
 	var result = [];
 	
 	if ( fieldName === 'xtargets' ) {
@@ -406,9 +577,7 @@ function fieldContentsInRecord (fieldName, record) {
 	}
 
 	return result;
-}
-
-
+};
 
 
 
@@ -416,9 +585,9 @@ function fieldContentsInRecord (fieldName, record) {
 	Converts a given list of data to thes list used for display by:
 		1. applying filters
 		2. sorting
-	according to the setup in the displaySort and filterArray variables.
+	according to the setup in the displaySort and filterArray configuration.
 */
-function displayLists (list) {
+var displayLists = function (list) {
 	
 	/*	filter
 		Returns filtered lists of pazpar2 records according to the current 
@@ -441,7 +610,7 @@ function displayLists (list) {
 		var matchesFilters = function (record) {
 			var matches = true;
 			var matchesEverythingNotTheDate = true;
-			for (var facetType in termLists) {
+			for (var facetType in config.termLists) {
 				for (var filterIndex in filterArray[facetType]) {
 					matches = false;
 					matchesEverythingNotTheDate = false;
@@ -503,7 +672,7 @@ function displayLists (list) {
 
 	/*	sortFunction
 		Sort function for pazpar2 records.
-		Sorts by date or author according to the current setup in the displaySort variable.
+		Sorts by date or author according to the current setup in the displaySort configuration.
 		input:	record1, record2 - pazpar2 records
 		output: negative/0/positive number
 	*/
@@ -555,9 +724,10 @@ function displayLists (list) {
 
 		var result = 0;
 
-		for (var sortCriterionIndex in displaySort) {
-			var fieldName = displaySort[sortCriterionIndex].fieldName;
-			var direction = (displaySort[sortCriterionIndex].direction === 'ascending') ? 1 : -1;
+		for (var sortCriterionIndex in config.displaySort) {
+			var sortCriterion = config.displaySort[sortCriterionIndex];
+			var fieldName = sortCriterion.fieldName;
+			var direction = (sortCriterion.direction === 'ascending') ? 1 : -1;
 
 			if (fieldName === 'date') {
 				var date1 = dateForRecord(record1);
@@ -595,121 +765,27 @@ function displayLists (list) {
 	var result = filteredLists(list);
 	result[0] = result[0].sort(sortFunction);
 	return result;
-}
+};
 
 
 
 /*	updateAndDisplay
 	Updates displayHitList and displayHitListUpToDate, then redraws.
 */
-function updateAndDisplay () {
+var updateAndDisplay = function () {
 	var filterResults = displayLists(hitList);
 	displayHitList = filterResults[0];
 	displayHitListUpToDate = filterResults[1];
 	display();
 	updateFacetLists();
-}
-
-
-
-/*	my_onshow
-	Callback for pazpar2 when data become available.
-	Goes through the records and adds them to hitList.
-	Regenerates displayHitList(UpToDate) and triggers redisplay.
-	input:	data - result data passed from pazpar2
-*/
-function my_onshow (data) {
-
-	/*	extractNewestDates
-		Looks for the 'date' array in the passed record and returns an array
-		of integers containing the numbers represented by the last four
-		consecutive digits in each member.
-		input:	array (possibly a pazpar2 record or a record’s location element
-		output:	array of integers
-	*/
-	var extractNewestDates = function (record) {
-		var result = [];
-
-		if (record['md-date']) {
-			for (var dateIndex in record['md-date']) {
-				var dateParts = record['md-date'][dateIndex].match(/[0-9]{4}/g);
-				if (dateParts && dateParts.length > 0) {
-					var parsedDate = parseInt(dateParts[dateParts.length - 1], 10);
-					if (!isNaN(parsedDate)) {
-						result.push(parsedDate);
-					}
-				}
-			}
-		}
-		return result;
-	};
-
-
-	for (var hitNumber in data.hits) {
-		var hit = data.hits[hitNumber];
-		var hitID = hit.recid[0];
-		if (hitID) {
-			var oldHit = hitList[hitID];
-			if (oldHit) {
-				hit.detailsDivVisible = oldHit.detailsDivVisible;
-				if (oldHit.location.length === hit.location.length) {
-					// preserve old details Div, if the location info hasn't changed
-					hit.detailsDiv = hitList[hitID].detailsDiv;
-				}
-			}
-			
-			// Make sure the 'medium' field exists by setting it to 'other' if necessary.
-			if (!hit['md-medium']) {
-				hit['md-medium'] = ['other'];
-			}
-			
-			// Create the integer 'filterDate' field for faceting.
-			hit['md-filterDate'] = extractNewestDates(hit);
-
-			// If there is no title information but series information, use the
-			// first series field for the title.
-			if (!(hit['md-title'] || hit['md-multivolume-title']) && hit['md-series-title']) {
-				hit['md-multivolume-title'] = [hit['md-series-title'][0]];
-			}
-
-			// If there is no language information, set the language code to zzz
-			// (undefined) to ensure we get a facet for this case as well.
-			if (!hit['md-language']) {
-				hit['md-language'] = ['zzz'];
-			}
-
-			// Sort the location array to have the newest item first
-			hit.location.sort(function (a, b) {
-					var aDates = extractNewestDates(a);
-					var bDates = extractNewestDates(b);
-
-					if (aDates.length > 0 && bDates.length > 0) {
-						return bDates[0] - aDates[0];
-					}
-					else if (aDates.length > 0 && bDates.length === 0) {
-						return -1;
-					}
-					else if (aDates.length === 0 && bDates.length > 0) {
-						return -1;
-					}
-					else {
-						return 0;
-					}
-				});
-			
-			hitList[hitID] = hit;
-		}
-	}
-
-	updateAndDisplay();
-}
+};
 
 
 
 /*	display
 	Displays the records stored in displayHitList as short records.
 */
-function display () {
+var display = function () {
 
 	/*	markupForField
 		Creates span DOM element and content for a field name; Appends it to the given container.
@@ -785,7 +861,7 @@ function display () {
 			// otherwise try to fall back to author fields
 			var authors = [];
 			for (var index = 0; index < hit['md-author'].length; index++) {
-				if (index < maxAuthors) {
+				if (index < config.maxAuthors) {
 					var authorname = hit['md-author'][index];
 					authors.push(authorname);
 				}
@@ -948,6 +1024,61 @@ function display () {
 
 
 
+	/*	toggleDetails
+		Called when a list item is clicked.
+			Reveals/Hides the detail information for the record.
+			Detail information is created when it is first needed and then stored with the record.
+		input:	prefixRecId - string of the form rec_RECORDID coming from the DOM ID
+	*/
+	var toggleDetails = function () {
+		var recordIDHTML = this.id.replace('rec_', '');
+		var recordID = recordIDForHTMLID(recordIDHTML);
+		var record = hitList[recordID];
+		var detailsElement = document.getElementById('det_' + recordIDHTML);
+		var extraLinks = jQuery('.pz2-extraLinks', record.detailsDiv);
+		var parent = document.getElementById('recdiv_'+ recordIDHTML);
+
+		if (record.detailsDivVisible) {
+			// Detailed record information is present: remove it
+			extraLinks.fadeOut('fast');
+			jQuery(detailsElement).slideUp('fast');
+			record.detailsDivVisible = false;
+			jQuery(parent).removeClass('pz2-detailsVisible');
+			trackPiwik('details/hide');
+		}
+		else {
+			// Create detail view if it doesn’t exist yet.
+			if (!record.detailsDiv) {
+				record.detailsDiv = renderDetails(recordID);
+				runMathJax(record.detailsDiv);
+			}
+
+			// Append the detail view if it is not in the DOM.
+			if (!detailsElement) {
+				jQuery(record.detailsDiv).hide();
+				parent.appendChild(record.detailsDiv);
+			}
+
+			extraLinks.hide();
+			if (!MSIEVersion() || MSIEVersion() >= 8) {
+				jQuery(record.detailsDiv).slideDown('fast');
+				extraLinks.fadeIn('fast');
+			}
+			else {
+				jQuery(record.detailsDiv).show();
+				extraLinks.show();
+			}
+
+			record.detailsDivVisible = true;
+			jQuery(parent).addClass('pz2-detailsVisible');
+			trackPiwik('details/show');
+		}
+
+		return false;
+	};
+
+
+
 	// Create results list.
 	var OL = document.createElement('ol');
 	var firstIndex = recPerPage * (curPage - 1);
@@ -968,7 +1099,7 @@ function display () {
 			LI.appendChild(linkElement);
 			linkElement.setAttribute('href', '#');
 			jQuery(linkElement).addClass('pz2-recordLink');
-			linkElement.onclick = new Function('toggleDetails(this.id);return false;');
+			linkElement.onclick = toggleDetails;
 			linkElement.setAttribute('id', 'rec_' + HTMLIDForRecordData(hit));
 
 			var iconElement = document.createElement('span');
@@ -982,7 +1113,7 @@ function display () {
 			}
 
 			jQuery(iconElement).addClass('pz2-mediaIcon ' + mediaClass);
-			iconElement.title = localise(mediaClass, mediaTypeNames);
+			iconElement.title = localise(mediaClass, 'mediaTypeNames');
 
 			appendInfoToContainer(titleInfo(), linkElement);
 			var authors = authorInfo();
@@ -1000,7 +1131,7 @@ function display () {
 				markupForField('date', linkElement, spaceBefore, '.');
 			}
 
-			if (provideCOinSExport) {
+			if (config.provideCOinSExport) {
 				appendInfoToContainer(COinSInfo(), LI);
 			}
 			hit.li = LI;
@@ -1036,14 +1167,66 @@ function display () {
 		zoteroNotification.initEvent('ZoteroItemUpdated', true, true);
 		document.dispatchEvent(zoteroNotification);
 	}
-}
+};
 
 
 
 /* 	updatePagers
-	Updates fs and record counts shown in .pz2-pager elements.
+	Updates pager and record counts shown in .pz2-pager elements.
 */
-function updatePagers () {
+var updatePagers = function () {
+
+	/*	showPage
+		Shows result page pageNumber.
+		input:	pageNum - number of the page to be shown
+		return:	false
+	*/
+	var showPage = function (pageNumber, link) {
+		curPage = Math.min( Math.max(0, pageNumber), Math.ceil(displayHitList.length / recPerPage) );
+		display();
+		trackPiwik('page', pageNumber);
+	};
+
+
+
+	/*	pagerGoto
+		Get the number in the calling element’s »pageNumber« attribute and go
+		to the page with that number.
+		return:	false
+	*/
+	var pagerGoto = function () {
+		var jThis = jQuery(this);
+		var pageNumber = jThis.parent().attr('pageNumber');
+		if (jThis.parents('.pz2-pager').hasClass('pz2-bottom')) {
+			jQuery('body,html').animate({'scrollTop': jQuery('.pz2-pager.pz2-top').offset().top}, 'fast');
+		}
+		showPage(pageNumber);
+		return false;
+	};
+
+
+	/*	pagerNext
+		Display the next page (if available).
+		return:	false
+	*/
+	var pagerNext = function () {
+		showPage(curPage + 1);
+		return false;
+	};
+
+
+
+	/*	pagerPrev
+		Display the previous page (if available).
+		return:	false
+	*/
+	var pagerPrev = function () {
+		showPage(curPage - 1);
+		return false;
+	};
+
+
+
 	jQuery('div.pz2-pager').each( function(index) {
 			var pages = Math.ceil(displayHitList.length / recPerPage);
 
@@ -1057,7 +1240,7 @@ function updatePagers () {
 			if (curPage > 1) {
 				previousLink = document.createElement('a');
 				previousLink.setAttribute('href', '#');
-				previousLink.onclick = new Function('pagerPrev(this);return false;');
+				previousLink.onclick = pagerPrev;
 				previousLink.title = localise('Vorige Trefferseite anzeigen');
 			}
 			jQuery(previousLink).addClass('pz2-prev');
@@ -1075,10 +1258,11 @@ function updatePagers () {
 				if (pageNumber < 5 || Math.abs(pageNumber - curPage) < 3 || pages < pageNumber + 4) {
 					var pageItem = document.createElement('li');
 					pageList.appendChild(pageItem);
+					pageItem.setAttribute('pageNumber', pageNumber);
 					if(pageNumber !== curPage) {
 						var linkElement = document.createElement('a');
 						linkElement.setAttribute('href', '#');
-						linkElement.onclick = new Function('showPage(' + pageNumber + ', this);return false;');
+						linkElement.onclick = pagerGoto;
 						linkElement.appendChild(document.createTextNode(pageNumber));
 						pageItem.appendChild(linkElement);
 					}
@@ -1103,7 +1287,7 @@ function updatePagers () {
 			if (pages - curPage > 0) {
 				nextLink = document.createElement('a');
 				nextLink.setAttribute('href', '#');
-				nextLink.onclick = new Function('pagerNext(this);return false;');
+				nextLink.onclick = pagerNext;
 				nextLink.title = localise('Nächste Trefferseite anzeigen');
 			}
 			jQuery(nextLink).addClass('pz2-next');
@@ -1196,7 +1380,7 @@ function updatePagers () {
 			jRecordCount.append(infoString);
 		}
 	);
-}
+};
 
 
 
@@ -1206,7 +1390,7 @@ function updatePagers () {
 		when finished.
 	input:	percentage - number
 */
-function updateProgressBar(percentage) {
+var updateProgressBar = function (percentage) {
 	// Display progress bar, with a minimum of 5% progress.
 	var progress = Math.max(percentage, 5);
 	var finished = (progress === 100);
@@ -1214,37 +1398,7 @@ function updateProgressBar(percentage) {
 	var duration = 500 * (finished ? 0.2 : 1);
 	
 	jQuery('.pz2-pager .pz2-progressIndicator').animate({'width': progress + '%', 'opacity': opacityValue}, duration);
-}
-
-
-
-/*	my_onstat
-	Callback for pazpar2 status information. Updates the progress bar, pagers and
-		and status information.
-	input:	data - object with status information from pazpar2
-*/
-function my_onstat(data) {
-	var progress = (data.clients[0] - data.activeclients[0]) / data.clients[0] * 100;
-	updateProgressBar(progress);
-
-	updatePagers();
-
-	// Create markup with status information.
-	var statDiv = document.getElementById('pz2-stat');
-	if (statDiv) {
-		jQuery(statDiv).empty();
-
-		var heading = document.createElement('h4');
-		statDiv.appendChild(heading);
-		heading.appendChild(document.createTextNode(localise('Status:')));
-
-		var statusText = localise('Aktive Abfragen:') + ' '
-				+ data.activeclients + '/' + data.clients + ' – '
-				+ localise('Geladene Datensätze:') + ' '
-				+ data.records + '/' + data.hits;
-		statDiv.appendChild(document.createTextNode(statusText));
-	}
-}
+};
 
 
 
@@ -1256,7 +1410,81 @@ function my_onstat(data) {
 				the facet information sent by pazpar2
 	output:	DOM elements for displaying the list of faces
 */
-function facetListForType (type, preferOriginalFacets) {
+var facetListForType = function (type, preferOriginalFacets) {
+
+	/*	limitResults
+		Adds a filter for term for the data of type kind. Then redisplays.
+		input:	* kind - string with name of facet type
+				* term - string that needs to match the facet
+	*/
+	var limitResults = function (kind, term) {
+		if (filterArray[kind]) {
+			// add alternate condition to an existing filter
+			filterArray[kind].push(term);
+		}
+		else {
+			// the first filter of its kind: create array
+			filterArray[kind] = [term];
+		}
+
+		curPage = 1;
+		updateAndDisplay();
+
+		trackPiwik('facet/limit', kind);
+	};
+
+
+
+	/*	delimitResults
+		Removes a filter for term from the data of type kind. Then redisplays.
+		input:	* kind - string with name of facet type
+				* term (optional) - string that shouldn't be filtered for
+						all terms are removed if term is omitted.
+	*/
+	var delimitResults = function (kind, term) {
+		if (filterArray[kind]) {
+			if (term) {
+				// if a term is given only delete occurrences of 'term' from the filter
+				for (var index = filterArray[kind].length -1; index >= 0; index--) {
+					if (filterArray[kind][index] === term) {
+						filterArray[kind].splice(index,1);
+					}
+				}
+				if (filterArray[kind].length === 0) {
+					filterArray[kind] = undefined;
+				}
+			}
+			else {
+				// if no term is given, delete the complete filter
+				filterArray[kind] = undefined;
+			}
+
+			updateAndDisplay();
+
+			trackPiwik('facet/delimit', kind);
+		}
+	};
+
+
+	var facetItemSelect = function () {
+		var jThis = jQuery(this);
+		var facetName = jThis.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
+		var facetTerm = jThis.parents('li').attr('facetTerm');
+		limitResults(facetName, facetTerm);
+		return false;
+	};
+
+
+	var facetItemDeselect = function () {
+		var jThis = jQuery(this);
+		var facetName = jThis.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
+		var facetTerm = jThis.parents('li').attr('facetTerm');
+		delimitResults(facetName, facetTerm);
+		return false;
+	};
+
+
+
 	/*	isFilteredForType
 		Returns whether there is a filter for the given type.
 		input:	type - string with the type's name
@@ -1341,10 +1569,10 @@ function facetListForType (type, preferOriginalFacets) {
 				// Note the maximum number
 				termList['maximumNumber'] = termList[0].freq;
 
-				if (type === 'filterDate' && !useHistogramForYearFacets) {
+				if (type === 'filterDate' && !config.useHistogramForYearFacets) {
 					// Special treatment for dates when displaying them as a list:
 					// take the most frequent items and sort by date if we are not using the histogram.
-					var maximumDateFacetCount = parseInt(termLists['filterDate'].maxFetch);
+					var maximumDateFacetCount = parseInt(config.termLists['filterDate'].maxFetch);
 					if (termList.length > maximumDateFacetCount) {
 						termList.splice(maximumDateFacetCount, termList.length - maximumDateFacetCount);
 					}
@@ -1373,12 +1601,11 @@ function facetListForType (type, preferOriginalFacets) {
 
 	var facetDisplayTermsForType = function (terms, type) {
 		var list = document.createElement('ol');
-		list.setAttribute('facetType', type);
 
 		// Determine whether facets need to be hidden.
 		// Avoid hiding less than 3 facets.
-		var needToHideFacets = (terms.length > parseInt(termLists[type].maxFetch) + 2)
-								&& (termLists[type].showAll !== true);
+		var needToHideFacets = (terms.length > parseInt(config.termLists[type].maxFetch) + 2)
+								&& (config.termLists[type].showAll !== true);
 		var invisibleCount = 0;
 
 
@@ -1386,13 +1613,14 @@ function facetListForType (type, preferOriginalFacets) {
 		for (var facetIndex = 0; facetIndex < terms.length; facetIndex++) {
 			var facet = terms[facetIndex];
 			var item = document.createElement('li');
-			var jItem = jQuery(item);
 			list.appendChild(item);
+			var jItem = jQuery(item);
+			jItem.attr('facetTerm', facet.name);
 
 			// Make items beyond the display limit invisible unless otherwise
 			// requested. Be a bit wiggly about this to avoid hiding less than 3
 			// items
-			if (needToHideFacets && facetIndex >= parseInt(termLists[type].maxFetch)
+			if (needToHideFacets && facetIndex >= parseInt(config.termLists[type].maxFetch)
 					&& !(type === 'language' && facet.name === 'zzz')) {
 				jItem.addClass('pz2-facet-hidden');
 				invisibleCount++;
@@ -1402,7 +1630,7 @@ function facetListForType (type, preferOriginalFacets) {
 			var link = document.createElement('a');
 			item.appendChild(link);
 			link.setAttribute('href', '#');
-			link.onclick = new Function('limitResults("' + type + '","' + facet.name.replace(/"/g, '\\"') + '");return false;');
+			link.onclick = facetItemSelect;
 
 			// 'Progress bar'
 			var progressBar = document.createElement('div');
@@ -1414,19 +1642,19 @@ function facetListForType (type, preferOriginalFacets) {
 			// Facet Display Name
 			var facetDisplayName = facet.name;
 			if (type === 'xtargets') {
-				facetDisplayName = localise(facet.name, catalogueNames);
+				facetDisplayName = localise(facet.name, 'catalogueNames');
 			}
 			else if (type === 'language') {
-				facetDisplayName = localise(facet.name, languageNames);
+				facetDisplayName = localise(facet.name, 'languageNames');
 			}
 			else if (type === 'medium') {
-				facetDisplayName = localise(facet.name, mediaTypeNames);
+				facetDisplayName = localise(facet.name, 'mediaTypeNames');
 			}
 			else if (type === 'country') {
-				facetDisplayName = localise(facet.name, countryNames);
+				facetDisplayName = localise(facet.name, 'countryNames');
 			}
 			else if (type === 'source-type') {
-				facetDisplayName = localise(facet.name, sourceTypeNames);
+				facetDisplayName = localise(facet.name, 'sourceTypeNames');
 			}
 
 			var textSpan = document.createElement('span');
@@ -1479,7 +1707,7 @@ function facetListForType (type, preferOriginalFacets) {
 						item.appendChild(cancelLink);
 						cancelLink.setAttribute('href', '#');
 						jQuery(cancelLink).addClass('pz2-facetCancel');
-						cancelLink.onclick = new Function('delimitResults("' + type + '","' + facet.name.replace(/"/g, '\\"') + '"); return false;');
+						cancelLink.onclick = facetItemDeselect;
 						cancelLink.appendChild(document.createTextNode(localise('Filter aufheben')));
 						break;
 					}
@@ -1505,7 +1733,7 @@ function facetListForType (type, preferOriginalFacets) {
 
 				// Store the current state in the termLists object for the current facet type.
 				var facetType = containingList.getAttribute('facetType');
-				termLists[facetType].showAll = true;
+				config.termLists[facetType].showAll = true;
 				return false;
 			};
 
@@ -1524,7 +1752,7 @@ function facetListForType (type, preferOriginalFacets) {
 			container.appendChild(cancelLink);
 			cancelLink.setAttribute('href', '#');
 			jQuery(cancelLink).addClass('pz2-facetCancel pz2-activeFacet');
-			cancelLink.onclick = new Function('delimitResults("filterDate"); return false;');
+			cancelLink.onclick = facetItemDeselect;
 			var yearString = filterArray['filterDate'][0].from;
 			if (filterArray['filterDate'][0].from !== filterArray['filterDate'][0].to - 1) {
 				yearString += '-' + (filterArray['filterDate'][0].to - 1);
@@ -1666,10 +1894,11 @@ function facetListForType (type, preferOriginalFacets) {
 
 	// Create container and heading.
 	var container = document.createElement('div');
+	container.setAttribute('facetType', type);
 	jQuery(container).addClass('pz2-termList pz2-termList-' + type);
 
 	var terms = facetInformationForType(type);
-	if (terms.length >= parseInt(termLists[type].minDisplay) || filterArray[type]) {
+	if (terms.length >= parseInt(config.termLists[type].minDisplay) || filterArray[type]) {
 		// Always display facet list if it is filtered. Otherwise require
 		// at least .minDisplay facet elements.
 		var heading = document.createElement('h5');
@@ -1681,7 +1910,7 @@ function facetListForType (type, preferOriginalFacets) {
 		heading.appendChild(document.createTextNode(headingText));
 
 		// Display histogram if set up and able to do so.
-		if (useHistogramForYearFacets && type === 'filterDate'
+		if (config.useHistogramForYearFacets && type === 'filterDate'
 			&& (!MSIEVersion() || MSIEVersion() >= 9)) {
 			appendFacetHistogramForDatesTo(terms, container);
 		}
@@ -1691,14 +1920,14 @@ function facetListForType (type, preferOriginalFacets) {
 	}
 		
 	return container;		
-}
+};
 
 
 
 /*	updateFacetLists
 	Updates all facet lists for the facet types stored in termLists.
 */
-function updateFacetLists () {
+var updateFacetLists = function () {
 	var container = document.getElementById('pz2-termLists');
 	if (container) {
 		jQuery(container).empty();
@@ -1707,163 +1936,30 @@ function updateFacetLists () {
 		container.appendChild(mainHeading);
 		mainHeading.appendChild(document.createTextNode(localise('Facetten')));
 
-		for (var facetType in termLists ) {
+		for (var facetType in config.termLists ) {
 			container.appendChild(facetListForType(facetType));
 		}
 	}
-}
-
-
-
-/*	my_onterm
-	pazpar2 callback for receiving facet data.
-		Stores facet data and recreates facets on page.
-	input:	data - Array with facet information.
-*/
-function my_onterm (data) {
-	facetData = data;
-}
-
-
-function my_onrecord(data) {
-}
-
-
-
-/*	my_onbytarget
-	Callback for target status information. Updates the status display.
-	input:	data - list coming from pazpar2
-*/
-function my_onbytarget(data) {
-	var targetDiv = document.getElementById('pz2-targetView');
-	jQuery(targetDiv).empty();
-
-	var table = document.createElement('table');
-	targetDiv.appendChild(table);
-
-	var caption = document.createElement('caption');
-	table.appendChild(caption);
-	caption.appendChild(document.createTextNode(localise('Übertragungsstatus')));
-	var closeLink = document.createElement('a');
-	caption.appendChild(closeLink);
-	closeLink.setAttribute('href', '#');
-	closeLink.setAttribute('onclick', 'toggleStatus();');
-	closeLink.appendChild(document.createTextNode(localise('[ausblenden]')));
-
-	var thead = document.createElement('thead');
-	table.appendChild(thead);
-	var tr = document.createElement('tr');
-	thead.appendChild(tr);
-	var td = document.createElement('th');
-	tr.appendChild(td);
-	td.appendChild(document.createTextNode(localise('Datenbank')));
-	td.id = 'pz2-target-name';
-	td = document.createElement('th');
-	tr.appendChild(td);
-	td.appendChild(document.createTextNode(localise('Geladen')));
-	td.id = 'pz2-target-loaded';
-	td = document.createElement('th');
-	tr.appendChild(td);
-	td.appendChild(document.createTextNode(localise('Treffer')));
-	td.id = 'pz2-target-hits';
-	td = document.createElement('th');
-	tr.appendChild(td);
-	jQuery(td).addClass('pz2-target-status');
-	td.appendChild(document.createTextNode(localise('Status')));
-	td.id = 'pz2-target-status';
-	
-	var tbody = document.createElement('tbody');
-	table.appendChild(tbody);
-
-	for (var i = 0; i < data.length; i++ ) {
-		tr = document.createElement('tr');
-		tbody.appendChild(tr);
-		td = document.createElement('th');
-		tr.appendChild(td);
-		td.appendChild(document.createTextNode(localise(data[i].name, catalogueNames)));
-		td.title = data[i].id;
-		td.setAttribute('headers', 'pz2-target-name');
-		td = document.createElement('td');
-		tr.appendChild(td);
-		td.appendChild(document.createTextNode(data[i].records));
-		td.setAttribute('headers', 'pz2-target-loaded');
-		td = document.createElement('td');
-		tr.appendChild(td);
-		var hitCount = data[i].hits;
-		if (hitCount === -1) {
-			hitCount = '?';
-		}
-		td.appendChild(document.createTextNode(hitCount));
-		td.setAttribute('headers', 'pz2-target-hits');
-		td = document.createElement('td');
-		tr.appendChild(td);
-		td.appendChild(document.createTextNode(localise(data[i].state)));
-		if (parseInt(data[i].diagnostic) !== 0) {
-			td.setAttribute('title', localise('Code') + ': ' + data[i].diagnostic);
-		}
-		td.setAttribute('headers', 'pz2-target-status');
-
-		targetStatus[data[i].name] = data[i];
-	}
-
-	if (my_paz.activeClients === 0) {
-		// Update the facet when no more clients are active, to ensure result
-		// counts and overflow indicators are up to date.
-		updateFacetLists();
-		// Update result count
-		updatePagers();
-	}
-
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-
-
-/*	pz2ClientDomReady
-	Called when the page is loaded. Sets up JavaScript-based search mechanism.
-*/
-function pz2ClientDomReady ()  {
-	domReadyFired = true;
-
-	jQuery('.pz2-searchForm').each( function(index, form) {
-			form.onsubmit = onFormSubmitEventHandler;
-			if (jQuery('form.pz2-searchForm').hasClass('pz2-extended')) {
-				jQuery('.pz2-extendedLink', form).click(removeExtendedSearch);
-			}
-			else {
-				jQuery('.pz2-extendedLink', form).click(addExtendedSearch);
-			}
-		}
-	);
-
-	jQuery('.pz2-sort, .pz2-perPage').attr('onchange', 'onSelectDidChange');
-	jQuery('#pazpar2').removeClass('pz2-noJS');
-
-	setupAutocomplete();
-
-	triggerSearchFunction(null);
-}
+};
 
 
 
 /*	setupAutocomplete
-	Hooks jQuery autocomplete up to the search fields that have autocompleteURLs set up.
+	Hooks jQuery autocomplete up to the search fields that have autocompleteURLs configured.
 */
-function setupAutocomplete () {
-	if (jQuery.ui && jQuery.ui.autocomplete && typeof(autocompleteSetupFunction) === 'function') {
-		for (var fieldName in autocompleteURLs) {
-			var URL = autocompleteURLs[fieldName];
-			var autocompleteConfiguration = autocompleteSetupFunction(URL, fieldName);
+var setupAutocomplete = function () {
+	if (jQuery.ui && jQuery.ui.autocomplete && typeof(config.autocompleteSetupFunction) === 'function') {
+		for (var fieldName in config.autocompleteURLs) {
+			var URL = config.autocompleteURLs[fieldName];
+			var autocompleteConfiguration = config.autocompleteSetupFunction(URL, fieldName);
 			var jField = jQuery('#pz2-field-' + fieldName);
 			jField.autocomplete(autocompleteConfiguration);
 			jField.on('autocompleteselect', function(event, ui) {
-				triggerSearchFunction(null);
+				config.triggerSearchFunction(null);
 			});
 		}
 	}
-}
+};
 
 
 
@@ -1874,9 +1970,9 @@ function setupAutocomplete () {
 
 	Set autocompleteSetupFunction = autocompleteSetupArray to use it.
 */
-function autocompleteSetupArray (URL, fieldName) {
+var autocompleteSetupArray = function (URL, fieldName) {
 	return {'source': URL};
-}
+};
 
 
 
@@ -1886,7 +1982,7 @@ function autocompleteSetupArray (URL, fieldName) {
 
 	Set autocompleteSetupFunction = autocompleteSetupSolrSpellcheck to use it.
 */
-function autocompleteSetupSolrSpellcheck (URL, fieldName) {
+var autocompleteSetupSolrSpellcheck = function (URL, fieldName) {
 	return {
 		'source': function(request, response) {
 			console.log(request);
@@ -1898,20 +1994,20 @@ function autocompleteSetupSolrSpellcheck (URL, fieldName) {
 			});
 		}
 	};
-}
+};
 
 
 
 /*	onFormSubmitEventHandler
 	Called when the search button is pressed.
 */
-function onFormSubmitEventHandler () {
+var onFormSubmitEventHandler = function () {
 	if (jQuery.ui && jQuery.ui.autocomplete) {
 		jQuery('.ui-autocomplete-input').autocomplete('close');
 	}
-	triggerSearchFunction(this);
+	config.triggerSearchFunction(this);
 	return false;
-}
+};
 
 
 
@@ -1919,11 +2015,26 @@ function onFormSubmitEventHandler () {
 	Called when sort-order popup menu is changed.
 		Gathers new sort-order information and redisplays.
 */
-function onSelectDidChange () {
+var onSelectDidChange = function () {
 	loadSelectsInForm(this.form);
 	updateAndDisplay();
 	return false;
-}
+};
+
+
+
+/*	toggleStatus
+	Shows and hides the status display with information on all targets.
+	Invoked by clicking the number of results.
+	output:	false
+*/
+var toggleStatus = function () {
+	var jTargetView = jQuery('#pz2-targetView');
+	jQuery('#pazpar2 .pz2-recordCount').after(jTargetView);
+	jTargetView.slideToggle('fast');
+	trackPiwik('status/toggle');
+	return false;
+};
 
 
 
@@ -1931,17 +2042,17 @@ function onSelectDidChange () {
 	Empties result lists, userSettings (filters, term list visibility),
 	resets status and switches to first page and redisplays.
 */
-function resetPage() {
+var resetPage = function () {
 	curPage = 1;
 	hitList = {};
 	displayHitList = [];
 	filterArray = {};
-	for (var facetIndex in termLists) {
-		termLists[facetIndex].showAll = undefined;
+	for (var facetIndex in config.termLists) {
+		config.termLists[facetIndex].showAll = undefined;
 	}
 	jQuery('.pz2-pager .pz2-progressIndicator').css({'width': 0});
 	updateAndDisplay();
-}
+};
 
 
 
@@ -1951,7 +2062,7 @@ function resetPage() {
 	input:	form - DOM element of the form used to trigger the search
 			additionalQueryTerms - array of query terms not entered in the form [optional]
 */
-function triggerSearchForForm (form, additionalQueryTerms) {
+var triggerSearchForForm = function (form, additionalQueryTerms) {
 	/*	addSearchStringForFieldToArray
 		Creates the appropriate search string for the passed field name and
 			adds it to the passed array.
@@ -2024,7 +2135,7 @@ function triggerSearchForForm (form, additionalQueryTerms) {
 		curAdditionalQueryTerms = additionalQueryTerms;
 	}
 
-	if (domReadyFired && pz2Initialised) {
+	if (isReady()) {
 		var searchChunks = [];
 		addSearchStringForFieldToArray('all', searchChunks);
 		var isExtendedSearch = jQuery(myForm).hasClass('pz2-extended');
@@ -2039,7 +2150,7 @@ function triggerSearchForForm (form, additionalQueryTerms) {
 		searchTerm = searchTerm.replace('*', '?');
 		if ( searchTerm !== '' && searchTerm !== curSearchTerm ) {
 			loadSelectsFromForm(myForm);
-			my_paz.search(searchTerm, fetchRecords, curSort, curFilter);
+			my_paz.search(searchTerm, config.fetchRecords, curSort, curFilter);
 			curSearchTerm = searchTerm;
 			resetPage();
 			trackPiwik('search', searchTerm);
@@ -2048,6 +2159,16 @@ function triggerSearchForForm (form, additionalQueryTerms) {
 	else if (!pz2Initialised) {
 		initialiseService();
 	}
+};
+
+
+
+/*	isReady
+
+	output:	 Boolean - whether the page is ready for starting a query.
+*/
+var isReady = function () {
+	return domReadyFired && pz2Initialised;
 }
 
 
@@ -2061,7 +2182,7 @@ function triggerSearchForForm (form, additionalQueryTerms) {
 			dontTrack - boolean [defaults to false]
 	output:	false
 */
-function addExtendedSearch (event, dontTrack) {
+var addExtendedSearch = function (event, dontTrack) {
 	// switch form type
 	var jFormContainer = jQuery('.pz2-mainForm');
 	jFormContainer.parent('form').removeClass('pz2-basic').addClass('pz2-extended');
@@ -2079,7 +2200,7 @@ function addExtendedSearch (event, dontTrack) {
 	}
 
 	return false;
-}
+};
 
 
 
@@ -2092,7 +2213,7 @@ function addExtendedSearch (event, dontTrack) {
 			dontTrack - boolean [defaults to false]
 	output:	false
 */
-function removeExtendedSearch (event, dontTrack) {
+var removeExtendedSearch  = function (event, dontTrack) {
 	// switch form type
 	var jFormContainer = jQuery('.pz2-mainForm');
 	jFormContainer.parent('form').removeClass('pz2-extended').addClass('pz2-basic');
@@ -2112,7 +2233,7 @@ function removeExtendedSearch (event, dontTrack) {
 	}
 
 	return false;
-}
+};
 
 
 
@@ -2120,17 +2241,17 @@ function removeExtendedSearch (event, dontTrack) {
 	Takes the passed sort value string with sort criteria separated by --
 		and labels and value inside the criteria separated by -,
 			[this strange format is owed to escaping problems when creating a Flow3 template for the form]
-		parses them and sets the displaySort and curSort variables accordingly.
+		parses them and sets the displaySort and curSort settings accordingly.
 	If the sort form is not present, the sort order stored in displaySort is used.
 
 	input:	sortString - string giving the sort format
 */
-function setSortCriteriaFromString (sortString) {
+var setSortCriteriaFromString = function (sortString) {
 	var curSortArray = [];
 
 	if (sortString) {
 		// The sort string exists: we get our settings from the menu.
-		displaySort = [];
+		config.displaySort = [];
 		var sortCriteria = sortString.split('--');
 
 		for (var criterionIndex in sortCriteria) {
@@ -2138,22 +2259,22 @@ function setSortCriteriaFromString (sortString) {
 			if (criterionParts.length === 2) {
 				var fieldName = criterionParts[0];
 				var direction = criterionParts[1];
-				displaySort.push({'fieldName': fieldName,
-									'direction': ((direction === 'd') ? 'descending' : 'ascending')});
+				config.displaySort.push({'fieldName': fieldName,
+											'direction': ((direction === 'd') ? 'descending' : 'ascending')});
 				curSortArray.push(fieldName + ':' + ((direction === 'd') ? '0' : '1') );
 			}
 		}
 	}
 	else {
 		// Use the default sort order set in displaySort.
-		for (var displaySortIndex in displaySort) {
-			var sortCriterion = displaySort[displaySortIndex];
+		for (var displaySortIndex in config.displaySort) {
+			var sortCriterion = config.displaySort[displaySortIndex];
 			curSortArray.push(sortCriterion.fieldName + ':' + ((sortCriterion.direction === 'descending') ? '0' : '1'));
 		}
 	}
 
 	curSort = curSortArray.join(',');
-}
+};
 
 
 
@@ -2161,7 +2282,7 @@ function setSortCriteriaFromString (sortString) {
 	Retrieves current settings for sort order and items per page from the form that is passed.
 	input:	form - DOM element of the form to get the data from
 */
-function loadSelectsFromForm (form) {
+var loadSelectsFromForm = function (form) {
 	var sortOrderString = jQuery('.pz2-sort option:selected', form).val();
 	setSortCriteriaFromString(sortOrderString);
 
@@ -2169,7 +2290,7 @@ function loadSelectsFromForm (form) {
 	if (jPerPageSelect.length > 0) {
 		recPerPage = jPerPageSelect.val();
 	}
-}
+};
 
 
 
@@ -2178,7 +2299,7 @@ function loadSelectsFromForm (form) {
 	inputs:	action - string of the user’s action, possibly in the style of a Unix file path
 			info - string with additional information regarding the action [optional]
 */
-function trackPiwik (action, info) {
+var trackPiwik = function (action, info) {
 	if (typeof(piwikTracker) !== 'undefined') {
 		var pageURL = document.URL.replace(/\/$/,'') + '/pazpar2/' + action;
 		if (info) {
@@ -2188,175 +2309,18 @@ function trackPiwik (action, info) {
 		piwikTracker.trackPageView('pazpar2: ' + action);
 		piwikTracker.setCustomUrl(document.URL);
 	}
-}
+};
 
 
 
 /*	runMathJax
 	Tells MathJax to process the passed element, if it is loaded.
 */
-function runMathJax (element) {
+var runMathJax = function (element) {
 	if (typeof(MathJax) !== 'undefined') {
 		MathJax.Hub.Queue(["Typeset", MathJax.Hub, element]);
 	}
-}
-
-
-
-/*	limitResults
-	Adds a filter for term for the data of type kind. Then redisplays.
-	input:	* kind - string with name of facet type
-			* term - string that needs to match the facet
-*/
-function limitResults(kind, term) {
-	if (filterArray[kind]) {
-		// add alternate condition to an existing filter
-		filterArray[kind].push(term);
-	}
-	else {
-		// the first filter of its kind: create array
-		filterArray[kind] = [term];
-	}
-
-	curPage = 1;
-	updateAndDisplay();
-
-	trackPiwik('facet/limit', kind);
-}
-
-
-
-/*	delimitResults
-	Removes a filter for term from the data of type kind. Then redisplays.
-	input:	* kind - string with name of facet type
-			* term (optional) - string that shouldn't be filtered for
-					all terms are removed if term is omitted.
-*/
-function delimitResults(kind, term) {
-	if (filterArray[kind]) {
-		if (term) {
-			// if a term is given only delete occurrences of 'term' from the filter
-			for (var index = filterArray[kind].length -1; index >= 0; index--) {
-				if (filterArray[kind][index] === term) {
-					filterArray[kind].splice(index,1);
-				}
-			}
-			if (filterArray[kind].length === 0) {
-				filterArray[kind] = undefined;
-			}
-		}
-		else {
-			// if no term is given, delete the complete filter
-			filterArray[kind] = undefined;
-		}
-
-		updateAndDisplay();
-
-		trackPiwik('facet/delimit', kind);
-	}
-}
-
-
-
-/*	showPage
-	Display the results page with the given number.
-		If the number is out of range, go to the first or last page instead.
-	input:	pageNum - number of the page to be shown
-*/
-function showPage (pageNum, link) {
-	curPage = Math.min( Math.max(0, pageNum), Math.ceil(displayHitList.length / recPerPage) );
-	if (jQuery(link).parents('.pz2-pager').hasClass('pz2-bottom')) {
-		jQuery('body,html').animate({'scrollTop': jQuery('.pz2-pager.pz2-top').offset().top}, 'fast');
-	}
-	display();
-	trackPiwik('page', pageNum);
-}
-
-
-/*	pagerNext
-	Display the next page (if available).
-*/
-function pagerNext(link) {
-	showPage (curPage + 1, link);
-}
-
-
-/*	pagerPrev
-	Display the previous page (if available).
-*/
-function pagerPrev(link) {
-	showPage(curPage - 1, link);
-}
-
-
-
-
-
-/*	toggleStatus
-	Shows and hides the status display with information on all targets.
-	Invoked by clicking the number of results.
-	output:	false
-*/
-function toggleStatus() {
-	var jTargetView = jQuery('#pz2-targetView');
-	jQuery('#pazpar2 .pz2-recordCount').after(jTargetView);
-	jTargetView.slideToggle('fast');
-	trackPiwik('status/toggle');
-	return false;
-}
-
-
-
-/*	toggleDetails
-	Called when a list item is clicked.
-		Reveals/Hides the detail information for the record.
-		Detail information is created when it is first needed and then stored with the record.
-	input:	prefixRecId - string of the form rec_RECORDID coming from the DOM ID	
-*/
-function toggleDetails (prefixRecId) {
-	var recordIDHTML = prefixRecId.replace('rec_', '');
-	var recordID = recordIDForHTMLID(recordIDHTML);
-	var record = hitList[recordID];
-	var detailsElement = document.getElementById('det_' + recordIDHTML);
-	var extraLinks = jQuery('.pz2-extraLinks', record.detailsDiv);
-	var parent = document.getElementById('recdiv_'+ recordIDHTML);
-
-	if (record.detailsDivVisible) {
-		// Detailed record information is present: remove it
-		extraLinks.fadeOut('fast');
-		jQuery(detailsElement).slideUp('fast');
-		record.detailsDivVisible = false;
-		jQuery(parent).removeClass('pz2-detailsVisible');
-		trackPiwik('details/hide');
-	}
-	else {
-		// Create detail view if it doesn’t exist yet.
-		if (!record.detailsDiv) {
-			record.detailsDiv = renderDetails(recordID);
-			runMathJax(record.detailsDiv);
-		}
-
-		// Append the detail view if it is not in the DOM.
-		if (!detailsElement) {
-			jQuery(record.detailsDiv).hide();
-			parent.appendChild(record.detailsDiv);
-		}
-
-		extraLinks.hide();
-		if (!MSIEVersion() || MSIEVersion() >= 8) {
-			jQuery(record.detailsDiv).slideDown('fast');
-			extraLinks.fadeIn('fast');
-		}
-		else {
-			jQuery(record.detailsDiv).show();
-			extraLinks.show();
-		}
-
-		record.detailsDivVisible = true;
-		jQuery(parent).addClass('pz2-detailsVisible');
-		trackPiwik('details/show');
-	}
-}
+};
 
 
 
@@ -2366,7 +2330,7 @@ function toggleDetails (prefixRecId) {
 	This function works in place and alters the original array.
 	input:	information - array to remove duplicate entries from.
 */
-function deduplicate (information) {
+var deduplicate = function (information) {
 	if (information) {
 		for (var i = 0; i < information.length; i++) {
 			var item = information[i].toLowerCase();
@@ -2382,7 +2346,7 @@ function deduplicate (information) {
 			}
 		}
 	}
-}
+};
 
 
 
@@ -2393,7 +2357,7 @@ function deduplicate (information) {
 	input:	recordID - string containing the key of the record to display details for
 	output:	DIV DOM element containing the details to be displayed
 */
-function renderDetails(recordID) {
+var renderDetails = function (recordID) {
 	/*	markupInfoItems
 		Returns marked up version of the DOM items passed, putting them into a list if necessary:
 		input:	infoItems - array of DOM elements to insert
@@ -2602,7 +2566,7 @@ function renderDetails(recordID) {
 
 
 	/*	keywordsDetailLine
-		If useKeywords is true, returns DOMElements with markup for the
+		If config.useKeywords is true, returns DOMElements with markup for the
 			record’s keywords, each wrapped in a link for starting the
 			associated subject search.
 
@@ -2614,7 +2578,7 @@ function renderDetails(recordID) {
 		var infoElements;
 		var labelString = 'keyword';
 
-		if (data['md-subject'] && useKeywords) {
+		if (data['md-subject'] && config.useKeywords) {
 			var infoElement = document.createElement('span');
 			infoElements = [infoElement];
 
@@ -2758,7 +2722,7 @@ function renderDetails(recordID) {
 		}
 
 		// Do nothing if there are no ISSNs or we do not want to use ZDB-JOP.
-		if ( !(ISSN || eISSN || ZDBID) || !useZDB ) { return; }
+		if ( !(ISSN || eISSN || ZDBID) || !config.useZDB ) { return; }
 
 		var parameters = '';
 
@@ -2818,7 +2782,7 @@ function renderDetails(recordID) {
 
 		// Run the ZDB query.
 		var ZDBPath = '/zdb/';
-		if (!ZDBUseClientIP) {
+		if (!config.ZDBUseClientIP) {
 			ZDBPath = '/zdb-local/';
 		}
 		var ZDBURL = ZDBPath + 'full.xml?' + parameters;
@@ -3005,7 +2969,7 @@ function renderDetails(recordID) {
 					
 					if (electronicInfos || printInfos) {
 						container = document.createElement('div');
-						if (ZDBUseClientIP) {
+						if (config.ZDBUseClientIP) {
 							appendLibraryNameFromResultDataTo(data, container);
 						}
 					}
@@ -3060,197 +3024,207 @@ function renderDetails(recordID) {
 		input:	DL DOM element that an additional item can be appended to
 	*/
 	var appendGoogleBooksElementTo = function (container) {
-		// Create list of search terms from ISBN and OCLC numbers.
-		var searchTerms = [];
-		for (locationNumber in data.location) {
-			var numberField = String(data.location[locationNumber]['md-isbn']);
-			var matches = numberField.replace(/-/g,'').match(/[0-9]{9,12}[0-9xX]/g);
-			if (matches) {
-				for (var ISBNMatchNumber = 0; ISBNMatchNumber < matches.length; ISBNMatchNumber++) {
-					searchTerms.push('ISBN:' + matches[ISBNMatchNumber]);
-				}
-			}
-			numberField = String(data.location[locationNumber]['md-oclc-number']);
-			matches = numberField.match(/[0-9]{4,}/g);
-			if (matches) {
-				for (var OCLCMatchNumber = 0; OCLCMatchNumber < matches.length; OCLCMatchNumber++) {
-					searchTerms.push('OCLC:' + matches[OCLCMatchNumber]);
-				}
-			}
-		}
-
-		if (searchTerms.length > 0) {
-			// Query Google Books for the ISBN/OCLC numbers in question.
-			var googleBooksURL = 'http://books.google.com/books?bibkeys=' + searchTerms
-						+ '&jscmd=viewapi&callback=?';
-			jQuery.getJSON(googleBooksURL,
-				function(data) {
-					/*	bookScore
-						Returns a score for given book to help determine which book
-						to use on the page if several results exist.
-					
-						Preference is given existing previews and books that are
-						embeddable are preferred if there is a tie.
-					
-						input: book - Google Books object
-						output: integer
-					*/
-					function bookScore (book) {
-						var score = 0;
-
-						if (book.preview === 'full') {
-							score += 10;
-						}
-						else if (book.preview === 'partial') {
-							score += 5;
-						}
-						if (book.embeddable === true) {
-							score += 1;
-						}
-
-						return score;
+		var booksLoaded = function () {
+			// Create list of search terms from ISBN and OCLC numbers.
+			var searchTerms = [];
+			for (locationNumber in data.location) {
+				var numberField = String(data.location[locationNumber]['md-isbn']);
+				var matches = numberField.replace(/-/g,'').match(/[0-9]{9,12}[0-9xX]/g);
+				if (matches) {
+					for (var ISBNMatchNumber = 0; ISBNMatchNumber < matches.length; ISBNMatchNumber++) {
+						searchTerms.push('ISBN:' + matches[ISBNMatchNumber]);
 					}
+				}
+				numberField = String(data.location[locationNumber]['md-oclc-number']);
+				matches = numberField.match(/[0-9]{4,}/g);
+				if (matches) {
+					for (var OCLCMatchNumber = 0; OCLCMatchNumber < matches.length; OCLCMatchNumber++) {
+						searchTerms.push('OCLC:' + matches[OCLCMatchNumber]);
+					}
+				}
+			}
+
+			if (searchTerms.length > 0) {
+				// Query Google Books for the ISBN/OCLC numbers in question.
+				var googleBooksURL = 'http://books.google.com/books?bibkeys=' + searchTerms
+							+ '&jscmd=viewapi&callback=?';
+				jQuery.getJSON(googleBooksURL,
+					function(data) {
+						/*	bookScore
+							Returns a score for given book to help determine which book
+							to use on the page if several results exist.
+
+							Preference is given existing previews and books that are
+							embeddable are preferred if there is a tie.
+
+							input: book - Google Books object
+							output: integer
+						*/
+						function bookScore (book) {
+							var score = 0;
+
+							if (book.preview === 'full') {
+								score += 10;
+							}
+							else if (book.preview === 'partial') {
+								score += 5;
+							}
+							if (book.embeddable === true) {
+								score += 1;
+							}
+
+							return score;
+						}
 
 
-					/*
-						If there are multiple results choose the first one with
-						the maximal score. Ignore books without a preview.
-					*/
-					var selectedBook;
-					jQuery.each(data,
-						function(bookNumber, book) {
-							var score = bookScore(book);
-							book.score = score;
+						/*
+							If there are multiple results choose the first one with
+							the maximal score. Ignore books without a preview.
+						*/
+						var selectedBook;
+						jQuery.each(data,
+							function(bookNumber, book) {
+								var score = bookScore(book);
+								book.score = score;
 
-							if (selectedBook === undefined || book.score > selectedBook.score) {
-								if (book.preview !== 'noview') {
-									selectedBook = book;
+								if (selectedBook === undefined || book.score > selectedBook.score) {
+									if (book.preview !== 'noview') {
+										selectedBook = book;
+									}
 								}
 							}
-						}
-					);
+						);
 
-					// Add link to Google Books if there is a selected book.
-					if (selectedBook !== undefined) {
-						/*	createGoogleBooksLink
-							Returns a link to open the Google Books Preview.
-							Depending on the features of the Preview, it opens interactively
-							on top of our view or in a new window.
+						// Add link to Google Books if there is a selected book.
+						if (selectedBook !== undefined) {
+							/*	createGoogleBooksLink
+								Returns a link to open the Google Books Preview.
+								Depending on the features of the Preview, it opens interactively
+								on top of our view or in a new window.
 
-							output: DOMElement - a Element with href and possibly onclick
-						*/
+								output: DOMElement - a Element with href and possibly onclick
+							*/
 
-						var createGoogleBooksLink = function () {
-							var bookLink = document.createElement('a');
-							bookLink.setAttribute('href', selectedBook.preview_url);
-							turnIntoNewWindowLink(bookLink);
-							if (selectedBook.embeddable === true) {
-								bookLink.onclick = openPreview;
+							var createGoogleBooksLink = function () {
+								var bookLink = document.createElement('a');
+								bookLink.setAttribute('href', selectedBook.preview_url);
+								turnIntoNewWindowLink(bookLink);
+								if (selectedBook.embeddable === true) {
+									bookLink.onclick = openPreview;
+								}
+								return bookLink;
+							};
+
+							var dt = document.createElement('dt');
+							var dd = document.createElement('dd');
+
+							var bookLink = createGoogleBooksLink();
+							dd.appendChild(bookLink);
+
+							var language = jQuery('html').attr('lang');
+							if (language === undefined) {
+								language = 'en';
 							}
-							return bookLink;
-						};
+							var buttonImageURL = 'http://www.google.com/intl/' + language + '/googlebooks/images/gbs_preview_button1.gif';
 
-						var dt = document.createElement('dt');
-						var dd = document.createElement('dd');
+							var buttonImage = document.createElement('img');
+							buttonImage.setAttribute('src', buttonImageURL);
+							var buttonAltText = 'Google Books';
+							if (selectedBook.preview === 'full') {
+								buttonAltText = localise('Google Books: Vollständige Ansicht');
+							}
+							else if (selectedBook.preview === 'partial') {
+								buttonAltText = localise('Google Books: Eingeschränkte Vorschau');
+							}
+							buttonImage.setAttribute('alt', buttonAltText);
+							bookLink.appendChild(buttonImage);
 
-						var bookLink = createGoogleBooksLink();
-						dd.appendChild(bookLink);
+							if (selectedBook.thumbnail_url !== undefined) {
+								bookLink = createGoogleBooksLink();
+								dt.appendChild(bookLink);
+								var coverArtImage = document.createElement('img');
+								bookLink.appendChild(coverArtImage);
+								coverArtImage.setAttribute('src', selectedBook.thumbnail_url);
+								coverArtImage.setAttribute('alt', localise('Umschlagbild'));
+								jQuery(coverArtImage).addClass('bookCover');
+							}
 
-						var language = jQuery('html').attr('lang');
-						if (language === undefined) {
-							language = 'en';
-						}
-						var buttonImageURL = 'http://www.google.com/intl/' + language + '/googlebooks/images/gbs_preview_button1.gif';
-
-						var buttonImage = document.createElement('img');
-						buttonImage.setAttribute('src', buttonImageURL);
-						var buttonAltText = 'Google Books';
-						if (selectedBook.preview === 'full') {
-							buttonAltText = localise('Google Books: Vollständige Ansicht');
-						}
-						else if (selectedBook.preview === 'partial') {
-							buttonAltText = localise('Google Books: Eingeschränkte Vorschau');
-						}
-						buttonImage.setAttribute('alt', buttonAltText);
-						bookLink.appendChild(buttonImage);
-
-						if (selectedBook.thumbnail_url !== undefined) {
-							bookLink = createGoogleBooksLink();
-							dt.appendChild(bookLink);
-							var coverArtImage = document.createElement('img');
-							bookLink.appendChild(coverArtImage);
-							coverArtImage.setAttribute('src', selectedBook.thumbnail_url);
-							coverArtImage.setAttribute('alt', localise('Umschlagbild'));
-							jQuery(coverArtImage).addClass('bookCover');
-						}
-
-						jElements = jQuery([dt, dd]);
-						jElements.addClass('pz2-googleBooks');
-						jElements.hide();
-						container.appendChild(dt);
-						container.appendChild(dd);
-						if (!MSIEVersion() || MSIEVersion() >= 8) {
-							jElements.slideDown('fast');
-						}
-						else {
-							jElements.show();
+							jElements = jQuery([dt, dd]);
+							jElements.addClass('pz2-googleBooks');
+							jElements.hide();
+							container.appendChild(dt);
+							container.appendChild(dd);
+							if (!MSIEVersion() || MSIEVersion() >= 8) {
+								jElements.slideDown('fast');
+							}
+							else {
+								jElements.show();
+							}
 						}
 					}
+				);
+			}
+
+
+
+			/*	openPreview
+				Called when the Google Books button is clicked.
+				Opens Google Preview.
+				output: false (so the click isn't handled any further)
+			*/
+			var openPreview = function() {
+				var googlePreviewButton = this;
+				// Get hold of containing <div>, creating it if necessary.
+				var previewContainerDivName = 'googlePreviewContainer';
+				var previewContainerDiv = document.getElementById(previewContainerDivName);
+				var previewDivName = 'googlePreview';
+				var previewDiv = document.getElementById(previewDivName);
+
+
+				if (!previewContainerDiv) {
+					previewContainerDiv = document.createElement('div');
+					previewContainerDiv.setAttribute('id', previewContainerDivName);
+					jQuery('#page').get(0).appendChild(previewContainerDiv);
+
+					var titleBarDiv = document.createElement('div');
+					jQuery(titleBarDiv).addClass('googlePreview-titleBar');
+					previewContainerDiv.appendChild(titleBarDiv);
+
+					var closeBoxLink = document.createElement('a');
+					titleBarDiv.appendChild(closeBoxLink);
+					jQuery(closeBoxLink).addClass('googlePreview-closeBox');
+					closeBoxLink.setAttribute('href', '#');
+
+					var onClosePreview = function () {
+						jQuery('#' + previewContainerDivName).hide(200);
+						trackPiwik('googlebooks/close');
+						return false;
+					};
+
+					closeBoxLink.onclick = onClosePreview;
+					closeBoxLink.appendChild(document.createTextNode(localise('Vorschau schließen')));
+
+					previewDiv = document.createElement('div');
+					previewDiv.setAttribute('id', previewDivName);
+					previewContainerDiv.appendChild(previewDiv);
 				}
-			);
-		}
+				else {
+					jQuery(previewContainerDiv).show(200);
+				}
 
+				var viewer = new google.books.DefaultViewer(previewDiv);
+				viewer.load(this.href);
 
+				trackPiwik('googlebooks/open');
 
-		/*	openPreview
-			Called when the Google Books button is clicked.
-			Opens Google Preview.
-			output: false (so the click isn't handled any further)
-		*/
-		var openPreview = function() {
-			var googlePreviewButton = this;
-			// Get hold of containing <div>, creating it if necessary.
-			var previewContainerDivName = 'googlePreviewContainer';
-			var previewContainerDiv = document.getElementById(previewContainerDivName);
-			var previewDivName = 'googlePreview';
-			var previewDiv = document.getElementById(previewDivName);
-
-
-			if (!previewContainerDiv) {
-				previewContainerDiv = document.createElement('div');
-				previewContainerDiv.setAttribute('id', previewContainerDivName);
-				jQuery('#page').get(0).appendChild(previewContainerDiv);
-
-				var titleBarDiv = document.createElement('div');
-				jQuery(titleBarDiv).addClass('googlePreview-titleBar');
-				previewContainerDiv.appendChild(titleBarDiv);
-
-				var closeBoxLink = document.createElement('a');
-				titleBarDiv.appendChild(closeBoxLink);
-				jQuery(closeBoxLink).addClass('googlePreview-closeBox');
-				closeBoxLink.setAttribute('href', '#');
-				
-				
-				closeBoxLink.onclick = new Function('javascript:jQuery("#' + previewContainerDivName + '").hide(200); trackPiwik("googlebooks/close"); return false;');
-				closeBoxLink.appendChild(document.createTextNode(localise('Vorschau schließen')));
-
-				previewDiv = document.createElement('div');
-				previewDiv.setAttribute('id', previewDivName);
-				previewContainerDiv.appendChild(previewDiv);
-			}
-			else {
-				jQuery(previewContainerDiv).show(200);
-			}
-
-			var viewer = new google.books.DefaultViewer(previewDiv);
-			viewer.load(this.href);
-
-			trackPiwik('googlebooks/open');
-
-			return false;
+				return false;
+			};
 		};
 
-	}; // end of addGoogleBooksLinkIntoElement
+		if (config.useGoogleBooks && google) {
+			google.load('books', '0', {callback: booksLoaded});
+		}
+	}; // end of appendGoogleBooksElementTo
 
 
 
@@ -3463,7 +3437,7 @@ function renderDetails(recordID) {
 		};
 
 		var line;
-		if (useMaps === true) {
+		if (config.useMaps === true) {
 			var markers = [];
 			for (var locationID in data.location) {
 				var location = data.location[locationID];
@@ -3738,7 +3712,7 @@ function renderDetails(recordID) {
 
 
 			var electronicURLs;
-			if (usesessions || !typeof(choose_url) === 'function') {
+			if (usesessions() || !typeof(choose_url) === 'function') {
 				// Using plain pazpar2: display cleaned URL list.
 				electronicURLs = cleanURLList();
 			}
@@ -3753,22 +3727,22 @@ function renderDetails(recordID) {
 
 				for (var URLNumber in electronicURLs) {
 					var URLInfo = electronicURLs[URLNumber];
-					var linkText = localise('Link', linkDescriptions); // default link name
+					var linkText = localise('Link', 'linkDescriptions'); // default link name
 					var linkURL = URLInfo;
 	
 					if (typeof(URLInfo) === 'object' && URLInfo['#text'] !== undefined) {
 						// URLInfo is not just an URL but an array also containing the link name
 						if (URLInfo['@name'] !== undefined) {
-							linkText = localise(URLInfo['@name'], linkDescriptions);
+							linkText = localise(URLInfo['@name'], 'linkDescriptions');
 							if (URLInfo['@note'] !== undefined) {
-								linkText += ', ' + localise(URLInfo['@note'], linkDescriptions);
+								linkText += ', ' + localise(URLInfo['@note'], 'linkDescriptions');
 							}
 						}
 						else if (URLInfo['@note'] !== undefined) {
-							linkText = localise(URLInfo['@note'], linkDescriptions);
+							linkText = localise(URLInfo['@note'], 'linkDescriptions');
 						}
 						else if (URLInfo['@fulltextfile'] !== undefined) {
-							linkText = localise('Document', linkDescriptions);
+							linkText = localise('Document', 'linkDescriptions');
 						}
 						linkURL = URLInfo['#text'];
 					}
@@ -3847,7 +3821,7 @@ function renderDetails(recordID) {
 		var catalogueLink = function () {
 			var linkElement;
 			var URL = contentOfFirstFieldWithName('catalogue-url');
-			var targetName = localise(location['@name'], catalogueNames);
+			var targetName = localise(location['@name'], 'catalogueNames');
 
 			if (URL && targetName) {
 				linkElement = document.createElement('a');
@@ -4065,8 +4039,8 @@ function renderDetails(recordID) {
 				if (pageLanguage !== undefined) {
 					scriptGetParameters.language = pageLanguage;
 				}
-				if (siteName !== undefined) {
-					scriptGetParameters.filename = siteName;
+				if (config.siteName !== undefined) {
+					scriptGetParameters.filename = config.siteName;
 				}
 				form.action = scriptPath + '?' + jQuery.param(scriptGetParameters);
 
@@ -4127,8 +4101,8 @@ function renderDetails(recordID) {
 					container - DOMULElement the list items are appended to
 		*/
 		var appendExportItemsTo = function (locations, labelFormat, container) {
-			for (var formatIndex in exportFormats) {
-				container.appendChild(exportItem(locations, exportFormats[formatIndex], labelFormat));
+			for (var formatIndex in config.exportFormats) {
+				container.appendChild(exportItem(locations, config.exportFormats[formatIndex], labelFormat));
 			}
 		};
 
@@ -4236,7 +4210,7 @@ function renderDetails(recordID) {
 
 		var extraLinkList = document.createElement('ul');
 
-		if (showKVKLink) {
+		if (config.showKVKLink) {
 			appendInfoToContainer(KVKItem(data), extraLinkList);
 		}
 
@@ -4248,7 +4222,7 @@ function renderDetails(recordID) {
 			var labelFormatAll = localise('download-label-format-all');
 			appendExportItemsTo(data.location, labelFormatAll, extraLinkList);
 
-			if (showExportLinksForEachLocation) {
+			if (config.showExportLinksForEachLocation) {
 				for (var formatIndex in exportFormats) {
 					extraLinkList.appendChild(exportItemSubmenu(data.location, exportFormats[formatIndex]));
 				}
@@ -4289,7 +4263,7 @@ function renderDetails(recordID) {
 			lists to avoid duplicating names listed in the short title display already:
 			* Do _not_ separately display authors and other-persons whose apparent
 				surname appears in the title-reponsibility field to avoid duplication.
-			* If no title-responsibility field is present,omit the first maxAuthors
+			* If no title-responsibility field is present, omit the first config.maxAuthors
 				authors as they are displayed in the short title.
 		*/
 		var allResponsibility = '';
@@ -4303,8 +4277,8 @@ function renderDetails(recordID) {
 				}
 			}
 		}
-		else if (data['md-author'] && data['md-author'].length > maxAuthors) {
-			data['md-author-clean'] = data['md-author'].slice(maxAuthors);
+		else if (data['md-author'] && data['md-author'].length > config.maxAuthors) {
+			data['md-author-clean'] = data['md-author'].slice(config.maxAuthors);
 		}
 		data['md-other-person-clean'] = [];
 		for (var personIndex in data['md-other-person']) {
@@ -4327,7 +4301,7 @@ function renderDetails(recordID) {
 		appendInfoToContainer( keywordsDetailLine(), detailsList);
 
 		appendInfoToContainer( locationDetails(), detailsList );
-		appendGoogleBooksElementTo(detailsList);
+		appendGoogleBooksElementTo( detailsList );
 		appendInfoToContainer( mapDetailLine(), detailsList );
 		addZDBInfoIntoElement( detailsList );
 		appendInfoToContainer( exportLinks(), detailsDiv );
@@ -4335,9 +4309,13 @@ function renderDetails(recordID) {
 
 	return detailsDiv;
 
-} // end of renderDetails
+}; // end of renderDetails
 
 
+
+/*
+	Helper functions
+*/
 
 
 /* 	HTMLIDForRecordData
@@ -4345,7 +4323,7 @@ function renderDetails(recordID) {
 	output:	ID of that object in HTML-compatible form
 			(replacing spaces by dashes)
 */
-function HTMLIDForRecordData (recordData) {
+var HTMLIDForRecordData = function (recordData) {
 	var result = undefined;
 
 	if (recordData.recid[0] !== undefined) {
@@ -4353,7 +4331,7 @@ function HTMLIDForRecordData (recordData) {
 	}
 
 	return result;
-}
+};
 
 
 
@@ -4361,9 +4339,9 @@ function HTMLIDForRecordData (recordData) {
 	input:	record ID in HTML compatible form
 	output:	input with dashes replaced by spaces
 */
-function recordIDForHTMLID (HTMLID) {
+var recordIDForHTMLID = function (HTMLID) {
 	return HTMLID.replace(/-pd-/g, ' ').replace(/-pe-/g, '/').replace(/-pf-/g, '.');
-}
+};
 
 
 
@@ -4373,7 +4351,7 @@ function recordIDForHTMLID (HTMLID) {
 		https://github.com/jquery/jquery-migrate/blob/master/src/core.js
 	output: number of the IE version we are running in | undefined if not running in IE
 */
-function MSIEVersion () {
+var MSIEVersion = function () {
 	var MSIEVersion;
 
 	var agentString = navigator.userAgent.toLowerCase();
@@ -4383,1948 +4361,2110 @@ function MSIEVersion () {
 	}
 
 	return MSIEVersion;
-}
-
-
-
-/*	Localised ISO 3166-1 alpha-2 Country Codes
-*/
-var countryNames = {
-	'de': {
-		'AD': 'Andorra',
-		'AE': 'Vereinigte Arabische Emirate',
-		'AF': 'Afghanistan',
-		'AG': 'Antigua und Barbuda',
-		'AI': 'Anguilla',
-		'AL': 'Albanien',
-		'AM': 'Armenien',
-		'AO': 'Angola',
-		'AQ': 'Antarktika',
-		'AR': 'Argentinien',
-		'AS': 'Amerikanisch-Samoa',
-		'AT': 'Österreich',
-		'AU': 'Australien',
-		'AW': 'Aruba',
-		'AX': 'Åland',
-		'AZ': 'Aserbaidschan',
-		'BA': 'Bosnien-Herzegowina',
-		'BB': 'Barbados',
-		'BD': 'Bangladesch',
-		'BE': 'Belgien',
-		'BF': 'Burkina Faso',
-		'BG': 'Bulgarien',
-		'BH': 'Bahrain',
-		'BI': 'Burundi',
-		'BJ': 'Benin',
-		'BL': 'Saint Barthélemy',
-		'BM': 'Bermudainseln',
-		'BN': 'Brunei',
-		'BO': 'Bolivien',
-		'BQ': 'Britisches Antarktis-Territorium',
-		'BR': 'Brasilien',
-		'BS': 'Bahamas',
-		'BT': 'Bhutan',
-		'BV': 'Bouvetinsel',
-		'BW': 'Botswana',
-		'BY': 'Weißrussland',
-		'BZ': 'Belize',
-		'CA': 'Kanada',
-		'CC': 'Kokosinseln',
-		'CD': 'Kongo <Demokratische Republik>',
-		'CF': 'Zentralafrikanische Republik',
-		'CG': 'Kongo',
-		'CH': 'Schweiz',
-		'CI': 'Elfenbeinküste',
-		'CK': 'Cookinseln',
-		'CL': 'Chile',
-		'CM': 'Kamerun',
-		'CN': 'China',
-		'CO': 'Kolumbien',
-		'CR': 'Costa Rica',
-		'CU': 'Kuba',
-		'CV': 'Kapverdische Inseln',
-		'CW': 'Curaçao',
-		'CX': 'Christmas Island',
-		'CY': 'Zypern',
-		'CZ': 'Tschechische Republik',
-		'DE': 'Deutschland',
-		'DJ': 'Dschibuti',
-		'DK': 'Dänemark',
-		'DM': 'Dominica',
-		'DO': 'Dominikanische Republik',
-		'DZ': 'Algerien',
-		'EC': 'Ecuador',
-		'EE': 'Estland',
-		'EG': 'Ägypten',
-		'EH': 'Westsahara',
-		'ER': 'Eritrea',
-		'ES': 'Spanien',
-		'ET': 'Äthiopien',
-		'FI': 'Finnland',
-		'FJ': 'Fidschi',
-		'FK': 'Falklandinseln',
-		'FM': 'Mikronesien',
-		'FO': 'Färöer',
-		'FR': 'Frankreich',
-		'GA': 'Gabun',
-		'GB': 'Großbritannien',
-		'GD': 'Grenada',
-		'GE': 'Georgien',
-		'GF': 'Französisch-Guayana',
-		'GG': 'Guernsey',
-		'GH': 'Ghana',
-		'GI': 'Gibraltar',
-		'GL': 'Grönland',
-		'GM': 'Gambia',
-		'GN': 'Guinea',
-		'GP': 'Guadeloupe',
-		'GQ': 'Äquatorialguinea',
-		'GR': 'Griechenland',
-		'GS': 'Südgeorgien und Südliche Sandwichinseln',
-		'GT': 'Guatemala',
-		'GU': 'Guam',
-		'GW': 'Guinea-Bissau',
-		'GY': 'Guyana',
-		'HK': 'Hongkong',
-		'HM': 'Heard und McDonaldinseln',
-		'HN': 'Honduras',
-		'HR': 'Kroatien',
-		'HT': 'Haiti',
-		'HU': 'Ungarn',
-		'ID': 'Indonesien',
-		'IE': 'Irland',
-		'IL': 'Israel',
-		'IM': 'Insel Man',
-		'IN': 'Indien',
-		'IO': 'Britisches Territorium im Indischen Ozean',
-		'IQ': 'Irak',
-		'IR': 'Iran',
-		'IS': 'Island',
-		'IT': 'Italien',
-		'JE': 'Jersey',
-		'JM': 'Jamaika',
-		'JO': 'Jordanien',
-		'JP': 'Japan',
-		'KE': 'Kenia',
-		'KG': 'Kirgisien',
-		'KH': 'Kambodscha',
-		'KI': 'Kiribati',
-		'KM': 'Komoren',
-		'KN': 'Saint Kitts und Nevis',
-		'KP': 'Nordkorea',
-		'KR': 'Südkorea',
-		'KW': 'Kuwait',
-		'KY': 'Kaiman Inseln',
-		'KZ': 'Kasachstan',
-		'LA': 'Laos',
-		'LB': 'Libanon',
-		'LC': 'Saint Lucia',
-		'LI': 'Liechtenstein',
-		'LK': 'Sri Lanka',
-		'LR': 'Liberia',
-		'LS': 'Lesotho',
-		'LT': 'Litauen',
-		'LU': 'Luxemburg',
-		'LV': 'Lettland',
-		'LY': 'Libyen',
-		'MA': 'Marokko',
-		'MC': 'Monaco',
-		'MD': 'Moldawien',
-		'ME': 'Montenegro',
-		'MF': 'St. Martin (Französicher Teil)',
-		'MG': 'Madagaskar',
-		'MH': 'Marshallinseln',
-		'MK': 'Makedonien',
-		'ML': 'Mali',
-		'MM': 'Birma',
-		'MN': 'Mongolei',
-		'MO': 'Macao',
-		'MP': 'Nördliche Marianen',
-		'MQ': 'Martinique',
-		'MR': 'Mauretanien',
-		'MS': 'Montserrat',
-		'MT': 'Malta',
-		'MU': 'Mauritius',
-		'MV': 'Malediven',
-		'MW': 'Malawi',
-		'MX': 'Mexiko',
-		'MY': 'Malaysia',
-		'MZ': 'Mozambique',
-		'NA': 'Namibia',
-		'NC': 'Neukaledonien',
-		'NE': 'Niger',
-		'NF': 'Norfolk-Insel',
-		'NG': 'Nigeria',
-		'NI': 'Nicaragua',
-		'NL': 'Niederlande',
-		'NO': 'Norwegen',
-		'NP': 'Nepal',
-		'NR': 'Nauru',
-		'NU': 'Niue',
-		'NZ': 'Neuseeland',
-		'OM': 'Oman',
-		'PA': 'Panama',
-		'PE': 'Peru',
-		'PF': 'Französisch-Polynesien',
-		'PG': 'Papua-Neuguinea',
-		'PH': 'Philippinen',
-		'PK': 'Pakistan',
-		'PL': 'Polen',
-		'PM': 'Saint-Pierre-et-Miquelon',
-		'PN': 'Pitcairn',
-		'PR': 'Puerto Rico',
-		'PS': 'Palästinensische Autonomiegebiete',
-		'PT': 'Portugal',
-		'PW': 'Palauinseln',
-		'PY': 'Paraguay',
-		'QA': 'Katar',
-		'RE': 'Réunion',
-		'RO': 'Rumänien',
-		'RS': 'Serbien',
-		'RU': 'Russland, Sowjetunion',
-		'RW': 'Rwanda',
-		'SA': 'Saudi-Arabien',
-		'SB': 'Salomonen',
-		'SC': 'Seychellen',
-		'SD': 'Sudan',
-		'SE': 'Schweden',
-		'SG': 'Singapur',
-		'SH': 'Sankt Helena',
-		'SI': 'Slowenien',
-		'SJ': 'Svalbard und Jan Mayen',
-		'SK': 'Slowakei',
-		'SL': 'Sierra Leone',
-		'SM': 'San Marino',
-		'SN': 'Senegal',
-		'SO': 'Somalia',
-		'SR': 'Surinam',
-		'SS': 'Südsudan',
-		'ST': 'São Tomé und Príncipe',
-		'SV': 'El Salvador',
-		'SX': 'St. Martin (Niederländischer Teil)',
-		'SY': 'Syrien',
-		'SZ': 'Swasiland',
-		'TC': 'Turks- und Caicos-Inseln',
-		'TD': 'Tschad',
-		'TF': 'Französische Südgebiete',
-		'TG': 'Togo',
-		'TH': 'Thailand',
-		'TJ': 'Tadschikistan',
-		'TK': 'Tokelau',
-		'TL': 'Osttimor',
-		'TM': 'Turkmenistan',
-		'TN': 'Tunesien',
-		'TO': 'Tonga',
-		'TR': 'Türkei',
-		'TT': 'Trinidad und Tobago',
-		'TV': 'Tuvalu',
-		'TW': 'Taiwan',
-		'TZ': 'Tansania',
-		'UA': 'Ukraine',
-		'UG': 'Uganda',
-		'UM': 'Amerikanische Überseeinseln',
-		'US': 'USA',
-		'UY': 'Uruguay',
-		'UZ': 'Usbekistan',
-		'VA': 'Vatikanstadt',
-		'VC': 'Saint Vincent and the Grenadines',
-		'VE': 'Venezuela',
-		'VG': 'Jungferninseln, Großbritannien',
-		'VI': 'Jungferninseln, U.S.',
-		'VN': 'Vietnam',
-		'VU': 'Vanuatu',
-		'WF': 'Wallis und Futuna',
-		'WS': 'Westsamoa',
-		'YE': 'Jemen',
-		'YT': 'Mayotte',
-		'ZA': 'Südafrika',
-		'ZM': 'Sambia',
-		'ZW': 'Simbabwe',
-		// Non-Standard codes
-		'EU': 'Europa',
-		'II': 'International'
-	},
-
-	'en': {
-		'AD': 'Andorra',
-		'AE': 'United Arab Emirates',
-		'AF': 'Afghanistan',
-		'AG': 'Antigua and Barbuda',
-		'AI': 'Anguilla',
-		'AL': 'Albania',
-		'AM': 'Armenia',
-		'AO': 'Angola',
-		'AQ': 'Antarctica',
-		'AR': 'Argentina',
-		'AS': 'American Samoa',
-		'AT': 'Austria',
-		'AU': 'Australia',
-		'AW': 'Aruba',
-		'AX': 'Åland Islands',
-		'AZ': 'Azerbaijan',
-		'BA': 'Bosnia and Herzegovina',
-		'BB': 'Barbados',
-		'BD': 'Bangladesh',
-		'BE': 'Belgium',
-		'BF': 'Burkina Faso',
-		'BG': 'Bulgaria',
-		'BH': 'Bahrain',
-		'BI': 'Burundi',
-		'BJ': 'Benin',
-		'BL': 'Saint Barthélemy',
-		'BM': 'Bermuda',
-		'BN': 'Brunei Darussalam',
-		'BO': 'Bolivia, Plurinational State of',
-		'BQ': 'Bonaire, Sint Eustatius and Saba',
-		'BR': 'Brazil',
-		'BS': 'Bahamas',
-		'BT': 'Bhutan',
-		'BV': 'Bouvet Island',
-		'BW': 'Botswana',
-		'BY': 'Belarus',
-		'BZ': 'Belize',
-		'CA': 'Canada',
-		'CC': 'Cocos (Keeling) Islands',
-		'CD': 'Congo, the Democratic Republic of the',
-		'CF': 'Central African Republic',
-		'CG': 'Congo',
-		'CH': 'Switzerland',
-		'CI': 'Côte d’Ivoire',
-		'CK': 'Cook Islands',
-		'CL': 'Chile',
-		'CM': 'Cameroon',
-		'CN': 'China',
-		'CO': 'Colombia',
-		'CR': 'Costa Rica',
-		'CU': 'Cuba',
-		'CV': 'Cape Verde',
-		'CW': 'Curaçao',
-		'CX': 'Christmas Island',
-		'CY': 'Cyprus',
-		'CZ': 'Czech Republic',
-		'DE': 'Germany',
-		'DJ': 'Djibouti',
-		'DK': 'Denmark',
-		'DM': 'Dominica',
-		'DO': 'Dominican Republic',
-		'DZ': 'Algeria',
-		'EC': 'Ecuador',
-		'EE': 'Estonia',
-		'EG': 'Egypt',
-		'EH': 'Western Sahara',
-		'ER': 'Eritrea',
-		'ES': 'Spain',
-		'ET': 'Ethiopia',
-		'FI': 'Finland',
-		'FJ': 'Fiji',
-		'FK': 'Falkland Islands (Malvinas)',
-		'FM': 'Micronesia, Federated States of',
-		'FO': 'Faroe Islands',
-		'FR': 'France',
-		'GA': 'Gabon',
-		'GB': 'United Kingdom',
-		'GD': 'Grenada',
-		'GE': 'Georgia',
-		'GF': 'French Guiana',
-		'GG': 'Guernsey',
-		'GH': 'Ghana',
-		'GI': 'Gibraltar',
-		'GL': 'Greenland',
-		'GM': 'Gambia',
-		'GN': 'Guinea',
-		'GP': 'Guadeloupe',
-		'GQ': 'Equatorial Guinea',
-		'GR': 'Greece',
-		'GS': 'South Georgia and the South Sandwich Islands',
-		'GT': 'Guatemala',
-		'GU': 'Guam',
-		'GW': 'Guinea-Bissau',
-		'GY': 'Guyana',
-		'HK': 'Hong Kong',
-		'HM': 'Heard Island and McDonald Islands',
-		'HN': 'Honduras',
-		'HR': 'Croatia',
-		'HT': 'Haiti',
-		'HU': 'Hungary',
-		'ID': 'Indonesia',
-		'IE': 'Ireland',
-		'IL': 'Israel',
-		'IM': 'Isle of Man',
-		'IN': 'India',
-		'IO': 'British Indian Ocean Territory',
-		'IQ': 'Iraq',
-		'IR': 'Iran, Islamic Republic of',
-		'IS': 'Iceland',
-		'IT': 'Italy',
-		'JE': 'Jersey',
-		'JM': 'Jamaica',
-		'JO': 'Jordan',
-		'JP': 'Japan',
-		'KE': 'Kenya',
-		'KG': 'Kyrgyzstan',
-		'KH': 'Cambodia',
-		'KI': 'Kiribati',
-		'KM': 'Comoros',
-		'KN': 'Saint Kitts and Nevis',
-		'KP': 'Korea, Democratic People’s Republic of',
-		'KR': 'Korea, Republic of',
-		'KW': 'Kuwait',
-		'KY': 'Cayman Islands',
-		'KZ': 'Kazakhstan',
-		'LA': 'Lao People’s Democratic Republic',
-		'LB': 'Lebanon',
-		'LC': 'Saint Lucia',
-		'LI': 'Liechtenstein',
-		'LK': 'Sri Lanka',
-		'LR': 'Liberia',
-		'LS': 'Lesotho',
-		'LT': 'Lithuania',
-		'LU': 'Luxembourg',
-		'LV': 'Latvia',
-		'LY': 'Libya',
-		'MA': 'Morocco',
-		'MC': 'Monaco',
-		'MD': 'Moldova, Republic of',
-		'ME': 'Montenegro',
-		'MF': 'Saint Martin (French part)',
-		'MG': 'Madagascar',
-		'MH': 'Marshall Islands',
-		'MK': 'Macedonia, the former Yugoslav Republic of',
-		'ML': 'Mali',
-		'MM': 'Myanmar',
-		'MN': 'Mongolia',
-		'MO': 'Macao',
-		'MP': 'Northern Mariana Islands',
-		'MQ': 'Martinique',
-		'MR': 'Mauritania',
-		'MS': 'Montserrat',
-		'MT': 'Malta',
-		'MU': 'Mauritius',
-		'MV': 'Maldives',
-		'MW': 'Malawi',
-		'MX': 'Mexico',
-		'MY': 'Malaysia',
-		'MZ': 'Mozambique',
-		'NA': 'Namibia',
-		'NC': 'New Caledonia',
-		'NE': 'Niger',
-		'NF': 'Norfolk Island',
-		'NG': 'Nigeria',
-		'NI': 'Nicaragua',
-		'NL': 'Netherlands',
-		'NO': 'Norway',
-		'NP': 'Nepal',
-		'NR': 'Nauru',
-		'NU': 'Niue',
-		'NZ': 'New Zealand',
-		'OM': 'Oman',
-		'PA': 'Panama',
-		'PE': 'Peru',
-		'PF': 'French Polynesia',
-		'PG': 'Papua New Guinea',
-		'PH': 'Philippines',
-		'PK': 'Pakistan',
-		'PL': 'Poland',
-		'PM': 'Saint Pierre and Miquelon',
-		'PN': 'Pitcairn',
-		'PR': 'Puerto Rico',
-		'PS': 'Palestinian Territory, Occupied',
-		'PT': 'Portugal',
-		'PW': 'Palau',
-		'PY': 'Paraguay',
-		'QA': 'Qatar',
-		'RE': 'Réunion',
-		'RO': 'Romania',
-		'RS': 'Serbia',
-		'RU': 'Russian Federation',
-		'RW': 'Rwanda',
-		'SA': 'Saudi Arabia',
-		'SB': 'Solomon Islands',
-		'SC': 'Seychelles',
-		'SD': 'Sudan',
-		'SE': 'Sweden',
-		'SG': 'Singapore',
-		'SH': 'Saint Helena, Ascension and Tristan da Cunha',
-		'SI': 'Slovenia',
-		'SJ': 'Svalbard and Jan Mayen',
-		'SK': 'Slovakia',
-		'SL': 'Sierra Leone',
-		'SM': 'San Marino',
-		'SN': 'Senegal',
-		'SO': 'Somalia',
-		'SR': 'Suriname',
-		'SS': 'South Sudan',
-		'ST': 'São Tomé and Principe',
-		'SV': 'El Salvador',
-		'SX': 'Sint Maarten (Dutch part)',
-		'SY': 'Syrian Arab Republic',
-		'SZ': 'Swaziland',
-		'TC': 'Turks and Caicos Islands',
-		'TD': 'Chad',
-		'TF': 'French Southern Territories',
-		'TG': 'Togo',
-		'TH': 'Thailand',
-		'TJ': 'Tajikistan',
-		'TK': 'Tokelau',
-		'TL': 'Timor-Leste',
-		'TM': 'Turkmenistan',
-		'TN': 'Tunisia',
-		'TO': 'Tonga',
-		'TR': 'Turkey',
-		'TT': 'Trinidad and Tobago',
-		'TV': 'Tuvalu',
-		'TW': 'Taiwan, Province of China',
-		'TZ': 'Tanzania, United Republic of',
-		'UA': 'Ukraine',
-		'UG': 'Uganda',
-		'UM': 'United States Minor Outlying Islands',
-		'US': 'United States',
-		'UY': 'Uruguay',
-		'UZ': 'Uzbekistan',
-		'VA': 'Holy See (Vatican City State)',
-		'VC': 'Saint Vincent and the Grenadines',
-		'VE': 'Venezuela, Bolivarian Republic of',
-		'VG': 'Virgin Islands, British',
-		'VI': 'Virgin Islands, U.S.',
-		'VN': 'Viet Nam',
-		'VU': 'Vanuatu',
-		'WF': 'Wallis and Futuna',
-		'WS': 'Samoa',
-		'YE': 'Yemen',
-		'YT': 'Mayotte',
-		'ZA': 'South Africa',
-		'ZM': 'Zambia',
-		'ZW': 'Zimbabwe',
-		// Non-Standard codes
-		'EU': 'Europe',
-		'II': 'International'
-	}
 };
 
 
-/*	Localised ISO 639-2/B Language Codes
-*/
-var languageNames = {
-	'de': {
-		'ace': 'Aceh',
-		'ach': 'Acholi',
-		'ada': 'Adangme',
-		'ady': 'Adyghe',
-		'egy': 'Ägyptisch',
-		'aar': 'Afar',
-		'pus': 'Afghanisch (=Paschtu)',
-		'afh': 'Afrihili',
-		'afr': 'Afrikaans',
-		'aka': 'Akan (=Volta-Comeo)',
-		'akk': 'Akkadisch',
-		'alb': 'Albanisch',
-		'ale': 'Aleut, Atka',
-		'alg': 'Algonkin-Sprachen',
-		'tut': 'Altaische Sprachen (andere)',
-		'chu': 'Altbulgarisch, Altslawisch, Kirchenslawisch',
-		'ang': 'Altenglisch (ca. 450-1100)',
-		'fro': 'Altfranzösisch (842-ca. 1400)',
-		'grc': 'Altgriechisch (bis 1453)',
-		'qhe': 'Althebräisch, Hebräisch/Althebräisch',
-		'goh': 'Althochdeutsch (ca. 750-1050)',
-		'sga': 'Altirisch (bis 1100)',
-		'kaw': 'Altjavanisch, Kawi',
-		'non': 'Altnordisch',
-		'peo': 'Altpersisch (ca. 600 -400 v.Chr.)',
-		'pro': 'Altprovenzalisch, Altokzitanisch (bis 1500)',
-		'amh': 'Amharisch',
-		'apa': 'Apachen-Sprache',
-		'ara': 'Arabisch',
-		'arg': 'Aragonese',
-		'arc': 'Aramäisch',
-		'arp': 'Arapaho',
-		'arn': 'Arauka-Sprachen',
-		'arw': 'Arawak-Sprachen',
-		'arm': 'Armenisch',
-		'aze': 'Aserbeidschanisch',
-		'asm': 'Assemesisch',
-		'ast': 'Asturian, Bable',
-		'ath': 'Athapaskische Sprachen',
-		'aus': 'Australische Sprachen',
-		'map': 'Austronesische Sprachen (andere)',
-		'ave': 'Avestisch',
-		'awa': 'Awadhi',
-		'ava': 'Awarisch',
-		'aym': 'Aymará',
-		'ban': 'Balinesisch',
-		'qbk': 'Balkarisch',
-		'bat': 'Baltische Sprachen (andere)',
-		'bam': 'Bambara',
-		'bai': 'Bamileke',
-		'bad': 'Banda',
-		'lam': 'Banjari, Lamba',
-		'bnt': 'Bantusprachen (andere)',
-		'bas': 'Basaa',
-		'bak': 'Baschkir',
-		'baq': 'Baskisch',
-		'btk': 'Batak (Indonesien)',
-		'bej': 'Bedauye',
-		'bal': 'Belutschisch',
-		'bem': 'Bemba',
-		'ben': 'Bengali',
-		'ber': 'Berbersprachen',
-		'bho': 'Bhodschpuri',
-		'bik': 'Bicol',
-		'bih': 'Bihari',
-		'bin': 'Bini (=Pini)',
-		'bur': 'Birmanisch',
-		'bis': 'Bislama, Beach-la-Mar',
-		'bla': 'Blackfoot',
-		'byn': 'Blin, Bilin',
-		'nob': 'Bokmål, Norwegen',
-		'bos': 'Bosnisch',
-		'bra': 'Braj-Bhakha',
-		'bre': 'Bretonisch',
-		'bug': 'Bugi',
-		'bul': 'Bulgarisch',
-		'bua': 'Burjatisch',
-		'cad': 'Caddo-Sprachen',
-		'ceb': 'Cebuano',
-		'qqa': 'Chakassisch',
-		'cmc': 'Cham-Sprachen',
-		'cha': 'Chamorro',
-		'qoj': 'chantisch, Ostjakisch',
-		'chr': 'Cherokee',
-		'nya': 'Chewa, Nyanja',
-		'chy': 'Cheyenne',
-		'chb': 'Chibcha-Sprachen',
-		'chi': 'Chinesisch',
-		'chn': 'Chinook',
-		'chp': 'Chipewyan',
-		'cho': 'Choctaw',
-		'cre': 'Cree',
-		'dan': 'Dänisch',
-		'day': 'Dajakisch',
-		'dak': 'Dakota',
-		'dar': 'Dari',
-		'del': 'Delaware',
-		'qdn': 'Dendi',
-		'ger': 'Deutsch',
-		'din': 'Dinka',
-		'doi': 'Dogri',
-		'dgr': 'Dogrib',
-		'qdo': 'Dolganisch',
-		'dra': 'Drawidische Sprachen (andere)',
-		'dua': 'Duala-Sprachen',
-		'dyu': 'Dyula',
-		'dzo': 'Dzongkha',
-		'efi': 'Efik',
-		'eka': 'Ekajuk',
-		'elx': 'Elamisch',
-		'tvl': 'Elliceanisch',
-		'eng': 'Englisch',
-		'myv': 'Erzya',
-		'esk': 'Eskimoisch (alter Sprachcode)', // deprecated
-		'kal': 'Eskimoisch (Grönländisch)',
-		'esp': 'Esperanto (alter Sprachcode)', // deprecated
-		'epo': 'Esperanto',
-		'est': 'Estnisch',
-		'eth': 'Ethiopisch (alter Sprachcode)', // deprecated
-		'gez': 'Ethiopisch',
-		'ewe': 'Ewe',
-		'qlm': 'Ewenisch, Lamutisch',
-		'qev': 'Ewenkisch',
-		'ewo': 'Ewondo',
-		'far': 'Färöisch (alter Sprachcode)', // deprecated
-		'fao': 'Färöisch',
-		'fat': 'Fanti',
-		'fij': 'Fidschi',
-		'fin': 'Finnisch',
-		'fiu': 'Finnougrische Sprachen (andere)',
-		'fon': 'Fon',
-		'fre': 'Französisch',
-		'fur': 'Friaulisch',
-		'fri': 'Friesisch', // deprecated
-		'frr': 'Nordfriesisch',
-		'frs': 'Ostfriesisch',
-		'ful': 'Ful',
-		'gaa': 'Ga',
-		'qgd': 'Gade',
-		'gae': 'Gälisch (= Schottisch, alter Sprachcode)', // deprecated
-		'gla': 'Gälisch (=Schottisch)',
-		'gag': 'Galizisch (alter Sprachcode)', // deprecated
-		'glg': 'Galizisch',
-		'lug': 'Ganda',
-		'gay': 'Gayo',
-		'gba': 'Gbaya',
-		'geo': 'Georgisch (=Grusinisch)',
-		'gem': 'Germanische Sprachen (andere)',
-		'gil': 'Gilbertesisch',
-		'qnv': 'Giljakisch',
-		'gon': 'Gondi',
-		'gor': 'Gorontalesisch',
-		'got': 'Gotisch',
-		'grb': 'Grebo',
-		'gre': 'Griechisch',
-		'grn': 'Guaraní',
-		'guj': 'Gujarati',
-		'hai': 'Haida',
-		'hat': 'Haitisch',
-		'afa': 'Hamitosemitische Sprachen',
-		'hau': 'Haussa',
-		'haw': 'Hawaiisch',
-		'heb': 'Hebräisch',
-		'her': 'Herero',
-		'hit': 'Hethitisch',
-		'hil': 'Hiligaynon',
-		'him': 'Himachali',
-		'hin': 'Hindi',
-		'hmo': 'Hiri-Motu',
-		'hsb': 'Hochsorbisch',
-		'hup': 'Hupa',
-		'iba': 'Iban',
-		'ibo': 'Ibo',
-		'ido': 'Ido',
-		'ijo': 'Ijo',
-		'ilo': 'Ilokano',
-		'smn': 'Inari Sami',
-		'nai': 'Indianersprachen (Nordamerika) (andere)',
-		'sai': 'Indianersprachen (Südamerika) (andere)',
-		'cai': 'Indianersprachen (Zentralamerika) (andere)',
-		'inc': 'Indoarische Sprachen',
-		'ine': 'Indogermanische Sprachen (andere)',
-		'ind': 'Indonesisch',
-		'inh': 'Inguschisch',
-		'ina': 'Interlingua (IALA)',
-		'ile': 'Interlingue',
-		'iku': 'Inuktitut',
-		'ipk': 'Inupiaq',
-		'ira': 'Iranische Sprachen (andere)',
-		'iri': 'Irisch (alter Sprachcode)', // deprecated
-		'gle': 'Irisch',
-		'iro': 'Irokesische Sprachen',
-		'ice': 'Isländisch',
-		'ita': 'Italienisch',
-		'qkc': 'Itelmenisch, Kamtschadalisch',
-		'sah': 'Jakutisch',
-		'jpn': 'Japanisch',
-		'jav': 'Javanisch',
-		'yid': 'Jiddisch',
-		'lad': 'Judenspanisch',
-		'jrb': 'Jüdisch-Arabisch',
-		'jpr': 'Jüdisch-Persisch',
-		'qju': 'Jukagirisch',
-		'kbd': 'Kabardisch',
-		'kab': 'Kabylisch',
-		'kac': 'Kachin',
-		'xal': 'Kalmükisch',
-		'kam': 'Kamba',
-		'kan': 'Kannada',
-		'kau': 'Kanuri',
-		'krc': 'Karachay-Balkar',
-		'kaa': 'Karakalpakisch',
-		'qkr': 'Karelisch',
-		'kar': 'Karenisch',
-		'car': 'Karibische Sprachen',
-		'kaz': 'Kasachisch',
-		'kas': 'Kaschmiri',
-		'csb': 'Kaschubisch',
-		'cat': 'Katalanisch',
-		'cau': 'Kaukasische Sprachen (andere)',
-		'cel': 'Keltische Sprachen (andere)',
-		'que': 'Ketchua (=Quechua)',
-		'kha': 'Khasi',
-		'cam': 'Khmer (Kambodschanisch, alterSprachcode)', // deprecated
-		'khm': 'Khmer (Kambodschanisch)',
-		'khi': 'Khoisan-Sprachen (andere)',
-		'mag': 'Khotta',
-		'kik': 'Kikuyu',
-		'kir': 'Kirgisisch',
-		'qrn': 'Kirundi',
-		'nwc': 'Klass. Newari, Altnewari, Klass. Nepalesisch, Bhasa',
-		'kom': 'Komi-Sprachen',
-		'kon': 'Kongo',
-		'kok': 'Konkani',
-		'cop': 'Koptisch',
-		'kor': 'Koreanisch',
-		'qkj': 'Korjakisch',
-		'cor': 'Kornisch',
-		'cos': 'Korsisch',
-		'kos': 'Kosraeanisch',
-		'kpe': 'Kpelle',
-		'cpe': 'Kreolisch-Englisch (andere), Krio',
-		'cpf': 'Kreolisch-Französisch (andere)',
-		'cpp': 'Kreolisch-Portugiesisch (andere)',
-		'crp': 'Kreolische Sprachen (andere)',
-		'crh': 'Krimtatarisch, Krimtürkisch',
-		'kro': 'Kru-Sprachen',
-		'kum': 'Kumükisch',
-		'art': 'Kunst-, Hilfssprache (andere)',
-		'kur': 'Kurdisch',
-		'cus': 'Kuschitische Sprachen (andere)',
-		'gwi': 'Kutchin',
-		'kut': 'Kutenai',
-		'kua': 'Kwanyama',
-		'lah': 'Lahnda',
-		'lao': 'Laotisch',
-		'lat': 'Latein',
-		'lez': 'Lesgisch',
-		'lav': 'Lettisch',
-		'lim': 'Limburgan',
-		'lin': 'Lingala',
-		'lit': 'Litauisch',
-		'jbo': 'Lojban',
-		'lub': 'Luba-Katanga',
-		'lua': 'Luba-Lulua',
-		'lui': 'Luiseno',
-		'smj': 'Lule Sami',
-		'lun': 'Lunda',
-		'luo': 'Luo (Kenia, Tansania)',
-		'lus': 'Lushai',
-		'ltz': 'Luxemburgisch',
-		'qmg': 'Madagassisch',
-		'mad': 'Maduresisch',
-		'mai': 'Maithili',
-		'mak': 'Makassarisch',
-		'mac': 'Makedonisch',
-		'mla': 'Madagassisch (alter Sprachcode)', // deprecated
-		'mlg': 'Madagassisch',
-		'may': 'Malaiisch',
-		'mal': 'Malayalam',
-		'div': 'Maledivisch',
-		'mlt': 'Maltesisch',
-		'mnc': 'Manchu, Mandschurisch',
-		'mdr': 'Mandaresisch',
-		'man': 'Mande-Sprachen, Mandingo, Malinke',
-		'mno': 'Manobo',
-		'max': 'Manx (alter Sprachcode)', // deprecated
-		'glv': 'Manx',
-		'mao': 'Maori',
-		'mar': 'Marathi',
-		'mah': 'Marschallesisch',
-		'mwr': 'Marwari',
-		'mas': 'Massai (=Masai)',
-		'myn': 'Maya-Sprachen',
-		'kmb': 'Mbundu (Kimbundu)',
-		'umb': 'Mbundu (Umbundu)',
-		'mul': 'mehrsprachig, Polyglott',
-		'mni': 'Meithei',
-		'men': 'Mende',
-		'hmn': 'Miao-Sprachen',
-		'mic': 'Micmac',
-		'min': 'Minangkabau',
-		'enm': 'Mittelenglisch (1100-1500)',
-		'frm': 'Mittelfranzösisch (ca. 1400-1600)',
-		'gmh': 'Mittelhochdeutsch (ca. 1050-1500)',
-		'mga': 'Mittelirisch (ca. 1100-1550)',
-		'dum': 'Mittelniederländisch (ca. 1050-1350)',
-		'pal': 'Mittelpersisch',
-		'moh': 'Mohawk',
-		'mdf': 'Moksha',
-		'mol': 'Moldawisch',
-		'mkh': 'Mon-Khmer-Sprachen (andere)',
-		'lol': 'Mongo',
-		'mon': 'Mongolisch',
-		'qmw': 'Mordwinisch',
-		'mos': 'Mossi',
-		'mun': 'Mundasprachen',
-		'mus': 'Muskogee-Sprachen',
-		'nqo': 'N’Ko',
-		'nah': 'Nahuatl (=Aztekisch)',
-		'qnn': 'Nanaisch',
-		'nau': 'Nauruanisch',
-		'nav': 'Navajo',
-		'nde': 'Ndebele (Nord)',
-		'nbl': 'Ndebele (Süd)',
-		'ndo': 'Ndonga',
-		'nap': 'Neapolitanisch',
-		'nep': 'Nepali',
-		'tpi': 'Neumelanesisch, Pidgin',
-		'new': 'Newari, Nepal Bhasa',
-		'nia': 'Nias',
-		'nds': 'Niederdeutsch',
-		'dut': 'Niederländisch',
-		'dsb': 'Niedersorbisch',
-		'nic': 'Nigerkordofanische Sprachen',
-		'ssa': 'Nilosaharanische Sprachen',
-		'niu': 'Niue',
-		'nyn': 'Nkole',
-		'nog': 'Nogai',
-		'nor': 'Norwegisch',
-		'nub': 'Nubische Sprachen',
-		'nym': 'Nyamwezi',
-		'nno': 'Nynorsk, Norwegen',
-		'nyo': 'Nyoro',
-		'nzi': 'Nzima',
-		'oji': 'Ojibwa',
-		'lan': 'Okzitanisch (nach 1500), Provencal (alter Sprachcode)', // deprecated
-		'oci': 'Okzitanisch (nach 1500), Provencal',
-		'kru': 'Oraon (=Kurukh)',
-		'ori': 'Oriya',
-		'gal': 'Oromo, Galla (alter Sprachcode)', // deprecated
-		'orm': 'Oromo, Galla',
-		'osa': 'Osage',
-		'oss': 'Ossetisch',
-		'rap': 'Osterinsel',
-		'oto': 'Otomangue-Sprachen',
-		'ota': 'Ottomanisch, (=Osmanisch =Türkisch) (1500-1928)',
-		'pau': 'Palau',
-		'pli': 'Pali',
-		'pam': 'Pampanggan',
-		'pan': 'Pandschabi',
-		'pag': 'Pangasinan',
-		'fan': 'Pangwe',
-		'pap': 'Papiamento',
-		'paa': 'Papuasprachen (andere)',
-		'per': 'Persisch (=Farsi)',
-		'phi': 'Philippinen-Austronesisch (andere)',
-		'phn': 'Phönikisch',
-		'pol': 'Polnisch',
-		'pon': 'Ponapeanisch',
-		'por': 'Portugiesisch',
-		'pra': 'Prakrit',
-		'roh': 'Rätoromanisch',
-		'raj': 'Rajasthani',
-		'rar': 'Rarotonganisch',
-		'roa': 'Romanische Sprachen (andere)',
-		'loz': 'Rotse',
-		'rum': 'Rumänisch',
-		'run': 'Rundi',
-		'rys': 'Rusinisch',
-		'rus': 'Russisch',
-		'kin': 'Rwanda',
-		'lap': 'Sami, Lappisch (alter Sprachcode)', // deprecated
-		'smi': 'Sami, Lappisch',
-		'kho': 'Sakisch',
-		'sal': 'Salish',
-		'sam': 'Samaritanisch',
-		'sme': 'Sami (Nord)',
-		'sma': 'Sami (Süd)',
-		'sao': 'Samoisch (alter Sprachcode)', // deprecated
-		'smo': 'Samoisch',
-		'sad': 'Sandawe',
-		'sag': 'Sango',
-		'san': 'Sanskrit',
-		'sat': 'Santali',
-		'srd': 'Sardisch',
-		'sas': 'Sassak (=Sasak)',
-		'shn': 'Schan',
-		'sho': 'Shona (alter Sprachcode)', // deprecated
-		'sna': 'Shona',
-		'sco': 'Schottisch',
-		'swe': 'Schwedisch',
-		'sel': 'Selkupisch',
-		'sem': 'Semitische Sprachen (andere)',
-		'scc': 'Serbisch (alter Sprachcode)', // deprecated
-		'srp': 'Serbisch',
-		'scr': 'Serbokroatisch (alter Sprachcode)', // deprecated
-		'hrv': 'Kroatisch',
-		'srr': 'Serer',
-		'iii': 'Sichuan Yi',
-		'sid': 'Sidamo',
-		'snd': 'Sindhi',
-		'snh': 'Singhalesisch (alter Sprachcode)', // deprecated
-		'sin': 'Singhalesisch',
-		'sit': 'Sinotibetische Sprachen (andere)',
-		'sio': 'Sioux-Sprachen',
-		'sms': 'Skolt Sami',
-		'den': 'Slave (Athapaskische Sprachen)',
-		'sla': 'Slawische Sprachen (andere)',
-		'slo': 'Slowakisch',
-		'slv': 'Slowenisch',
-		'sog': 'Sogdisch',
-		'som': 'Somali',
-		'son': 'Songhai',
-		'snk': 'Soninke',
-		'wen': 'Sorbisch',
-		'nso': 'Sotho (Nord), Pedi',
-		'sot': 'Sotho (Süd)',
-		'sso': 'Sotho (alter Sprachcode)', // deprecated
-		'spa': 'Spanisch, Kastilianisch',
-		'swa': 'Suaheli (=Swaheli)',
-		'suk': 'Sukuma',
-		'sux': 'Sumerisch',
-		'sun': 'Sundanesisch',
-		'sus': 'Susu',
-		'swz': 'Swazi (alter Sprachcode)', // deprecated
-		'ssw': 'Swazi',
-		'syr': 'Syrisch',
-		'taj': 'Tadschikisch (alter Sprachcode)', // deprecated
-		'tgk': 'Tadschikisch',
-		'tag': 'Tagalog (alter Sprachcode)', // deprecated
-		'tgl': 'Tagalog',
-		'tah': 'Tahitisch',
-		'tmh': 'Tamaseq',
-		'tam': 'Tamil',
-		'tar': 'Tatarisch (alter Sprachcode)', // deprecated
-		'tat': 'Tatarisch',
-		'tel': 'Telugu',
-		'tem': 'Temne',
-		'ter': 'Tereno',
-		'tet': 'Tetum',
-		'tha': 'Thailändisch',
-		'tai': 'Thaisprachen (andere)',
-		'tib': 'Tibetisch',
-		'tig': 'Tigre',
-		'tir': 'Tigrinja',
-		'tiv': 'Tiv',
-		'tli': 'Tlingit',
-		'tkl': 'Tokelauanisch',
-		'ton': 'Tonga (Tonga Islands)',
-		'tog': 'Tonga, Bantus, Malawi',
-		'chk': 'Trukesisch',
-		'chg': 'Tschagataisch',
-		'cze': 'Tschechisch',
-		'chm': 'Tscheremissisch, Mari',
-		'qce': 'Tscherkessisch ',
-		'che': 'Tschetschenisch',
-		'qtc': 'Tschukktschisch',
-		'chv': 'Tschuwaschisch',
-		'tsi': 'Tsimshian',
-		'tso': 'Tsonga (Tsonga)',
-		'tsw': 'Tswana (alter Sprachcode)', // deprecated
-		'tsn': 'Tswana',
-		'tur': 'Türkisch',
-		'tum': 'Tumbuka',
-		'tup': 'Tupi',
-		'tuk': 'Turkmenisch',
-		'tyv': 'Tuwinisch',
-		'twi': 'Twi',
-		'udm': 'Udmurt',
-		'uga': 'Ugaritisch',
-		'uig': 'Uigurisch',
-		'ukr': 'Ukrainisch',
-		'und': 'Unbestimmbare Sprachen',
-		'hun': 'Ungarisch',
-		'urd': 'Urdu',
-		'uzb': 'Usbekisch',
-		'vai': 'Vai',
-		'ven': 'Venda',
-		'mis': 'verschiedene Sprachen',
-		'vie': 'Vietnamesisch',
-		'vol': 'Volapük',
-		'wak': 'Wakash-Sprachen',
-		'wal': 'Walamo',
-		'wel': 'Walisisch',
-		'wln': 'Wallonisch',
-		'war': 'Waray',
-		'was': 'Washo',
-		'bel': 'Weißrussisch',
-		'qqg': 'Wogulisch, Mansi',
-		'wol': 'Wolof',
-		'vot': 'Wotisch',
-		'xho': 'Xhosa',
-		'yao': 'Yao (=Mien=Man)',
-		'yap': 'Yapesisch',
-		'yor': 'Yoruba (=Joruba)',
-		'ypk': 'Yupik',
-		'znd': 'Zande',
-		'zap': 'Zapoteca',
-		'zza': 'Zaza',
-		'sgn': 'Zeichensprachen',
-		'zen': 'Zenaga',
-		'zha': 'Zhuang',
-		'rom': 'Zigeunersprache, Romani',
-		'zul': 'Zulu',
-		'zun': 'Zuni',
-		'zzz': 'unbekannt'
-	},
 
-	'en': {
-		'ace': 'Achinese',
-		'ach': 'Acoli',
-		'ada': 'Adangme',
-		'ady': 'Adygei',
-		'aar': 'Afar',
-		'afh': 'Afrihili (Artificial language)',
-		'afr': 'Afrikaans',
-		'afa': 'Afroasiatic (Other)',
-		'aka': 'Akan',
-		'akk': 'Akkadian',
-		'alb': 'Albanian',
-		'ale': 'Aleut',
-		'alg': 'Algonquian (Other)',
-		'tut': 'Altaic (Other)',
-		'amh': 'Amharic',
-		'apa': 'Apache languages',
-		'ara': 'Arabic',
-		'arg': 'Aragonese Spanish',
-		'arc': 'Aramaic',
-		'arp': 'Arapaho',
-		'arw': 'Arawak',
-		'arm': 'Armenian',
-		'art': 'Artificial (Other)',
-		'asm': 'Assamese',
-		'ath': 'Athapascan (Other)',
-		'aus': 'Australian languages',
-		'map': 'Austronesian (Other)',
-		'ava': 'Avaric',
-		'ave': 'Avestan',
-		'awa': 'Awadhi',
-		'aym': 'Aymara',
-		'aze': 'Azerbaijani',
-		'ast': 'Bable',
-		'ban': 'Balinese',
-		'bat': 'Baltic (Other)',
-		'bal': 'Baluchi',
-		'bam': 'Bambara',
-		'bai': 'Bamileke languages',
-		'bad': 'Banda',
-		'bnt': 'Bantu (Other)',
-		'bas': 'Basa',
-		'bak': 'Bashkir',
-		'baq': 'Basque',
-		'btk': 'Batak',
-		'bej': 'Beja',
-		'bel': 'Belarusian',
-		'bem': 'Bemba',
-		'ben': 'Bengali',
-		'ber': 'Berber (Other)',
-		'bho': 'Bhojpuri',
-		'bih': 'Bihari',
-		'bik': 'Bikol',
-		'bis': 'Bislama',
-		'bos': 'Bosnian',
-		'bra': 'Braj',
-		'bre': 'Breton',
-		'bug': 'Bugis',
-		'bul': 'Bulgarian',
-		'bua': 'Buriat',
-		'bur': 'Burmese',
-		'cad': 'Caddo',
-		'car': 'Carib',
-		'cat': 'Catalan',
-		'cau': 'Caucasian (Other)',
-		'ceb': 'Cebuano',
-		'cel': 'Celtic (Other)',
-		'cai': 'Central American Indian (Other)',
-		'chg': 'Chagatai',
-		'cmc': 'Chamic languages',
-		'cha': 'Chamorro',
-		'che': 'Chechen',
-		'chr': 'Cherokee',
-		'chy': 'Cheyenne',
-		'chb': 'Chibcha',
-		'chi': 'Chinese',
-		'chn': 'Chinook jargon',
-		'chp': 'Chipewyan',
-		'cho': 'Choctaw',
-		'chu': 'Church Slavic',
-		'chv': 'Chuvash',
-		'cop': 'Coptic',
-		'cor': 'Cornish',
-		'cos': 'Corsican',
-		'cre': 'Cree',
-		'mus': 'Creek',
-		'crp': 'Creoles and Pidgins (Other)',
-		'cpe': 'Creoles and Pidgins, English-based (Other)',
-		'cpf': 'Creoles and Pidgins, French-based (Other)',
-		'cpp': 'Creoles and Pidgins, Portuguese-based (Other)',
-		'crh': 'Crimean Tatar',
-		'hrv': 'Croatian',
-		'cus': 'Cushitic (Other)',
-		'cze': 'Czech',
-		'dak': 'Dakota',
-		'dan': 'Danish',
-		'dar': 'Dargwa',
-		'day': 'Dayak',
-		'del': 'Delaware',
-		'din': 'Dinka',
-		'div': 'Divehi',
-		'doi': 'Dogri',
-		'dgr': 'Dogrib',
-		'dra': 'Dravidian (Other)',
-		'dua': 'Duala',
-		'dut': 'Dutch',
-		'dum': 'Dutch, Middle (ca. 1050-1350)',
-		'dyu': 'Dyula',
-		'dzo': 'Dzongkha',
-		'bin': 'Edo',
-		'efi': 'Efik',
-		'egy': 'Egyptian',
-		'eka': 'Ekajuk',
-		'elx': 'Elamite',
-		'eng': 'English',
-		'enm': 'English, Middle (1100-1500)',
-		'ang': 'English, Old (ca. 450-1100)',
-		'esp': 'Esperanto (old language code)', // deprecated
-		'epo': 'Esperanto',
-		'est': 'Estonian',
-		'eth': 'Ethiopic (old language code)', // deprecated
-		'gez': 'Ethiopic',
-		'ewe': 'Ewe',
-		'ewo': 'Ewondo',
-		'fan': 'Fang',
-		'fat': 'Fanti',
-		'far': 'Faroese (old language code)', // deprecated
-		'fao': 'Faroese',
-		'fij': 'Fijian',
-		'fin': 'Finnish',
-		'fiu': 'Finno-Ugrian (Other)',
-		'fon': 'Fon',
-		'fre': 'French',
-		'frm': 'French, Middle (ca. 1400-1600)',
-		'fro': 'French, Old (ca. 842-1400)',
-		'fri': 'Frisian', // deprecated
-		'frr': 'North Frisian',
-		'frs': 'East Frisian',
-		'fur': 'Friulian',
-		'ful': 'Fula',
-		'gag': 'Galician (old language code)', // deprecated
-		'glg': 'Galician',
-		'lug': 'Ganda',
-		'gay': 'Gayo',
-		'gba': 'Gbaya',
-		'geo': 'Georgian',
-		'ger': 'German',
-		'gmh': 'German, Middle High (ca. 1050-1500)',
-		'goh': 'German, Old High (ca. 750-1050)',
-		'gem': 'Germanic (Other)',
-		'gil': 'Gilbertese',
-		'gon': 'Gondi',
-		'gor': 'Gorontalo',
-		'got': 'Gothic',
-		'grb': 'Grebo',
-		'grc': 'Greek, Ancient (to 1453)',
-		'gre': 'Greek',
-		'grn': 'Guaraní',
-		'guj': 'Gujarati',
-		'gwi': 'Gwich’in',
-		'gaa': 'Gã',
-		'hai': 'Haida',
-		'hat': 'Haitian French Creole',
-		'hau': 'Hausa',
-		'haw': 'Hawaiian',
-		'heb': 'Hebrew',
-		'her': 'Herero',
-		'hil': 'Hiligaynon',
-		'him': 'Himachali',
-		'hin': 'Hindi',
-		'hmo': 'Hiri Motu',
-		'hit': 'Hittite',
-		'hmn': 'Hmong',
-		'hun': 'Hungarian',
-		'hup': 'Hupa',
-		'iba': 'Iban',
-		'ice': 'Icelandic',
-		'ido': 'Ido',
-		'ibo': 'Igbo',
-		'ijo': 'Ijo',
-		'ilo': 'Iloko',
-		'smn': 'Inari Sami',
-		'inc': 'Indic (Other)',
-		'ine': 'Indo-European (Other)',
-		'ind': 'Indonesian',
-		'inh': 'Ingush',
-		'ina': 'Interlingua (International Auxiliary Language Association)',
-		'ile': 'Interlingue',
-		'iku': 'Inuktitut',
-		'ipk': 'Inupiaq',
-		'ira': 'Iranian (Other)',
-		'iri': 'Irish (old language code)', // deprecated
-		'gle': 'Irish',
-		'mga': 'Irish, Middle (ca. 1100-1550)',
-		'sga': 'Irish, Old (to 1100)',
-		'iro': 'Iroquoian (Other)',
-		'ita': 'Italian',
-		'jpn': 'Japanese',
-		'jav': 'Javanese',
-		'jrb': 'Judeo-Arabic',
-		'jpr': 'Judeo-Persian',
-		'kbd': 'Kabardian',
-		'kab': 'Kabyle',
-		'kac': 'Kachin',
-		'xal': 'Kalmyk',
-		'esk': 'Eskimo', // deprecated
-		'kal': 'Kalâtdlisut',
-		'kam': 'Kamba',
-		'kan': 'Kannada',
-		'kau': 'Kanuri',
-		'kaa': 'Kara-Kalpak',
-		'kar': 'Karen',
-		'kas': 'Kashmiri',
-		'kaw': 'Kawi',
-		'kaz': 'Kazakh',
-		'kha': 'Khasi',
-		'cam': 'Khmer (old code)', // deprecated
-		'khm': 'Khmer',
-		'khi': 'Khoisan (Other)',
-		'kho': 'Khotanese',
-		'kik': 'Kikuyu',
-		'kmb': 'Kimbundu',
-		'kin': 'Kinyarwanda',
-		'kom': 'Komi',
-		'kon': 'Kongo',
-		'kok': 'Konkani',
-		'kor': 'Korean',
-		'kpe': 'Kpelle',
-		'kro': 'Kru',
-		'kua': 'Kuanyama',
-		'kum': 'Kumyk',
-		'kur': 'Kurdish',
-		'kru': 'Kurukh',
-		'kos': 'Kusaie',
-		'kut': 'Kutenai',
-		'kir': 'Kyrgyz',
-		'lad': 'Ladino',
-		'lah': 'Lahnda',
-		'lam': 'Lamba',
-		'lao': 'Lao',
-		'lat': 'Latin',
-		'lav': 'Latvian',
-		'ltz': 'Letzeburgesch',
-		'lez': 'Lezgian',
-		'lim': 'Limburgish',
-		'lin': 'Lingala',
-		'lit': 'Lithuanian',
-		'nds': 'Low German',
-		'loz': 'Lozi',
-		'lub': 'Luba-Katanga',
-		'lua': 'Luba-Lulua',
-		'lui': 'Luiseño',
-		'smj': 'Lule Sami',
-		'lun': 'Lunda',
-		'luo': 'Luo (Kenya and Tanzania)',
-		'lus': 'Lushai',
-		'mac': 'Macedonian',
-		'mad': 'Madurese',
-		'mag': 'Magahi',
-		'mai': 'Maithili',
-		'mak': 'Makasar',
-		'mlg': 'Malagasy',
-		'may': 'Malay',
-		'mal': 'Malayalam',
-		'mlt': 'Maltese',
-		'mnc': 'Manchu',
-		'mdr': 'Mandar',
-		'man': 'Mandingo',
-		'mni': 'Manipuri',
-		'mno': 'Manobo languages',
-		'max': 'Manx (old language code)', // deprecated
-		'glv': 'Manx',
-		'mao': 'Maori',
-		'arn': 'Mapuche',
-		'mar': 'Marathi',
-		'chm': 'Mari',
-		'mah': 'Marshallese',
-		'mwr': 'Marwari',
-		'mas': 'Masai',
-		'myn': 'Mayan languages',
-		'men': 'Mende',
-		'mic': 'Micmac',
-		'min': 'Minangkabau',
-		'mis': 'Miscellaneous languages',
-		'moh': 'Mohawk',
-		'mol': 'Moldavian',
-		'mkh': 'Mon-Khmer (Other)',
-		'lol': 'Mongo-Nkundu',
-		'mon': 'Mongolian',
-		'mos': 'Mooré',
-		'mul': 'Multiple languages',
-		'mun': 'Munda (Other)',
-		'nqo': 'N’Ko',
-		'nah': 'Nahuatl',
-		'nau': 'Nauru',
-		'nav': 'Navajo',
-		'nbl': 'Ndebele (South Africa)',
-		'nde': 'Ndebele (Zimbabwe)',
-		'ndo': 'Ndonga',
-		'nap': 'Neapolitan Italian',
-		'nep': 'Nepali',
-		'new': 'Newari',
-		'nia': 'Nias',
-		'nic': 'Niger-Kordofanian (Other)',
-		'ssa': 'Nilo-Saharan (Other)',
-		'niu': 'Niuean',
-		'nog': 'Nogai',
-		'nai': 'North American Indian (Other)',
-		'sme': 'Northern Sami',
-		'nso': 'Northern Sotho',
-		'nor': 'Norwegian',
-		'nob': 'Norwegian (Bokmål)',
-		'nno': 'Norwegian (Nynorsk)',
-		'nub': 'Nubian languages',
-		'nym': 'Nyamwezi',
-		'nya': 'Nyanja',
-		'nyn': 'Nyankole',
-		'nyo': 'Nyoro',
-		'nzi': 'Nzima',
-		'lan': 'Occitan (post-1500, old language code)', // deprecated
-		'oci': 'Occitan (post-1500)',
-		'oji': 'Ojibwa',
-		'non': 'Old Norse',
-		'peo': 'Old Persian (ca. 600-400 B.C.)',
-		'ori': 'Oriya',
-		'gal': 'Oromo (old language code)', // deprecated
-		'orm': 'Oromo',
-		'osa': 'Osage',
-		'oss': 'Ossetic',
-		'oto': 'Otomian languages',
-		'pal': 'Pahlavi',
-		'pau': 'Palauan',
-		'pli': 'Pali',
-		'pam': 'Pampanga',
-		'pag': 'Pangasinan',
-		'pan': 'Panjabi',
-		'pap': 'Papiamento',
-		'paa': 'Papuan (Other)',
-		'per': 'Persian',
-		'phi': 'Philippine (Other)',
-		'phn': 'Phoenician',
-		'pol': 'Polish',
-		'pon': 'Ponape',
-		'por': 'Portuguese',
-		'pra': 'Prakrit languages',
-		'pro': 'Provençal (to 1500)',
-		'pus': 'Pushto',
-		'que': 'Quechua',
-		'roh': 'Raeto-Romance',
-		'raj': 'Rajasthani',
-		'rap': 'Rapanui',
-		'rar': 'Rarotongan',
-		'roa': 'Romance (Other)',
-		'rom': 'Romani',
-		'rum': 'Romanian',
-		'run': 'Rundi',
-		'rus': 'Russian',
-		'sal': 'Salishan languages',
-		'sam': 'Samaritan Aramaic',
-		'lap': 'Sami (old language code)', // deprecated
-		'smi': 'Sami',
-		'smo': 'Samoan',
-		'sad': 'Sandawe',
-		'sag': 'Sango (Ubangi Creole)',
-		'san': 'Sanskrit',
-		'sat': 'Santali',
-		'srd': 'Sardinian',
-		'sas': 'Sasak',
-		'sco': 'Scots',
-		'gae': 'Scottish Gaelic (old language code)', // deprecated
-		'gla': 'Scottish Gaelic',
-		'sel': 'Selkup',
-		'sem': 'Semitic (Other)',
-		'scc': 'Serbian (old language code)', // deprecated
-		'scr': 'Serbocroatian (old language code)', // deprecated
-		'srp': 'Serbian',
-		'srr': 'Serer',
-		'shn': 'Shan',
-		'sho': 'Shona (old language code)', // deprecated
-		'sna': 'Shona',
-		'iii': 'Sichuan Yi',
-		'sid': 'Sidamo',
-		'sgn': 'Sign languages',
-		'bla': 'Siksika',
-		'snd': 'Sindhi',
-		'snh': 'Sinhalese (old language code)', // deprecated
-		'sin': 'Sinhalese',
-		'sit': 'Sino-Tibetan (Other)',
-		'sio': 'Siouan (Other)',
-		'sms': 'Skolt Sami',
-		'den': 'Slave',
-		'sla': 'Slavic (Other)',
-		'slo': 'Slovak',
-		'slv': 'Slovenian',
-		'sog': 'Sogdian',
-		'som': 'Somali',
-		'son': 'Songhai',
-		'snk': 'Soninke',
-		'wen': 'Sorbian languages',
-		'sso': 'Sotho (old language code)', // deprecated
-		'sot': 'Sotho',
-		'sai': 'South American Indian (Other)',
-		'sma': 'Southern Sami',
-		'spa': 'Spanish',
-		'suk': 'Sukuma',
-		'sux': 'Sumerian',
-		'sun': 'Sundanese',
-		'sus': 'Susu',
-		'swa': 'Swahili',
-		'swz': 'Swazi (old language code)', // deprecated
-		'ssw': 'Swazi',
-		'swe': 'Swedish',
-		'syr': 'Syriac',
-		'tag': 'Tagalog (old language code)', // deprecated
-		'tgl': 'Tagalog',
-		'tah': 'Tahitian',
-		'tai': 'Tai (Other)',
-		'taj': 'Tajik (old language code)', // deprecated
-		'tgk': 'Tajik',
-		'tmh': 'Tamashek',
-		'tam': 'Tamil',
-		'tar': 'Tatar (old language code)', // deprecated
-		'tat': 'Tatar',
-		'tel': 'Telugu',
-		'tem': 'Temne',
-		'ter': 'Terena',
-		'tet': 'Tetum',
-		'tha': 'Thai',
-		'tib': 'Tibetan',
-		'tig': 'Tigré',
-		'tir': 'Tigrinya',
-		'tiv': 'Tiv',
-		'tli': 'Tlingit',
-		'tpi': 'Tok Pisin',
-		'tkl': 'Tokelauan',
-		'tog': 'Tonga (Nyasa)',
-		'ton': 'Tongan',
-		'chk': 'Truk',
-		'tsi': 'Tsimshian',
-		'tso': 'Tsonga',
-		'tsw': 'Tswana (old language code)', // deprecated
-		'tsn': 'Tswana',
-		'tum': 'Tumbuka',
-		'tup': 'Tupi languages',
-		'tur': 'Turkish',
-		'ota': 'Turkish, Ottoman',
-		'tuk': 'Turkmen',
-		'tvl': 'Tuvaluan',
-		'tyv': 'Tuvinian',
-		'twi': 'Twi',
-		'udm': 'Udmurt',
-		'uga': 'Ugaritic',
-		'uig': 'Uighur',
-		'ukr': 'Ukrainian',
-		'umb': 'Umbundu',
-		'und': 'Undetermined',
-		'urd': 'Urdu',
-		'uzb': 'Uzbek',
-		'vai': 'Vai',
-		'ven': 'Venda',
-		'vie': 'Vietnamese',
-		'vol': 'Volapük',
-		'vot': 'Votic',
-		'wak': 'Wakashan languages',
-		'wal': 'Walamo',
-		'wln': 'Walloon',
-		'war': 'Waray',
-		'was': 'Washo',
-		'wel': 'Welsh',
-		'wol': 'Wolof',
-		'xho': 'Xhosa',
-		'sah': 'Yakut',
-		'yao': 'Yao (Africa)',
-		'yap': 'Yapese',
-		'yid': 'Yiddish',
-		'yor': 'Yoruba',
-		'ypk': 'Yupik languages',
-		'znd': 'Zande',
-		'zap': 'Zapotec',
-		'zza': 'Zaza',
-		'zen': 'Zenaga',
-		'zha': 'Zhuang',
-		'zul': 'Zulu',
-		'zun': 'Zuni',
-		'zzz': 'unknown'
+/*
+	Localisation functions and dictionaries.
+*/
+
+/*	localise
+	Return localised term using the passed dictionary
+		or the one stored in localisations variable.
+	The localisation dictionary has ISO 639-1 language codes as keys.
+	For each of them there can be a dictionary with terms for that language.
+	In case the language dictionary is not present, the default ('de') is used.
+	input:	term - string to localise
+			dictionaryName (optional) - name of localisation object in the localisations object
+	output:	localised string
+*/
+var localise = function (term, dictionaryName) {
+	var dictionary = localisations.general;
+	if (dictionaryName && localisations[dictionaryName]) {
+		dictionary = localisations[dictionaryName];
+	}
+
+	if (!pageLanguage) {
+		pageLanguage = jQuery('html')[0].getAttribute('lang');
+		if (!pageLanguage) {
+			pageLanguage = 'de';
+		}
+	}
+
+	var languageCode = pageLanguage;
+	if (dictionary[pageLanguage] === null) {
+		languageCode = 'de';
+	}
+
+	var localised = dictionary[languageCode][term];
+	if (localised === undefined) {
+		localised = term;
+		// console.log('No localisation for: "' + term + '"');
+	}
+
+	return localised;
+};
+
+
+
+/*	overrideLocalisation
+	Overwrite specific strings in the localisation dictionaries.
+	Figures out the correct dictionary based on the key.
+	Made to enable overwriting localisation strings from a CMS without
+	needing to touch the JavaScript code.
+*/
+var overrideLocalisation = function (languageCode, key, localisedString) {
+	// First figure out the correct object to override the localisation in.
+	var localisationObject = localisations.general;
+	var match = key.match(/^(link-description|media-type|catalogue-name)-(.*)/);
+	if (match) {
+		if (match[1] === 'link-description') {
+			localisationObject = localisations.linkDescriptions;
+		}
+		else if (match[1] === 'media-type') {
+			localisationObject = localisations.mediaTypeNames;
+		}
+		else if (match[1] === 'catalogue-name') {
+			localisationObject = localisations.catalogueNames;
+		}
+		key = match[2];
+	}
+
+	// Then override the localisation if the language exists.
+	if (languageCode === 'default') {
+		languageCode = 'en';
+	}
+	if (localisationObject[languageCode]) {
+		localisationObject[languageCode][key] = localisedString;
 	}
 };
 
 
 
-/*	Localised user interface strings.
-	German and English
+/*
+	Localisation Dictionaries.
 */
 var localisations = {
-	'de': {
-		// Facets
-		'gefiltert': 'gefiltert',
-		'Filter aufheben': 'Filter aufheben',
-		'Filter # aufheben': 'Filter # aufheben',
-		'Facetten': 'Facetten',
-		'facet-title-xtargets': 'Kataloge',
-		'facet-title-medium': 'Art',
-		'facet-title-author': 'Autoren',
-		'facet-title-language': 'Sprache',
-		'facet-title-country': 'Land',
-		'facet-title-source-type': 'Quellenart',
-		'facet-title-subject': 'Themengebiete',
-		'facet-title-filterDate': 'Jahre',
-		'# weitere anzeigen': '# weitere anzeigen',
-		// Detail display
-		'Im Katalog ansehen': 'Im Katalog ansehen.',
-		'enthaltendes Werk im Katalog ansehen': 'Alle zugehörigen Publikationen im Katalog ansehen.',
-		'enthaltendes Werk': 'zugehörige Publikationen',
-		'detail-label-title': 'Titel',
-		'detail-label-author': 'Autor',
-		'detail-label-author-plural': 'Autoren',
-		'detail-label-author-clean': 'Autor',
-		'detail-label-author-clean-plural': 'Autoren',
-		'detail-label-other-person': 'Person',
-		'detail-label-other-person-plural': 'Personen',
-		'detail-label-other-person-clean': 'Person',
-		'detail-label-other-person-clean-plural': 'Personen',
-		'detail-label-medium': 'Art',
-		'detail-label-description': 'Information',
-		'detail-label-description-plural': 'Informationen',
-		'detail-label-abstract': 'Abstract',
-		'detail-label-series-title': 'Reihe',
-		'detail-label-issn': 'ISSN',
-		'detail-label-acronym-issn': 'Internationale Standardseriennummer',
-		'detail-label-isbn-minimal': 'ISBN',
-		'detail-label-acronym-isbn-minimal': 'Internationale Standardbuchnummer',
-		'detail-label-doi': 'DOI',
-		'detail-label-acronym-doi': 'Document Object Identifier: Mit dem Link zu dieser Nummer kann das Dokument im Netz gefunden werden.',
-		'detail-label-doi-plural': 'DOIs',
-		'detail-label-keyword': 'Schlagwort',
-		'detail-label-keyword-plural': 'Schlagwörter',
-		'detail-label-classification-msc': 'MSC',
-		'detail-label-acronym-classification-msc': 'Mathematics Subject Classification',
-		'detail-label-map': 'Ort',
-		'detail-label-mapscale': 'Maßstab',
-		'detail-label-creator': 'erfasst von',
-		'detail-label-verfügbarkeit': 'Verfügbarkeit',
-		'elektronisch': 'digital',
-		'gedruckt': 'gedruckt',
-		'gemäß': 'gemäß',
-		'nach Schlagwort "#" suchen': 'nach Schlagwort \u201e#\u201c suchen',
-		'Ausgabe': 'Ausgabe',
-		/* Google Books status Strings from
-			http://code.google.com/intl/de-DE/apis/books/examples/translated-branding-elements.html	*/
-		'Google Books: Vollständige Ansicht': 'Google Books: Vollständige Ansicht',
-		'Google Books: Eingeschränkte Vorschau': 'Google Books: Eingeschränkte Vorschau',
-		'Vorschau schließen': 'Vorschau schließen',
-		'Umschlagbild': 'Umschlagbild',
-		// Download/Extra Links
-		'mehr Links': 'mehr Links',
-		'download-label-format-simple': 'Bibliographische Daten für diesen Treffer als * laden',
-		'download-label-format-all': 'Alle Ausgaben als * laden',
-		'download-label-submenu-format': 'Einzelne als * laden',
-		'download-label-submenu-index-format': 'Ausgabe *',
-		'download-label-ris': 'RIS',
-		'download-label-bibtex': 'BibTeX',
-		'KVK': 'deutschlandweit suchen',
-		'deutschlandweit im KVK suchen': 'Suche in deutschen Verbundkatalogen (KVK)',
-		'&lang=de': '&lang=de',
-		// Short Display
-		'von': 'von',
-		'In': 'In',
-		'et al.': 'et al.',
-		// General Information
-		'Suche...': 'Suche\u2026',
-		'keine Suchabfrage': 'keine Suchabfrage',
-		'Suche momentan nicht verfügbar.': 'Suche momentan nicht verfügbar.',
-		'keine Treffer gefunden': 'keine Treffer',
-		'+': '+',
-		'Es können nicht alle # Treffer geladen werden.': '+: Es können nicht alle # Treffer geladen werden. Bitte verwenden Sie einen spezifischeren Suchbegriff, um die Trefferzahl zu reduzieren.',
-		'...': '\u2026',
-		'Error indicator': '\u2022',
-		'Bei der Übertragung von Daten aus # der abgefragten Kataloge ist ein Fehler aufgetreten.': '\u2022: Bei der Übertragung von Daten aus # der abgefragten Kataloge ist ein Fehler aufgetreten.',
-		'In diesem Katalog gibt es noch # weitere Treffer.': 'In diesem Katalog gibt es noch # weitere Treffer, die wir nicht herunterladen und hier anzeigen können. Bitte verwenden Sie einen spezifischeren Suchbegriff, um die Trefferzahl zu reduzieren. Oder suchen Sie direkt im Katalog.',
-		'Nicht alle Datenbanken verfügbar.': 'Von Ihrem aktuellen Internetzugang haben sie nicht Zugriff auf alle Datenbanken.\nBei Zugriff aus einem deutschen Universitätsnetzwerk umfaßt Ihre Abfrage zusätzliche Datenbanken.',
-		'Zugang über:': 'Zugang über:',
-		'Gastzugang': 'Gastzugang',
-		// Pager
-		'Vorige Trefferseite anzeigen': 'Vorige Trefferseite anzeigen',
-		'Nächste Trefferseite anzeigen': 'Nächste Trefferseite anzeigen',
-		// Histogram Tooltip
-		'Treffer': 'Treffer',
-		// ZDB-JOP status labels
-		'frei verfügbar': 'frei verfügbar',
-		'teilweise frei verfügbar': 'teilweise frei verfügbar',
-		'verfügbar': 'verfügbar',
-		'teilweise verfügbar': 'teilweise verfügbar',
-		'nicht verfügbar': 'nicht verfügbar',
-		'diese Ausgabe nicht verfügbar': 'diese Ausgabe nicht verfügbar',
-		'Informationen bei der Zeitschriftendatenbank': 'Verfügbarkeitsinformationen bei der Zeitschriftendatenbank ansehen',
-		'[neuere Bände im Lesesaal 2]': '[neuere Bände im Lesesaal 2]',
-		// Link tooltip
-		'Erscheint in separatem Fenster.': 'Erscheint in separatem Fenster.',
-		// Search Form
-		'erweiterte Suche': 'erweiterte Suche',
-		'einfache Suche': 'einfache Suche',
-		// Status display
-		'Übertragungsstatus': 'Übertragungsstatus',
-		'[ausblenden]': '[ausblenden]',
-		'Status:': 'Status:',
-		'Aktive Abfragen:': 'Aktive Abfragen:',
-		'Geladene Datensätze:': 'Geladene Datensätze:',
-		'Datenbank': 'Datenbank',
-		'Code': 'Statuscode',
-		'Status': 'Status',
-		'Geladen': 'Geladen',
-		'Client_Working': 'arbeitet',
-		'Client_Idle': 'fertig',
-		'Client_Error': 'Fehler',
-		'Client_Disconnected': 'Verbindungsabbruch'
+
+	/*	Localised country names for ISO 3166-1 alpha-2 country codes.
+	*/
+	countryNames: {
+		'de': {
+			'AD': 'Andorra',
+			'AE': 'Vereinigte Arabische Emirate',
+			'AF': 'Afghanistan',
+			'AG': 'Antigua und Barbuda',
+			'AI': 'Anguilla',
+			'AL': 'Albanien',
+			'AM': 'Armenien',
+			'AO': 'Angola',
+			'AQ': 'Antarktika',
+			'AR': 'Argentinien',
+			'AS': 'Amerikanisch-Samoa',
+			'AT': 'Österreich',
+			'AU': 'Australien',
+			'AW': 'Aruba',
+			'AX': 'Åland',
+			'AZ': 'Aserbaidschan',
+			'BA': 'Bosnien-Herzegowina',
+			'BB': 'Barbados',
+			'BD': 'Bangladesch',
+			'BE': 'Belgien',
+			'BF': 'Burkina Faso',
+			'BG': 'Bulgarien',
+			'BH': 'Bahrain',
+			'BI': 'Burundi',
+			'BJ': 'Benin',
+			'BL': 'Saint Barthélemy',
+			'BM': 'Bermudainseln',
+			'BN': 'Brunei',
+			'BO': 'Bolivien',
+			'BQ': 'Britisches Antarktis-Territorium',
+			'BR': 'Brasilien',
+			'BS': 'Bahamas',
+			'BT': 'Bhutan',
+			'BV': 'Bouvetinsel',
+			'BW': 'Botswana',
+			'BY': 'Weißrussland',
+			'BZ': 'Belize',
+			'CA': 'Kanada',
+			'CC': 'Kokosinseln',
+			'CD': 'Kongo <Demokratische Republik>',
+			'CF': 'Zentralafrikanische Republik',
+			'CG': 'Kongo',
+			'CH': 'Schweiz',
+			'CI': 'Elfenbeinküste',
+			'CK': 'Cookinseln',
+			'CL': 'Chile',
+			'CM': 'Kamerun',
+			'CN': 'China',
+			'CO': 'Kolumbien',
+			'CR': 'Costa Rica',
+			'CU': 'Kuba',
+			'CV': 'Kapverdische Inseln',
+			'CW': 'Curaçao',
+			'CX': 'Christmas Island',
+			'CY': 'Zypern',
+			'CZ': 'Tschechische Republik',
+			'DE': 'Deutschland',
+			'DJ': 'Dschibuti',
+			'DK': 'Dänemark',
+			'DM': 'Dominica',
+			'DO': 'Dominikanische Republik',
+			'DZ': 'Algerien',
+			'EC': 'Ecuador',
+			'EE': 'Estland',
+			'EG': 'Ägypten',
+			'EH': 'Westsahara',
+			'ER': 'Eritrea',
+			'ES': 'Spanien',
+			'ET': 'Äthiopien',
+			'FI': 'Finnland',
+			'FJ': 'Fidschi',
+			'FK': 'Falklandinseln',
+			'FM': 'Mikronesien',
+			'FO': 'Färöer',
+			'FR': 'Frankreich',
+			'GA': 'Gabun',
+			'GB': 'Großbritannien',
+			'GD': 'Grenada',
+			'GE': 'Georgien',
+			'GF': 'Französisch-Guayana',
+			'GG': 'Guernsey',
+			'GH': 'Ghana',
+			'GI': 'Gibraltar',
+			'GL': 'Grönland',
+			'GM': 'Gambia',
+			'GN': 'Guinea',
+			'GP': 'Guadeloupe',
+			'GQ': 'Äquatorialguinea',
+			'GR': 'Griechenland',
+			'GS': 'Südgeorgien und Südliche Sandwichinseln',
+			'GT': 'Guatemala',
+			'GU': 'Guam',
+			'GW': 'Guinea-Bissau',
+			'GY': 'Guyana',
+			'HK': 'Hongkong',
+			'HM': 'Heard und McDonaldinseln',
+			'HN': 'Honduras',
+			'HR': 'Kroatien',
+			'HT': 'Haiti',
+			'HU': 'Ungarn',
+			'ID': 'Indonesien',
+			'IE': 'Irland',
+			'IL': 'Israel',
+			'IM': 'Insel Man',
+			'IN': 'Indien',
+			'IO': 'Britisches Territorium im Indischen Ozean',
+			'IQ': 'Irak',
+			'IR': 'Iran',
+			'IS': 'Island',
+			'IT': 'Italien',
+			'JE': 'Jersey',
+			'JM': 'Jamaika',
+			'JO': 'Jordanien',
+			'JP': 'Japan',
+			'KE': 'Kenia',
+			'KG': 'Kirgisien',
+			'KH': 'Kambodscha',
+			'KI': 'Kiribati',
+			'KM': 'Komoren',
+			'KN': 'Saint Kitts und Nevis',
+			'KP': 'Nordkorea',
+			'KR': 'Südkorea',
+			'KW': 'Kuwait',
+			'KY': 'Kaiman Inseln',
+			'KZ': 'Kasachstan',
+			'LA': 'Laos',
+			'LB': 'Libanon',
+			'LC': 'Saint Lucia',
+			'LI': 'Liechtenstein',
+			'LK': 'Sri Lanka',
+			'LR': 'Liberia',
+			'LS': 'Lesotho',
+			'LT': 'Litauen',
+			'LU': 'Luxemburg',
+			'LV': 'Lettland',
+			'LY': 'Libyen',
+			'MA': 'Marokko',
+			'MC': 'Monaco',
+			'MD': 'Moldawien',
+			'ME': 'Montenegro',
+			'MF': 'St. Martin (Französicher Teil)',
+			'MG': 'Madagaskar',
+			'MH': 'Marshallinseln',
+			'MK': 'Makedonien',
+			'ML': 'Mali',
+			'MM': 'Birma',
+			'MN': 'Mongolei',
+			'MO': 'Macao',
+			'MP': 'Nördliche Marianen',
+			'MQ': 'Martinique',
+			'MR': 'Mauretanien',
+			'MS': 'Montserrat',
+			'MT': 'Malta',
+			'MU': 'Mauritius',
+			'MV': 'Malediven',
+			'MW': 'Malawi',
+			'MX': 'Mexiko',
+			'MY': 'Malaysia',
+			'MZ': 'Mozambique',
+			'NA': 'Namibia',
+			'NC': 'Neukaledonien',
+			'NE': 'Niger',
+			'NF': 'Norfolk-Insel',
+			'NG': 'Nigeria',
+			'NI': 'Nicaragua',
+			'NL': 'Niederlande',
+			'NO': 'Norwegen',
+			'NP': 'Nepal',
+			'NR': 'Nauru',
+			'NU': 'Niue',
+			'NZ': 'Neuseeland',
+			'OM': 'Oman',
+			'PA': 'Panama',
+			'PE': 'Peru',
+			'PF': 'Französisch-Polynesien',
+			'PG': 'Papua-Neuguinea',
+			'PH': 'Philippinen',
+			'PK': 'Pakistan',
+			'PL': 'Polen',
+			'PM': 'Saint-Pierre-et-Miquelon',
+			'PN': 'Pitcairn',
+			'PR': 'Puerto Rico',
+			'PS': 'Palästinensische Autonomiegebiete',
+			'PT': 'Portugal',
+			'PW': 'Palauinseln',
+			'PY': 'Paraguay',
+			'QA': 'Katar',
+			'RE': 'Réunion',
+			'RO': 'Rumänien',
+			'RS': 'Serbien',
+			'RU': 'Russland, Sowjetunion',
+			'RW': 'Rwanda',
+			'SA': 'Saudi-Arabien',
+			'SB': 'Salomonen',
+			'SC': 'Seychellen',
+			'SD': 'Sudan',
+			'SE': 'Schweden',
+			'SG': 'Singapur',
+			'SH': 'Sankt Helena',
+			'SI': 'Slowenien',
+			'SJ': 'Svalbard und Jan Mayen',
+			'SK': 'Slowakei',
+			'SL': 'Sierra Leone',
+			'SM': 'San Marino',
+			'SN': 'Senegal',
+			'SO': 'Somalia',
+			'SR': 'Surinam',
+			'SS': 'Südsudan',
+			'ST': 'São Tomé und Príncipe',
+			'SV': 'El Salvador',
+			'SX': 'St. Martin (Niederländischer Teil)',
+			'SY': 'Syrien',
+			'SZ': 'Swasiland',
+			'TC': 'Turks- und Caicos-Inseln',
+			'TD': 'Tschad',
+			'TF': 'Französische Südgebiete',
+			'TG': 'Togo',
+			'TH': 'Thailand',
+			'TJ': 'Tadschikistan',
+			'TK': 'Tokelau',
+			'TL': 'Osttimor',
+			'TM': 'Turkmenistan',
+			'TN': 'Tunesien',
+			'TO': 'Tonga',
+			'TR': 'Türkei',
+			'TT': 'Trinidad und Tobago',
+			'TV': 'Tuvalu',
+			'TW': 'Taiwan',
+			'TZ': 'Tansania',
+			'UA': 'Ukraine',
+			'UG': 'Uganda',
+			'UM': 'Amerikanische Überseeinseln',
+			'US': 'USA',
+			'UY': 'Uruguay',
+			'UZ': 'Usbekistan',
+			'VA': 'Vatikanstadt',
+			'VC': 'Saint Vincent and the Grenadines',
+			'VE': 'Venezuela',
+			'VG': 'Jungferninseln, Großbritannien',
+			'VI': 'Jungferninseln, U.S.',
+			'VN': 'Vietnam',
+			'VU': 'Vanuatu',
+			'WF': 'Wallis und Futuna',
+			'WS': 'Westsamoa',
+			'YE': 'Jemen',
+			'YT': 'Mayotte',
+			'ZA': 'Südafrika',
+			'ZM': 'Sambia',
+			'ZW': 'Simbabwe',
+			// Non-Standard codes
+			'EU': 'Europa',
+			'II': 'International'
+		},
+
+		'en': {
+			'AD': 'Andorra',
+			'AE': 'United Arab Emirates',
+			'AF': 'Afghanistan',
+			'AG': 'Antigua and Barbuda',
+			'AI': 'Anguilla',
+			'AL': 'Albania',
+			'AM': 'Armenia',
+			'AO': 'Angola',
+			'AQ': 'Antarctica',
+			'AR': 'Argentina',
+			'AS': 'American Samoa',
+			'AT': 'Austria',
+			'AU': 'Australia',
+			'AW': 'Aruba',
+			'AX': 'Åland Islands',
+			'AZ': 'Azerbaijan',
+			'BA': 'Bosnia and Herzegovina',
+			'BB': 'Barbados',
+			'BD': 'Bangladesh',
+			'BE': 'Belgium',
+			'BF': 'Burkina Faso',
+			'BG': 'Bulgaria',
+			'BH': 'Bahrain',
+			'BI': 'Burundi',
+			'BJ': 'Benin',
+			'BL': 'Saint Barthélemy',
+			'BM': 'Bermuda',
+			'BN': 'Brunei Darussalam',
+			'BO': 'Bolivia, Plurinational State of',
+			'BQ': 'Bonaire, Sint Eustatius and Saba',
+			'BR': 'Brazil',
+			'BS': 'Bahamas',
+			'BT': 'Bhutan',
+			'BV': 'Bouvet Island',
+			'BW': 'Botswana',
+			'BY': 'Belarus',
+			'BZ': 'Belize',
+			'CA': 'Canada',
+			'CC': 'Cocos (Keeling) Islands',
+			'CD': 'Congo, the Democratic Republic of the',
+			'CF': 'Central African Republic',
+			'CG': 'Congo',
+			'CH': 'Switzerland',
+			'CI': 'Côte d’Ivoire',
+			'CK': 'Cook Islands',
+			'CL': 'Chile',
+			'CM': 'Cameroon',
+			'CN': 'China',
+			'CO': 'Colombia',
+			'CR': 'Costa Rica',
+			'CU': 'Cuba',
+			'CV': 'Cape Verde',
+			'CW': 'Curaçao',
+			'CX': 'Christmas Island',
+			'CY': 'Cyprus',
+			'CZ': 'Czech Republic',
+			'DE': 'Germany',
+			'DJ': 'Djibouti',
+			'DK': 'Denmark',
+			'DM': 'Dominica',
+			'DO': 'Dominican Republic',
+			'DZ': 'Algeria',
+			'EC': 'Ecuador',
+			'EE': 'Estonia',
+			'EG': 'Egypt',
+			'EH': 'Western Sahara',
+			'ER': 'Eritrea',
+			'ES': 'Spain',
+			'ET': 'Ethiopia',
+			'FI': 'Finland',
+			'FJ': 'Fiji',
+			'FK': 'Falkland Islands (Malvinas)',
+			'FM': 'Micronesia, Federated States of',
+			'FO': 'Faroe Islands',
+			'FR': 'France',
+			'GA': 'Gabon',
+			'GB': 'United Kingdom',
+			'GD': 'Grenada',
+			'GE': 'Georgia',
+			'GF': 'French Guiana',
+			'GG': 'Guernsey',
+			'GH': 'Ghana',
+			'GI': 'Gibraltar',
+			'GL': 'Greenland',
+			'GM': 'Gambia',
+			'GN': 'Guinea',
+			'GP': 'Guadeloupe',
+			'GQ': 'Equatorial Guinea',
+			'GR': 'Greece',
+			'GS': 'South Georgia and the South Sandwich Islands',
+			'GT': 'Guatemala',
+			'GU': 'Guam',
+			'GW': 'Guinea-Bissau',
+			'GY': 'Guyana',
+			'HK': 'Hong Kong',
+			'HM': 'Heard Island and McDonald Islands',
+			'HN': 'Honduras',
+			'HR': 'Croatia',
+			'HT': 'Haiti',
+			'HU': 'Hungary',
+			'ID': 'Indonesia',
+			'IE': 'Ireland',
+			'IL': 'Israel',
+			'IM': 'Isle of Man',
+			'IN': 'India',
+			'IO': 'British Indian Ocean Territory',
+			'IQ': 'Iraq',
+			'IR': 'Iran, Islamic Republic of',
+			'IS': 'Iceland',
+			'IT': 'Italy',
+			'JE': 'Jersey',
+			'JM': 'Jamaica',
+			'JO': 'Jordan',
+			'JP': 'Japan',
+			'KE': 'Kenya',
+			'KG': 'Kyrgyzstan',
+			'KH': 'Cambodia',
+			'KI': 'Kiribati',
+			'KM': 'Comoros',
+			'KN': 'Saint Kitts and Nevis',
+			'KP': 'Korea, Democratic People’s Republic of',
+			'KR': 'Korea, Republic of',
+			'KW': 'Kuwait',
+			'KY': 'Cayman Islands',
+			'KZ': 'Kazakhstan',
+			'LA': 'Lao People’s Democratic Republic',
+			'LB': 'Lebanon',
+			'LC': 'Saint Lucia',
+			'LI': 'Liechtenstein',
+			'LK': 'Sri Lanka',
+			'LR': 'Liberia',
+			'LS': 'Lesotho',
+			'LT': 'Lithuania',
+			'LU': 'Luxembourg',
+			'LV': 'Latvia',
+			'LY': 'Libya',
+			'MA': 'Morocco',
+			'MC': 'Monaco',
+			'MD': 'Moldova, Republic of',
+			'ME': 'Montenegro',
+			'MF': 'Saint Martin (French part)',
+			'MG': 'Madagascar',
+			'MH': 'Marshall Islands',
+			'MK': 'Macedonia, the former Yugoslav Republic of',
+			'ML': 'Mali',
+			'MM': 'Myanmar',
+			'MN': 'Mongolia',
+			'MO': 'Macao',
+			'MP': 'Northern Mariana Islands',
+			'MQ': 'Martinique',
+			'MR': 'Mauritania',
+			'MS': 'Montserrat',
+			'MT': 'Malta',
+			'MU': 'Mauritius',
+			'MV': 'Maldives',
+			'MW': 'Malawi',
+			'MX': 'Mexico',
+			'MY': 'Malaysia',
+			'MZ': 'Mozambique',
+			'NA': 'Namibia',
+			'NC': 'New Caledonia',
+			'NE': 'Niger',
+			'NF': 'Norfolk Island',
+			'NG': 'Nigeria',
+			'NI': 'Nicaragua',
+			'NL': 'Netherlands',
+			'NO': 'Norway',
+			'NP': 'Nepal',
+			'NR': 'Nauru',
+			'NU': 'Niue',
+			'NZ': 'New Zealand',
+			'OM': 'Oman',
+			'PA': 'Panama',
+			'PE': 'Peru',
+			'PF': 'French Polynesia',
+			'PG': 'Papua New Guinea',
+			'PH': 'Philippines',
+			'PK': 'Pakistan',
+			'PL': 'Poland',
+			'PM': 'Saint Pierre and Miquelon',
+			'PN': 'Pitcairn',
+			'PR': 'Puerto Rico',
+			'PS': 'Palestinian Territory, Occupied',
+			'PT': 'Portugal',
+			'PW': 'Palau',
+			'PY': 'Paraguay',
+			'QA': 'Qatar',
+			'RE': 'Réunion',
+			'RO': 'Romania',
+			'RS': 'Serbia',
+			'RU': 'Russian Federation',
+			'RW': 'Rwanda',
+			'SA': 'Saudi Arabia',
+			'SB': 'Solomon Islands',
+			'SC': 'Seychelles',
+			'SD': 'Sudan',
+			'SE': 'Sweden',
+			'SG': 'Singapore',
+			'SH': 'Saint Helena, Ascension and Tristan da Cunha',
+			'SI': 'Slovenia',
+			'SJ': 'Svalbard and Jan Mayen',
+			'SK': 'Slovakia',
+			'SL': 'Sierra Leone',
+			'SM': 'San Marino',
+			'SN': 'Senegal',
+			'SO': 'Somalia',
+			'SR': 'Suriname',
+			'SS': 'South Sudan',
+			'ST': 'São Tomé and Principe',
+			'SV': 'El Salvador',
+			'SX': 'Sint Maarten (Dutch part)',
+			'SY': 'Syrian Arab Republic',
+			'SZ': 'Swaziland',
+			'TC': 'Turks and Caicos Islands',
+			'TD': 'Chad',
+			'TF': 'French Southern Territories',
+			'TG': 'Togo',
+			'TH': 'Thailand',
+			'TJ': 'Tajikistan',
+			'TK': 'Tokelau',
+			'TL': 'Timor-Leste',
+			'TM': 'Turkmenistan',
+			'TN': 'Tunisia',
+			'TO': 'Tonga',
+			'TR': 'Turkey',
+			'TT': 'Trinidad and Tobago',
+			'TV': 'Tuvalu',
+			'TW': 'Taiwan, Province of China',
+			'TZ': 'Tanzania, United Republic of',
+			'UA': 'Ukraine',
+			'UG': 'Uganda',
+			'UM': 'United States Minor Outlying Islands',
+			'US': 'United States',
+			'UY': 'Uruguay',
+			'UZ': 'Uzbekistan',
+			'VA': 'Holy See (Vatican City State)',
+			'VC': 'Saint Vincent and the Grenadines',
+			'VE': 'Venezuela, Bolivarian Republic of',
+			'VG': 'Virgin Islands, British',
+			'VI': 'Virgin Islands, U.S.',
+			'VN': 'Viet Nam',
+			'VU': 'Vanuatu',
+			'WF': 'Wallis and Futuna',
+			'WS': 'Samoa',
+			'YE': 'Yemen',
+			'YT': 'Mayotte',
+			'ZA': 'South Africa',
+			'ZM': 'Zambia',
+			'ZW': 'Zimbabwe',
+			// Non-Standard codes
+			'EU': 'Europe',
+			'II': 'International'
+		}
 	},
-	
-	'en': {
-		// Facets
-		'gefiltert': 'filtered',
-		'Filter aufheben': 'Remove filter',
-		'Filter # aufheben': 'Remove filter #',
-		'Facetten': 'Facets',
-		'facet-title-xtargets': 'Catalogues',
-		'facet-title-medium': 'Type',
-		'facet-title-author': 'Authors',
-		'facet-title-language': 'Languages',
-		'facet-title-country': 'Countries',
-		'facet-title-source-type': 'Source Type',
-		'facet-title-subject': 'Subjects',
-		'facet-title-filterDate': 'Years',
-		'# weitere anzeigen': 'Show # more items',
-		// Detail display
-		'Im Katalog ansehen': 'View in catalogue.',
-		'enthaltendes Werk im Katalog ansehen': 'View all associated items in catalogue.',
-		'enthaltendes Werk': 'associated items',
-		'detail-label-title': 'Title',
-		'detail-label-author': 'Author',
-		'detail-label-author-plural': 'Authors',
-		'detail-label-author-clean': 'Author',
-		'detail-label-author-clean-plural': 'Authors',
-		'detail-label-other-person': 'Person',
-		'detail-label-other-person-plural': 'People',
-		'detail-label-other-person-clean': 'Person',
-		'detail-label-other-person-clean-plural': 'People',
-		'detail-label-medium': 'Type',
-		'detail-label-description': 'Information',
-		'detail-label-description-plural': 'Information',
-		'detail-label-abstract': 'Abstract',
-		'detail-label-series-title': 'Series',
-		'detail-label-issn': 'ISSN',
-		'detail-label-acronym-issn': 'International Standard Series Number',
-		'detail-label-isbn-minimal': 'ISBN',
-		'detail-label-acronym-isbn-minimal': 'International Standard Book Number',
-		'detail-label-doi': 'DOI',
-		'detail-label-acronym-doi': 'Document Object Identifier: Use the link to load the document.',
-		'detail-label-doi-plural': 'DOIs',
-		'detail-label-keyword': 'Keyword',
-		'detail-label-keyword-plural': 'Keywords',
-		'detail-label-classification-msc': 'MSC',
-		'detail-label-acronym-classification-msc': 'Mathematics Subject Classification',
-		'detail-label-map': 'Location',
-		'detail-label-mapscale': 'Scale',
-		'detail-label-creator': 'catalogued by',
-		'detail-label-verfügbarkeit': 'Availability',
-		'elektronisch': 'electronic',
-		'gedruckt': 'printed',
-		'gemäß': 'according to',
-		'nach Schlagwort "#" suchen': 'search for keyword \u201c#\u201d',
-		'Ausgabe': 'Edition',
-		/* Google Books status Strings from
-			http://code.google.com/intl/de-DE/apis/books/examples/translated-branding-elements.html	*/
-		'Google Books: Vollständige Ansicht': 'Google Books: Full view',
-		'Google Books: Eingeschränkte Vorschau': 'Google Books: Limited Preview',
-		'Vorschau schließen': 'Close Preview',
-		'Umschlagbild': 'Book Cover',
-		// Short Display
-		'von': 'of',
-		'In': 'In',
-		'et al.': 'et al.',
-		// Download/Extra Links
-		'mehr Links': 'additional Links',
-		'download-label-format-simple': 'Load bibliographic data for this result as *',
-		'download-label-format-all': 'Load all Editions as *',
-		'download-label-submenu-format': 'Load as *',
-		'download-label-submenu-index-format': 'Record *',
-		'download-label-ris': 'RIS',
-		'download-label-bibtex': 'BibTeX',
-		'KVK': 'search throughout Germany',
-		'deutschlandweit im KVK suchen': 'search for this item in German union catalogues (KVK)',
-		'&lang=de': '&lang=en',
-		// General Information
-		'Suche...': 'Searching\u2026',
-		'Suchdienst momentan nicht verfügbar.': 'Search is temporarily unavailable.',
-		'keine Treffer gefunden': 'no matching records',
-		'keine Suchabfrage': 'no search query',
-		'+': '+',
-		'Es können nicht alle # Treffer geladen werden.': '+: There are # results, not all of which can be loaded. Please use a more specific search query to reduce the number of results.',
-		'...': '\u2026',
-		'Error indicator': '\u2022',
-		'In diesem Katalog gibt es noch # weitere Treffer.': 'There are # additional results available in this catalogue which we cannot download and display. Please use a more specific search query.',
-		'Nicht alle Datenbanken verfügbar.': 'You do not have permission to access all catalogues from your current location.\n\
-	Please run the search from a German university network for more complete results.',
-		'Zugang über:': 'Access provided by:',
-		'Gastzugang': 'Guest Access',
-		// Pager
-		'Vorige Trefferseite anzeigen': 'Show next page of results',
-		'Nächste Trefferseite anzeigen': 'Show previous page of results',
-		// Histogram Tooltip
-		'Treffer': 'Treffer',
-		// ZDB-JOP status labels
-		'frei verfügbar': 'accessible for all',
-		'teilweise frei verfügbar': 'partially accessible for all',
-		'verfügbar': 'accessible',
-		'teilweise verfügbar': 'partially accessible',
-		'nicht verfügbar': 'not accessible',
-		'diese Ausgabe nicht verfügbar': 'this issue not accessible',
-		'Informationen bei der Zeitschriftendatenbank': 'View availability information at Zeitschriftendatenbank',
-		'[neuere Bände im Lesesaal 2]': '[current volumes in Lesesaal 2]',
-		// Link tooltip
-		'Erscheint in separatem Fenster.': 'Link opens in a new window.',
-		// Search Form
-		'erweiterte Suche': 'Extended Search',
-		'einfache Suche': 'Basic Search',
-		// Status display
-		'Übertragungsstatus': 'Status Information',
-		'[ausblenden]': '[hide]',
-		'Status:': 'Status:',
-		'Aktive Abfragen:': 'Active Queries:',
-		'Geladene Datensätze:': 'Loaded Records:',
-		'Datenbank': 'Database',
-		'Code': 'Status Code',
-		'Status': 'Status',
-		'Gesamt': 'Loaded',
-		'Client_Working': 'working',
-		'Client_Idle': 'done',
-		'Client_Error': 'Error',
-		'Client_Disconnected': 'disconnected'
+
+	/*	Localised languae names for ISO 639-2/B language codes.
+	*/
+	languageNames: {
+		'de': {
+			'ace': 'Aceh',
+			'ach': 'Acholi',
+			'ada': 'Adangme',
+			'ady': 'Adyghe',
+			'egy': 'Ägyptisch',
+			'aar': 'Afar',
+			'pus': 'Afghanisch (=Paschtu)',
+			'afh': 'Afrihili',
+			'afr': 'Afrikaans',
+			'aka': 'Akan (=Volta-Comeo)',
+			'akk': 'Akkadisch',
+			'alb': 'Albanisch',
+			'ale': 'Aleut, Atka',
+			'alg': 'Algonkin-Sprachen',
+			'tut': 'Altaische Sprachen (andere)',
+			'chu': 'Altbulgarisch, Altslawisch, Kirchenslawisch',
+			'ang': 'Altenglisch (ca. 450-1100)',
+			'fro': 'Altfranzösisch (842-ca. 1400)',
+			'grc': 'Altgriechisch (bis 1453)',
+			'qhe': 'Althebräisch, Hebräisch/Althebräisch',
+			'goh': 'Althochdeutsch (ca. 750-1050)',
+			'sga': 'Altirisch (bis 1100)',
+			'kaw': 'Altjavanisch, Kawi',
+			'non': 'Altnordisch',
+			'peo': 'Altpersisch (ca. 600 -400 v.Chr.)',
+			'pro': 'Altprovenzalisch, Altokzitanisch (bis 1500)',
+			'amh': 'Amharisch',
+			'apa': 'Apachen-Sprache',
+			'ara': 'Arabisch',
+			'arg': 'Aragonese',
+			'arc': 'Aramäisch',
+			'arp': 'Arapaho',
+			'arn': 'Arauka-Sprachen',
+			'arw': 'Arawak-Sprachen',
+			'arm': 'Armenisch',
+			'aze': 'Aserbeidschanisch',
+			'asm': 'Assemesisch',
+			'ast': 'Asturian, Bable',
+			'ath': 'Athapaskische Sprachen',
+			'aus': 'Australische Sprachen',
+			'map': 'Austronesische Sprachen (andere)',
+			'ave': 'Avestisch',
+			'awa': 'Awadhi',
+			'ava': 'Awarisch',
+			'aym': 'Aymará',
+			'ban': 'Balinesisch',
+			'qbk': 'Balkarisch',
+			'bat': 'Baltische Sprachen (andere)',
+			'bam': 'Bambara',
+			'bai': 'Bamileke',
+			'bad': 'Banda',
+			'lam': 'Banjari, Lamba',
+			'bnt': 'Bantusprachen (andere)',
+			'bas': 'Basaa',
+			'bak': 'Baschkir',
+			'baq': 'Baskisch',
+			'btk': 'Batak (Indonesien)',
+			'bej': 'Bedauye',
+			'bal': 'Belutschisch',
+			'bem': 'Bemba',
+			'ben': 'Bengali',
+			'ber': 'Berbersprachen',
+			'bho': 'Bhodschpuri',
+			'bik': 'Bicol',
+			'bih': 'Bihari',
+			'bin': 'Bini (=Pini)',
+			'bur': 'Birmanisch',
+			'bis': 'Bislama, Beach-la-Mar',
+			'bla': 'Blackfoot',
+			'byn': 'Blin, Bilin',
+			'nob': 'Bokmål, Norwegen',
+			'bos': 'Bosnisch',
+			'bra': 'Braj-Bhakha',
+			'bre': 'Bretonisch',
+			'bug': 'Bugi',
+			'bul': 'Bulgarisch',
+			'bua': 'Burjatisch',
+			'cad': 'Caddo-Sprachen',
+			'ceb': 'Cebuano',
+			'qqa': 'Chakassisch',
+			'cmc': 'Cham-Sprachen',
+			'cha': 'Chamorro',
+			'qoj': 'chantisch, Ostjakisch',
+			'chr': 'Cherokee',
+			'nya': 'Chewa, Nyanja',
+			'chy': 'Cheyenne',
+			'chb': 'Chibcha-Sprachen',
+			'chi': 'Chinesisch',
+			'chn': 'Chinook',
+			'chp': 'Chipewyan',
+			'cho': 'Choctaw',
+			'cre': 'Cree',
+			'dan': 'Dänisch',
+			'day': 'Dajakisch',
+			'dak': 'Dakota',
+			'dar': 'Dari',
+			'del': 'Delaware',
+			'qdn': 'Dendi',
+			'ger': 'Deutsch',
+			'din': 'Dinka',
+			'doi': 'Dogri',
+			'dgr': 'Dogrib',
+			'qdo': 'Dolganisch',
+			'dra': 'Drawidische Sprachen (andere)',
+			'dua': 'Duala-Sprachen',
+			'dyu': 'Dyula',
+			'dzo': 'Dzongkha',
+			'efi': 'Efik',
+			'eka': 'Ekajuk',
+			'elx': 'Elamisch',
+			'tvl': 'Elliceanisch',
+			'eng': 'Englisch',
+			'myv': 'Erzya',
+			'esk': 'Eskimoisch (alter Sprachcode)', // deprecated
+			'kal': 'Eskimoisch (Grönländisch)',
+			'esp': 'Esperanto (alter Sprachcode)', // deprecated
+			'epo': 'Esperanto',
+			'est': 'Estnisch',
+			'eth': 'Ethiopisch (alter Sprachcode)', // deprecated
+			'gez': 'Ethiopisch',
+			'ewe': 'Ewe',
+			'qlm': 'Ewenisch, Lamutisch',
+			'qev': 'Ewenkisch',
+			'ewo': 'Ewondo',
+			'far': 'Färöisch (alter Sprachcode)', // deprecated
+			'fao': 'Färöisch',
+			'fat': 'Fanti',
+			'fij': 'Fidschi',
+			'fin': 'Finnisch',
+			'fiu': 'Finnougrische Sprachen (andere)',
+			'fon': 'Fon',
+			'fre': 'Französisch',
+			'fur': 'Friaulisch',
+			'fri': 'Friesisch', // deprecated
+			'frr': 'Nordfriesisch',
+			'frs': 'Ostfriesisch',
+			'ful': 'Ful',
+			'gaa': 'Ga',
+			'qgd': 'Gade',
+			'gae': 'Gälisch (= Schottisch, alter Sprachcode)', // deprecated
+			'gla': 'Gälisch (=Schottisch)',
+			'gag': 'Galizisch (alter Sprachcode)', // deprecated
+			'glg': 'Galizisch',
+			'lug': 'Ganda',
+			'gay': 'Gayo',
+			'gba': 'Gbaya',
+			'geo': 'Georgisch (=Grusinisch)',
+			'gem': 'Germanische Sprachen (andere)',
+			'gil': 'Gilbertesisch',
+			'qnv': 'Giljakisch',
+			'gon': 'Gondi',
+			'gor': 'Gorontalesisch',
+			'got': 'Gotisch',
+			'grb': 'Grebo',
+			'gre': 'Griechisch',
+			'grn': 'Guaraní',
+			'guj': 'Gujarati',
+			'hai': 'Haida',
+			'hat': 'Haitisch',
+			'afa': 'Hamitosemitische Sprachen',
+			'hau': 'Haussa',
+			'haw': 'Hawaiisch',
+			'heb': 'Hebräisch',
+			'her': 'Herero',
+			'hit': 'Hethitisch',
+			'hil': 'Hiligaynon',
+			'him': 'Himachali',
+			'hin': 'Hindi',
+			'hmo': 'Hiri-Motu',
+			'hsb': 'Hochsorbisch',
+			'hup': 'Hupa',
+			'iba': 'Iban',
+			'ibo': 'Ibo',
+			'ido': 'Ido',
+			'ijo': 'Ijo',
+			'ilo': 'Ilokano',
+			'smn': 'Inari Sami',
+			'nai': 'Indianersprachen (Nordamerika) (andere)',
+			'sai': 'Indianersprachen (Südamerika) (andere)',
+			'cai': 'Indianersprachen (Zentralamerika) (andere)',
+			'inc': 'Indoarische Sprachen',
+			'ine': 'Indogermanische Sprachen (andere)',
+			'ind': 'Indonesisch',
+			'inh': 'Inguschisch',
+			'ina': 'Interlingua (IALA)',
+			'ile': 'Interlingue',
+			'iku': 'Inuktitut',
+			'ipk': 'Inupiaq',
+			'ira': 'Iranische Sprachen (andere)',
+			'iri': 'Irisch (alter Sprachcode)', // deprecated
+			'gle': 'Irisch',
+			'iro': 'Irokesische Sprachen',
+			'ice': 'Isländisch',
+			'ita': 'Italienisch',
+			'qkc': 'Itelmenisch, Kamtschadalisch',
+			'sah': 'Jakutisch',
+			'jpn': 'Japanisch',
+			'jav': 'Javanisch',
+			'yid': 'Jiddisch',
+			'lad': 'Judenspanisch',
+			'jrb': 'Jüdisch-Arabisch',
+			'jpr': 'Jüdisch-Persisch',
+			'qju': 'Jukagirisch',
+			'kbd': 'Kabardisch',
+			'kab': 'Kabylisch',
+			'kac': 'Kachin',
+			'xal': 'Kalmükisch',
+			'kam': 'Kamba',
+			'kan': 'Kannada',
+			'kau': 'Kanuri',
+			'krc': 'Karachay-Balkar',
+			'kaa': 'Karakalpakisch',
+			'qkr': 'Karelisch',
+			'kar': 'Karenisch',
+			'car': 'Karibische Sprachen',
+			'kaz': 'Kasachisch',
+			'kas': 'Kaschmiri',
+			'csb': 'Kaschubisch',
+			'cat': 'Katalanisch',
+			'cau': 'Kaukasische Sprachen (andere)',
+			'cel': 'Keltische Sprachen (andere)',
+			'que': 'Ketchua (=Quechua)',
+			'kha': 'Khasi',
+			'cam': 'Khmer (Kambodschanisch, alterSprachcode)', // deprecated
+			'khm': 'Khmer (Kambodschanisch)',
+			'khi': 'Khoisan-Sprachen (andere)',
+			'mag': 'Khotta',
+			'kik': 'Kikuyu',
+			'kir': 'Kirgisisch',
+			'qrn': 'Kirundi',
+			'nwc': 'Klass. Newari, Altnewari, Klass. Nepalesisch, Bhasa',
+			'kom': 'Komi-Sprachen',
+			'kon': 'Kongo',
+			'kok': 'Konkani',
+			'cop': 'Koptisch',
+			'kor': 'Koreanisch',
+			'qkj': 'Korjakisch',
+			'cor': 'Kornisch',
+			'cos': 'Korsisch',
+			'kos': 'Kosraeanisch',
+			'kpe': 'Kpelle',
+			'cpe': 'Kreolisch-Englisch (andere), Krio',
+			'cpf': 'Kreolisch-Französisch (andere)',
+			'cpp': 'Kreolisch-Portugiesisch (andere)',
+			'crp': 'Kreolische Sprachen (andere)',
+			'crh': 'Krimtatarisch, Krimtürkisch',
+			'kro': 'Kru-Sprachen',
+			'kum': 'Kumükisch',
+			'art': 'Kunst-, Hilfssprache (andere)',
+			'kur': 'Kurdisch',
+			'cus': 'Kuschitische Sprachen (andere)',
+			'gwi': 'Kutchin',
+			'kut': 'Kutenai',
+			'kua': 'Kwanyama',
+			'lah': 'Lahnda',
+			'lao': 'Laotisch',
+			'lat': 'Latein',
+			'lez': 'Lesgisch',
+			'lav': 'Lettisch',
+			'lim': 'Limburgan',
+			'lin': 'Lingala',
+			'lit': 'Litauisch',
+			'jbo': 'Lojban',
+			'lub': 'Luba-Katanga',
+			'lua': 'Luba-Lulua',
+			'lui': 'Luiseno',
+			'smj': 'Lule Sami',
+			'lun': 'Lunda',
+			'luo': 'Luo (Kenia, Tansania)',
+			'lus': 'Lushai',
+			'ltz': 'Luxemburgisch',
+			'qmg': 'Madagassisch',
+			'mad': 'Maduresisch',
+			'mai': 'Maithili',
+			'mak': 'Makassarisch',
+			'mac': 'Makedonisch',
+			'mla': 'Madagassisch (alter Sprachcode)', // deprecated
+			'mlg': 'Madagassisch',
+			'may': 'Malaiisch',
+			'mal': 'Malayalam',
+			'div': 'Maledivisch',
+			'mlt': 'Maltesisch',
+			'mnc': 'Manchu, Mandschurisch',
+			'mdr': 'Mandaresisch',
+			'man': 'Mande-Sprachen, Mandingo, Malinke',
+			'mno': 'Manobo',
+			'max': 'Manx (alter Sprachcode)', // deprecated
+			'glv': 'Manx',
+			'mao': 'Maori',
+			'mar': 'Marathi',
+			'mah': 'Marschallesisch',
+			'mwr': 'Marwari',
+			'mas': 'Massai (=Masai)',
+			'myn': 'Maya-Sprachen',
+			'kmb': 'Mbundu (Kimbundu)',
+			'umb': 'Mbundu (Umbundu)',
+			'mul': 'mehrsprachig, Polyglott',
+			'mni': 'Meithei',
+			'men': 'Mende',
+			'hmn': 'Miao-Sprachen',
+			'mic': 'Micmac',
+			'min': 'Minangkabau',
+			'enm': 'Mittelenglisch (1100-1500)',
+			'frm': 'Mittelfranzösisch (ca. 1400-1600)',
+			'gmh': 'Mittelhochdeutsch (ca. 1050-1500)',
+			'mga': 'Mittelirisch (ca. 1100-1550)',
+			'dum': 'Mittelniederländisch (ca. 1050-1350)',
+			'pal': 'Mittelpersisch',
+			'moh': 'Mohawk',
+			'mdf': 'Moksha',
+			'mol': 'Moldawisch',
+			'mkh': 'Mon-Khmer-Sprachen (andere)',
+			'lol': 'Mongo',
+			'mon': 'Mongolisch',
+			'qmw': 'Mordwinisch',
+			'mos': 'Mossi',
+			'mun': 'Mundasprachen',
+			'mus': 'Muskogee-Sprachen',
+			'nqo': 'N’Ko',
+			'nah': 'Nahuatl (=Aztekisch)',
+			'qnn': 'Nanaisch',
+			'nau': 'Nauruanisch',
+			'nav': 'Navajo',
+			'nde': 'Ndebele (Nord)',
+			'nbl': 'Ndebele (Süd)',
+			'ndo': 'Ndonga',
+			'nap': 'Neapolitanisch',
+			'nep': 'Nepali',
+			'tpi': 'Neumelanesisch, Pidgin',
+			'new': 'Newari, Nepal Bhasa',
+			'nia': 'Nias',
+			'nds': 'Niederdeutsch',
+			'dut': 'Niederländisch',
+			'dsb': 'Niedersorbisch',
+			'nic': 'Nigerkordofanische Sprachen',
+			'ssa': 'Nilosaharanische Sprachen',
+			'niu': 'Niue',
+			'nyn': 'Nkole',
+			'nog': 'Nogai',
+			'nor': 'Norwegisch',
+			'nub': 'Nubische Sprachen',
+			'nym': 'Nyamwezi',
+			'nno': 'Nynorsk, Norwegen',
+			'nyo': 'Nyoro',
+			'nzi': 'Nzima',
+			'oji': 'Ojibwa',
+			'lan': 'Okzitanisch (nach 1500), Provencal (alter Sprachcode)', // deprecated
+			'oci': 'Okzitanisch (nach 1500), Provencal',
+			'kru': 'Oraon (=Kurukh)',
+			'ori': 'Oriya',
+			'gal': 'Oromo, Galla (alter Sprachcode)', // deprecated
+			'orm': 'Oromo, Galla',
+			'osa': 'Osage',
+			'oss': 'Ossetisch',
+			'rap': 'Osterinsel',
+			'oto': 'Otomangue-Sprachen',
+			'ota': 'Ottomanisch, (=Osmanisch =Türkisch) (1500-1928)',
+			'pau': 'Palau',
+			'pli': 'Pali',
+			'pam': 'Pampanggan',
+			'pan': 'Pandschabi',
+			'pag': 'Pangasinan',
+			'fan': 'Pangwe',
+			'pap': 'Papiamento',
+			'paa': 'Papuasprachen (andere)',
+			'per': 'Persisch (=Farsi)',
+			'phi': 'Philippinen-Austronesisch (andere)',
+			'phn': 'Phönikisch',
+			'pol': 'Polnisch',
+			'pon': 'Ponapeanisch',
+			'por': 'Portugiesisch',
+			'pra': 'Prakrit',
+			'roh': 'Rätoromanisch',
+			'raj': 'Rajasthani',
+			'rar': 'Rarotonganisch',
+			'roa': 'Romanische Sprachen (andere)',
+			'loz': 'Rotse',
+			'rum': 'Rumänisch',
+			'run': 'Rundi',
+			'rys': 'Rusinisch',
+			'rus': 'Russisch',
+			'kin': 'Rwanda',
+			'lap': 'Sami, Lappisch (alter Sprachcode)', // deprecated
+			'smi': 'Sami, Lappisch',
+			'kho': 'Sakisch',
+			'sal': 'Salish',
+			'sam': 'Samaritanisch',
+			'sme': 'Sami (Nord)',
+			'sma': 'Sami (Süd)',
+			'sao': 'Samoisch (alter Sprachcode)', // deprecated
+			'smo': 'Samoisch',
+			'sad': 'Sandawe',
+			'sag': 'Sango',
+			'san': 'Sanskrit',
+			'sat': 'Santali',
+			'srd': 'Sardisch',
+			'sas': 'Sassak (=Sasak)',
+			'shn': 'Schan',
+			'sho': 'Shona (alter Sprachcode)', // deprecated
+			'sna': 'Shona',
+			'sco': 'Schottisch',
+			'swe': 'Schwedisch',
+			'sel': 'Selkupisch',
+			'sem': 'Semitische Sprachen (andere)',
+			'scc': 'Serbisch (alter Sprachcode)', // deprecated
+			'srp': 'Serbisch',
+			'scr': 'Serbokroatisch (alter Sprachcode)', // deprecated
+			'hrv': 'Kroatisch',
+			'srr': 'Serer',
+			'iii': 'Sichuan Yi',
+			'sid': 'Sidamo',
+			'snd': 'Sindhi',
+			'snh': 'Singhalesisch (alter Sprachcode)', // deprecated
+			'sin': 'Singhalesisch',
+			'sit': 'Sinotibetische Sprachen (andere)',
+			'sio': 'Sioux-Sprachen',
+			'sms': 'Skolt Sami',
+			'den': 'Slave (Athapaskische Sprachen)',
+			'sla': 'Slawische Sprachen (andere)',
+			'slo': 'Slowakisch',
+			'slv': 'Slowenisch',
+			'sog': 'Sogdisch',
+			'som': 'Somali',
+			'son': 'Songhai',
+			'snk': 'Soninke',
+			'wen': 'Sorbisch',
+			'nso': 'Sotho (Nord), Pedi',
+			'sot': 'Sotho (Süd)',
+			'sso': 'Sotho (alter Sprachcode)', // deprecated
+			'spa': 'Spanisch, Kastilianisch',
+			'swa': 'Suaheli (=Swaheli)',
+			'suk': 'Sukuma',
+			'sux': 'Sumerisch',
+			'sun': 'Sundanesisch',
+			'sus': 'Susu',
+			'swz': 'Swazi (alter Sprachcode)', // deprecated
+			'ssw': 'Swazi',
+			'syr': 'Syrisch',
+			'taj': 'Tadschikisch (alter Sprachcode)', // deprecated
+			'tgk': 'Tadschikisch',
+			'tag': 'Tagalog (alter Sprachcode)', // deprecated
+			'tgl': 'Tagalog',
+			'tah': 'Tahitisch',
+			'tmh': 'Tamaseq',
+			'tam': 'Tamil',
+			'tar': 'Tatarisch (alter Sprachcode)', // deprecated
+			'tat': 'Tatarisch',
+			'tel': 'Telugu',
+			'tem': 'Temne',
+			'ter': 'Tereno',
+			'tet': 'Tetum',
+			'tha': 'Thailändisch',
+			'tai': 'Thaisprachen (andere)',
+			'tib': 'Tibetisch',
+			'tig': 'Tigre',
+			'tir': 'Tigrinja',
+			'tiv': 'Tiv',
+			'tli': 'Tlingit',
+			'tkl': 'Tokelauanisch',
+			'ton': 'Tonga (Tonga Islands)',
+			'tog': 'Tonga, Bantus, Malawi',
+			'chk': 'Trukesisch',
+			'chg': 'Tschagataisch',
+			'cze': 'Tschechisch',
+			'chm': 'Tscheremissisch, Mari',
+			'qce': 'Tscherkessisch ',
+			'che': 'Tschetschenisch',
+			'qtc': 'Tschukktschisch',
+			'chv': 'Tschuwaschisch',
+			'tsi': 'Tsimshian',
+			'tso': 'Tsonga (Tsonga)',
+			'tsw': 'Tswana (alter Sprachcode)', // deprecated
+			'tsn': 'Tswana',
+			'tur': 'Türkisch',
+			'tum': 'Tumbuka',
+			'tup': 'Tupi',
+			'tuk': 'Turkmenisch',
+			'tyv': 'Tuwinisch',
+			'twi': 'Twi',
+			'udm': 'Udmurt',
+			'uga': 'Ugaritisch',
+			'uig': 'Uigurisch',
+			'ukr': 'Ukrainisch',
+			'und': 'Unbestimmbare Sprachen',
+			'hun': 'Ungarisch',
+			'urd': 'Urdu',
+			'uzb': 'Usbekisch',
+			'vai': 'Vai',
+			'ven': 'Venda',
+			'mis': 'verschiedene Sprachen',
+			'vie': 'Vietnamesisch',
+			'vol': 'Volapük',
+			'wak': 'Wakash-Sprachen',
+			'wal': 'Walamo',
+			'wel': 'Walisisch',
+			'wln': 'Wallonisch',
+			'war': 'Waray',
+			'was': 'Washo',
+			'bel': 'Weißrussisch',
+			'qqg': 'Wogulisch, Mansi',
+			'wol': 'Wolof',
+			'vot': 'Wotisch',
+			'xho': 'Xhosa',
+			'yao': 'Yao (=Mien=Man)',
+			'yap': 'Yapesisch',
+			'yor': 'Yoruba (=Joruba)',
+			'ypk': 'Yupik',
+			'znd': 'Zande',
+			'zap': 'Zapoteca',
+			'zza': 'Zaza',
+			'sgn': 'Zeichensprachen',
+			'zen': 'Zenaga',
+			'zha': 'Zhuang',
+			'rom': 'Zigeunersprache, Romani',
+			'zul': 'Zulu',
+			'zun': 'Zuni',
+			'zzz': 'unbekannt'
+		},
+
+		'en': {
+			'ace': 'Achinese',
+			'ach': 'Acoli',
+			'ada': 'Adangme',
+			'ady': 'Adygei',
+			'aar': 'Afar',
+			'afh': 'Afrihili (Artificial language)',
+			'afr': 'Afrikaans',
+			'afa': 'Afroasiatic (Other)',
+			'aka': 'Akan',
+			'akk': 'Akkadian',
+			'alb': 'Albanian',
+			'ale': 'Aleut',
+			'alg': 'Algonquian (Other)',
+			'tut': 'Altaic (Other)',
+			'amh': 'Amharic',
+			'apa': 'Apache languages',
+			'ara': 'Arabic',
+			'arg': 'Aragonese Spanish',
+			'arc': 'Aramaic',
+			'arp': 'Arapaho',
+			'arw': 'Arawak',
+			'arm': 'Armenian',
+			'art': 'Artificial (Other)',
+			'asm': 'Assamese',
+			'ath': 'Athapascan (Other)',
+			'aus': 'Australian languages',
+			'map': 'Austronesian (Other)',
+			'ava': 'Avaric',
+			'ave': 'Avestan',
+			'awa': 'Awadhi',
+			'aym': 'Aymara',
+			'aze': 'Azerbaijani',
+			'ast': 'Bable',
+			'ban': 'Balinese',
+			'bat': 'Baltic (Other)',
+			'bal': 'Baluchi',
+			'bam': 'Bambara',
+			'bai': 'Bamileke languages',
+			'bad': 'Banda',
+			'bnt': 'Bantu (Other)',
+			'bas': 'Basa',
+			'bak': 'Bashkir',
+			'baq': 'Basque',
+			'btk': 'Batak',
+			'bej': 'Beja',
+			'bel': 'Belarusian',
+			'bem': 'Bemba',
+			'ben': 'Bengali',
+			'ber': 'Berber (Other)',
+			'bho': 'Bhojpuri',
+			'bih': 'Bihari',
+			'bik': 'Bikol',
+			'bis': 'Bislama',
+			'bos': 'Bosnian',
+			'bra': 'Braj',
+			'bre': 'Breton',
+			'bug': 'Bugis',
+			'bul': 'Bulgarian',
+			'bua': 'Buriat',
+			'bur': 'Burmese',
+			'cad': 'Caddo',
+			'car': 'Carib',
+			'cat': 'Catalan',
+			'cau': 'Caucasian (Other)',
+			'ceb': 'Cebuano',
+			'cel': 'Celtic (Other)',
+			'cai': 'Central American Indian (Other)',
+			'chg': 'Chagatai',
+			'cmc': 'Chamic languages',
+			'cha': 'Chamorro',
+			'che': 'Chechen',
+			'chr': 'Cherokee',
+			'chy': 'Cheyenne',
+			'chb': 'Chibcha',
+			'chi': 'Chinese',
+			'chn': 'Chinook jargon',
+			'chp': 'Chipewyan',
+			'cho': 'Choctaw',
+			'chu': 'Church Slavic',
+			'chv': 'Chuvash',
+			'cop': 'Coptic',
+			'cor': 'Cornish',
+			'cos': 'Corsican',
+			'cre': 'Cree',
+			'mus': 'Creek',
+			'crp': 'Creoles and Pidgins (Other)',
+			'cpe': 'Creoles and Pidgins, English-based (Other)',
+			'cpf': 'Creoles and Pidgins, French-based (Other)',
+			'cpp': 'Creoles and Pidgins, Portuguese-based (Other)',
+			'crh': 'Crimean Tatar',
+			'hrv': 'Croatian',
+			'cus': 'Cushitic (Other)',
+			'cze': 'Czech',
+			'dak': 'Dakota',
+			'dan': 'Danish',
+			'dar': 'Dargwa',
+			'day': 'Dayak',
+			'del': 'Delaware',
+			'din': 'Dinka',
+			'div': 'Divehi',
+			'doi': 'Dogri',
+			'dgr': 'Dogrib',
+			'dra': 'Dravidian (Other)',
+			'dua': 'Duala',
+			'dut': 'Dutch',
+			'dum': 'Dutch, Middle (ca. 1050-1350)',
+			'dyu': 'Dyula',
+			'dzo': 'Dzongkha',
+			'bin': 'Edo',
+			'efi': 'Efik',
+			'egy': 'Egyptian',
+			'eka': 'Ekajuk',
+			'elx': 'Elamite',
+			'eng': 'English',
+			'enm': 'English, Middle (1100-1500)',
+			'ang': 'English, Old (ca. 450-1100)',
+			'esp': 'Esperanto (old language code)', // deprecated
+			'epo': 'Esperanto',
+			'est': 'Estonian',
+			'eth': 'Ethiopic (old language code)', // deprecated
+			'gez': 'Ethiopic',
+			'ewe': 'Ewe',
+			'ewo': 'Ewondo',
+			'fan': 'Fang',
+			'fat': 'Fanti',
+			'far': 'Faroese (old language code)', // deprecated
+			'fao': 'Faroese',
+			'fij': 'Fijian',
+			'fin': 'Finnish',
+			'fiu': 'Finno-Ugrian (Other)',
+			'fon': 'Fon',
+			'fre': 'French',
+			'frm': 'French, Middle (ca. 1400-1600)',
+			'fro': 'French, Old (ca. 842-1400)',
+			'fri': 'Frisian', // deprecated
+			'frr': 'North Frisian',
+			'frs': 'East Frisian',
+			'fur': 'Friulian',
+			'ful': 'Fula',
+			'gag': 'Galician (old language code)', // deprecated
+			'glg': 'Galician',
+			'lug': 'Ganda',
+			'gay': 'Gayo',
+			'gba': 'Gbaya',
+			'geo': 'Georgian',
+			'ger': 'German',
+			'gmh': 'German, Middle High (ca. 1050-1500)',
+			'goh': 'German, Old High (ca. 750-1050)',
+			'gem': 'Germanic (Other)',
+			'gil': 'Gilbertese',
+			'gon': 'Gondi',
+			'gor': 'Gorontalo',
+			'got': 'Gothic',
+			'grb': 'Grebo',
+			'grc': 'Greek, Ancient (to 1453)',
+			'gre': 'Greek',
+			'grn': 'Guaraní',
+			'guj': 'Gujarati',
+			'gwi': 'Gwich’in',
+			'gaa': 'Gã',
+			'hai': 'Haida',
+			'hat': 'Haitian French Creole',
+			'hau': 'Hausa',
+			'haw': 'Hawaiian',
+			'heb': 'Hebrew',
+			'her': 'Herero',
+			'hil': 'Hiligaynon',
+			'him': 'Himachali',
+			'hin': 'Hindi',
+			'hmo': 'Hiri Motu',
+			'hit': 'Hittite',
+			'hmn': 'Hmong',
+			'hun': 'Hungarian',
+			'hup': 'Hupa',
+			'iba': 'Iban',
+			'ice': 'Icelandic',
+			'ido': 'Ido',
+			'ibo': 'Igbo',
+			'ijo': 'Ijo',
+			'ilo': 'Iloko',
+			'smn': 'Inari Sami',
+			'inc': 'Indic (Other)',
+			'ine': 'Indo-European (Other)',
+			'ind': 'Indonesian',
+			'inh': 'Ingush',
+			'ina': 'Interlingua (International Auxiliary Language Association)',
+			'ile': 'Interlingue',
+			'iku': 'Inuktitut',
+			'ipk': 'Inupiaq',
+			'ira': 'Iranian (Other)',
+			'iri': 'Irish (old language code)', // deprecated
+			'gle': 'Irish',
+			'mga': 'Irish, Middle (ca. 1100-1550)',
+			'sga': 'Irish, Old (to 1100)',
+			'iro': 'Iroquoian (Other)',
+			'ita': 'Italian',
+			'jpn': 'Japanese',
+			'jav': 'Javanese',
+			'jrb': 'Judeo-Arabic',
+			'jpr': 'Judeo-Persian',
+			'kbd': 'Kabardian',
+			'kab': 'Kabyle',
+			'kac': 'Kachin',
+			'xal': 'Kalmyk',
+			'esk': 'Eskimo', // deprecated
+			'kal': 'Kalâtdlisut',
+			'kam': 'Kamba',
+			'kan': 'Kannada',
+			'kau': 'Kanuri',
+			'kaa': 'Kara-Kalpak',
+			'kar': 'Karen',
+			'kas': 'Kashmiri',
+			'kaw': 'Kawi',
+			'kaz': 'Kazakh',
+			'kha': 'Khasi',
+			'cam': 'Khmer (old code)', // deprecated
+			'khm': 'Khmer',
+			'khi': 'Khoisan (Other)',
+			'kho': 'Khotanese',
+			'kik': 'Kikuyu',
+			'kmb': 'Kimbundu',
+			'kin': 'Kinyarwanda',
+			'kom': 'Komi',
+			'kon': 'Kongo',
+			'kok': 'Konkani',
+			'kor': 'Korean',
+			'kpe': 'Kpelle',
+			'kro': 'Kru',
+			'kua': 'Kuanyama',
+			'kum': 'Kumyk',
+			'kur': 'Kurdish',
+			'kru': 'Kurukh',
+			'kos': 'Kusaie',
+			'kut': 'Kutenai',
+			'kir': 'Kyrgyz',
+			'lad': 'Ladino',
+			'lah': 'Lahnda',
+			'lam': 'Lamba',
+			'lao': 'Lao',
+			'lat': 'Latin',
+			'lav': 'Latvian',
+			'ltz': 'Letzeburgesch',
+			'lez': 'Lezgian',
+			'lim': 'Limburgish',
+			'lin': 'Lingala',
+			'lit': 'Lithuanian',
+			'nds': 'Low German',
+			'loz': 'Lozi',
+			'lub': 'Luba-Katanga',
+			'lua': 'Luba-Lulua',
+			'lui': 'Luiseño',
+			'smj': 'Lule Sami',
+			'lun': 'Lunda',
+			'luo': 'Luo (Kenya and Tanzania)',
+			'lus': 'Lushai',
+			'mac': 'Macedonian',
+			'mad': 'Madurese',
+			'mag': 'Magahi',
+			'mai': 'Maithili',
+			'mak': 'Makasar',
+			'mlg': 'Malagasy',
+			'may': 'Malay',
+			'mal': 'Malayalam',
+			'mlt': 'Maltese',
+			'mnc': 'Manchu',
+			'mdr': 'Mandar',
+			'man': 'Mandingo',
+			'mni': 'Manipuri',
+			'mno': 'Manobo languages',
+			'max': 'Manx (old language code)', // deprecated
+			'glv': 'Manx',
+			'mao': 'Maori',
+			'arn': 'Mapuche',
+			'mar': 'Marathi',
+			'chm': 'Mari',
+			'mah': 'Marshallese',
+			'mwr': 'Marwari',
+			'mas': 'Masai',
+			'myn': 'Mayan languages',
+			'men': 'Mende',
+			'mic': 'Micmac',
+			'min': 'Minangkabau',
+			'mis': 'Miscellaneous languages',
+			'moh': 'Mohawk',
+			'mol': 'Moldavian',
+			'mkh': 'Mon-Khmer (Other)',
+			'lol': 'Mongo-Nkundu',
+			'mon': 'Mongolian',
+			'mos': 'Mooré',
+			'mul': 'Multiple languages',
+			'mun': 'Munda (Other)',
+			'nqo': 'N’Ko',
+			'nah': 'Nahuatl',
+			'nau': 'Nauru',
+			'nav': 'Navajo',
+			'nbl': 'Ndebele (South Africa)',
+			'nde': 'Ndebele (Zimbabwe)',
+			'ndo': 'Ndonga',
+			'nap': 'Neapolitan Italian',
+			'nep': 'Nepali',
+			'new': 'Newari',
+			'nia': 'Nias',
+			'nic': 'Niger-Kordofanian (Other)',
+			'ssa': 'Nilo-Saharan (Other)',
+			'niu': 'Niuean',
+			'nog': 'Nogai',
+			'nai': 'North American Indian (Other)',
+			'sme': 'Northern Sami',
+			'nso': 'Northern Sotho',
+			'nor': 'Norwegian',
+			'nob': 'Norwegian (Bokmål)',
+			'nno': 'Norwegian (Nynorsk)',
+			'nub': 'Nubian languages',
+			'nym': 'Nyamwezi',
+			'nya': 'Nyanja',
+			'nyn': 'Nyankole',
+			'nyo': 'Nyoro',
+			'nzi': 'Nzima',
+			'lan': 'Occitan (post-1500, old language code)', // deprecated
+			'oci': 'Occitan (post-1500)',
+			'oji': 'Ojibwa',
+			'non': 'Old Norse',
+			'peo': 'Old Persian (ca. 600-400 B.C.)',
+			'ori': 'Oriya',
+			'gal': 'Oromo (old language code)', // deprecated
+			'orm': 'Oromo',
+			'osa': 'Osage',
+			'oss': 'Ossetic',
+			'oto': 'Otomian languages',
+			'pal': 'Pahlavi',
+			'pau': 'Palauan',
+			'pli': 'Pali',
+			'pam': 'Pampanga',
+			'pag': 'Pangasinan',
+			'pan': 'Panjabi',
+			'pap': 'Papiamento',
+			'paa': 'Papuan (Other)',
+			'per': 'Persian',
+			'phi': 'Philippine (Other)',
+			'phn': 'Phoenician',
+			'pol': 'Polish',
+			'pon': 'Ponape',
+			'por': 'Portuguese',
+			'pra': 'Prakrit languages',
+			'pro': 'Provençal (to 1500)',
+			'pus': 'Pushto',
+			'que': 'Quechua',
+			'roh': 'Raeto-Romance',
+			'raj': 'Rajasthani',
+			'rap': 'Rapanui',
+			'rar': 'Rarotongan',
+			'roa': 'Romance (Other)',
+			'rom': 'Romani',
+			'rum': 'Romanian',
+			'run': 'Rundi',
+			'rus': 'Russian',
+			'sal': 'Salishan languages',
+			'sam': 'Samaritan Aramaic',
+			'lap': 'Sami (old language code)', // deprecated
+			'smi': 'Sami',
+			'smo': 'Samoan',
+			'sad': 'Sandawe',
+			'sag': 'Sango (Ubangi Creole)',
+			'san': 'Sanskrit',
+			'sat': 'Santali',
+			'srd': 'Sardinian',
+			'sas': 'Sasak',
+			'sco': 'Scots',
+			'gae': 'Scottish Gaelic (old language code)', // deprecated
+			'gla': 'Scottish Gaelic',
+			'sel': 'Selkup',
+			'sem': 'Semitic (Other)',
+			'scc': 'Serbian (old language code)', // deprecated
+			'scr': 'Serbocroatian (old language code)', // deprecated
+			'srp': 'Serbian',
+			'srr': 'Serer',
+			'shn': 'Shan',
+			'sho': 'Shona (old language code)', // deprecated
+			'sna': 'Shona',
+			'iii': 'Sichuan Yi',
+			'sid': 'Sidamo',
+			'sgn': 'Sign languages',
+			'bla': 'Siksika',
+			'snd': 'Sindhi',
+			'snh': 'Sinhalese (old language code)', // deprecated
+			'sin': 'Sinhalese',
+			'sit': 'Sino-Tibetan (Other)',
+			'sio': 'Siouan (Other)',
+			'sms': 'Skolt Sami',
+			'den': 'Slave',
+			'sla': 'Slavic (Other)',
+			'slo': 'Slovak',
+			'slv': 'Slovenian',
+			'sog': 'Sogdian',
+			'som': 'Somali',
+			'son': 'Songhai',
+			'snk': 'Soninke',
+			'wen': 'Sorbian languages',
+			'sso': 'Sotho (old language code)', // deprecated
+			'sot': 'Sotho',
+			'sai': 'South American Indian (Other)',
+			'sma': 'Southern Sami',
+			'spa': 'Spanish',
+			'suk': 'Sukuma',
+			'sux': 'Sumerian',
+			'sun': 'Sundanese',
+			'sus': 'Susu',
+			'swa': 'Swahili',
+			'swz': 'Swazi (old language code)', // deprecated
+			'ssw': 'Swazi',
+			'swe': 'Swedish',
+			'syr': 'Syriac',
+			'tag': 'Tagalog (old language code)', // deprecated
+			'tgl': 'Tagalog',
+			'tah': 'Tahitian',
+			'tai': 'Tai (Other)',
+			'taj': 'Tajik (old language code)', // deprecated
+			'tgk': 'Tajik',
+			'tmh': 'Tamashek',
+			'tam': 'Tamil',
+			'tar': 'Tatar (old language code)', // deprecated
+			'tat': 'Tatar',
+			'tel': 'Telugu',
+			'tem': 'Temne',
+			'ter': 'Terena',
+			'tet': 'Tetum',
+			'tha': 'Thai',
+			'tib': 'Tibetan',
+			'tig': 'Tigré',
+			'tir': 'Tigrinya',
+			'tiv': 'Tiv',
+			'tli': 'Tlingit',
+			'tpi': 'Tok Pisin',
+			'tkl': 'Tokelauan',
+			'tog': 'Tonga (Nyasa)',
+			'ton': 'Tongan',
+			'chk': 'Truk',
+			'tsi': 'Tsimshian',
+			'tso': 'Tsonga',
+			'tsw': 'Tswana (old language code)', // deprecated
+			'tsn': 'Tswana',
+			'tum': 'Tumbuka',
+			'tup': 'Tupi languages',
+			'tur': 'Turkish',
+			'ota': 'Turkish, Ottoman',
+			'tuk': 'Turkmen',
+			'tvl': 'Tuvaluan',
+			'tyv': 'Tuvinian',
+			'twi': 'Twi',
+			'udm': 'Udmurt',
+			'uga': 'Ugaritic',
+			'uig': 'Uighur',
+			'ukr': 'Ukrainian',
+			'umb': 'Umbundu',
+			'und': 'Undetermined',
+			'urd': 'Urdu',
+			'uzb': 'Uzbek',
+			'vai': 'Vai',
+			'ven': 'Venda',
+			'vie': 'Vietnamese',
+			'vol': 'Volapük',
+			'vot': 'Votic',
+			'wak': 'Wakashan languages',
+			'wal': 'Walamo',
+			'wln': 'Walloon',
+			'war': 'Waray',
+			'was': 'Washo',
+			'wel': 'Welsh',
+			'wol': 'Wolof',
+			'xho': 'Xhosa',
+			'sah': 'Yakut',
+			'yao': 'Yao (Africa)',
+			'yap': 'Yapese',
+			'yid': 'Yiddish',
+			'yor': 'Yoruba',
+			'ypk': 'Yupik languages',
+			'znd': 'Zande',
+			'zap': 'Zapotec',
+			'zza': 'Zaza',
+			'zen': 'Zenaga',
+			'zha': 'Zhuang',
+			'zul': 'Zulu',
+			'zun': 'Zuni',
+			'zzz': 'unknown'
+		}
+	},
+
+	/*	Localised media type names.
+	*/
+	mediaTypeNames: {
+		'de': {
+			'article': 'Aufsatz',
+			'audio-visual': 'Film',
+			'book': 'Buch',
+			'electronic': 'Datei',
+			'letter': 'Brief',
+			'journal': 'Zeitschrift',
+			'map': 'Karte',
+			'microform': 'Mikroform',
+			'multivolume': 'Mehrere Bände',
+			'music-score': 'Noten',
+			'manuscript': 'Manuskript',
+			'other': 'Andere',
+			'recording': 'Tonaufnahme',
+			'website': 'Website',
+			'multiple': 'Verschiedene Medien',
+			'image': 'Bild'
+		},
+
+		'en': {
+			'article': 'Article',
+			'audio-visual': 'Film',
+			'book': 'Book',
+			'electronic': 'Computer file',
+			'journal': 'Journal',
+			'map': 'Map',
+			'microform': 'Microform',
+			'music-score': 'Music score',
+			'manuscript': 'Manuscript',
+			'multivolume': 'Multiple volumes',
+			'other': 'Other',
+			'recording': 'Recording',
+			'website': 'Website',
+			'multiple': 'Mixed media types',
+			'image': 'Image'
+		}
+	},
+
+	/* Localised source type names (for faceting Guide Records).
+	*/
+	sourceTypeNames: {
+		'de': {
+			'sf': 'Hochschul- und Forschungsinstitute',
+			'so1': 'Fachgesellschaften',
+			'so2': 'Landesdienste',
+			'sc': 'Kommerzielle Anbieter',
+			'per': 'Personen',
+			'ref': 'Nachschlagewerke',
+			'dat': 'Daten und Quellen',
+			'man': 'Anleitungen, Lehrmaterialien',
+			'fp': 'Forschungsprojekte',
+			'kn': 'Kongresse',
+			'web': 'Webverzeichnisse',
+			'bl': 'Bibliographien',
+			'lib': 'Bibliotheken, Archive, Kataloge',
+			'img': 'Bildersammlungen, Filme',
+			'mus': 'Museen, Ausstellungen',
+			'do': 'Software',
+			'ka': 'Karten und Atlanten',
+			'vc': 'Listen',
+			'art': 'Zeitschriften und Artikel'
+		},
+
+		'en': {
+			'sf': 'Academic and Research Institutions',
+			'so1': 'Scholarly Organizations',
+			'so2': 'Official Governmental Servers',
+			'sc': 'Commercial Providers',
+			'per': 'Persons',
+			'ref': 'Reference Works',
+			'dat': 'Data and Sources',
+			'man': 'Manuals, Teaching Materials',
+			'fp': 'Current Research Projects',
+			'kn': 'Congresses',
+			'web': 'Web Directories',
+			'bl': 'Bibliographies',
+			'lib': 'Libraries, Archives, Catalogs',
+			'img': 'Collections of pictures, videos',
+			'mus': 'Museums, Exhibitions',
+			'do': 'Software ',
+			'ka': 'Maps and Atlases',
+			'vc': 'Lists',
+			'art': 'Journals and Articles'
+		}
+	},
+
+	/*	Localised catalogue names.
+	*/
+	catalogueNames: {
+		'de': {
+			'OLC Mathematik': 'Artikel'
+		},
+
+		'en': {
+			'Geschichte Aufsätze': 'Essays: History',
+			'Anglistik Aufsätze': 'Essays: Literature',
+			'Alte Karten': 'Old Maps',
+			'OLC Mathematik': 'Articles',
+			'Dissertationen': 'Dissertations',
+			'Jahrbuch-Datenbank': 'Jahrbuch-Database',
+			'SUB Onlineressourcen': 'SUB Online Resources'
+		}
+	},
+
+	/*	Localised Link Descriptions
+		For link terminology found in:
+		* GVK Catalogue records
+		* Repository stylesheets
+	*/
+	linkDescriptions: {
+		'de': {
+			'Book review (H-Net)': 'Rezension',
+			'Buchrezension (H-Soz-u-Kult)': 'Rezension',
+			'Contributor biographical information': 'Biographische Informationen',
+			'Deutschlandweit zugänglich': 'deutschlandweit zugänglich',
+			'Document': 'Volltext',
+			'Gesamtes Dokument': 'Volltext',
+			'Inhaltsverzeichnis': 'Inhaltsverzeichnis',
+			'kostenfrei': 'kostenfrei',
+			'Leseprobe': 'Leseprobe',
+			'Link': 'Link',
+			'Publisher Description': 'Verlagsbeschreibung',
+			'Repository': 'Repository',
+			'Rezension': 'Rezension',
+			'Table of Contents': 'Inhaltsverzeichnis',
+			'Table of contents': 'Inhaltsverzeichnis',
+			'Table of contents only': 'Inhaltsverzeichnis',
+			'TOC': 'Inhaltsverzeichnis',
+			'Volltext': 'Volltext'
+		},
+
+		'en': {
+			'Book review (H-Net)': 'Review',
+			'Buchrezension (H-Soz-u-Kult)': 'Review',
+			'Contributor biographical information': 'Biographical Information',
+			'Deutschlandweit zugänglich': 'accessible in Germany',
+			'Document': 'Full Text',
+			'Gesamtes Dokument': 'Full Text',
+			'Inhaltsverzeichnis': 'Table of Contents',
+			'kostenfrei': 'free',
+			'Leseprobe': 'Excerpt',
+			'Link': 'Link',
+			'Publisher Description': 'Publisher Description',
+			'Repository': 'Repository',
+			'Rezension': 'Review',
+			'Table of Contents': 'Table of Contents',
+			'Table of contents': 'Table of Contents',
+			'Table of contents only': 'Table of Contents',
+			'TOC': 'Table of Contents',
+			'Volltext': 'Full text'
+		}
+	},
+
+	/*	Localised user interface strings.
+	*/
+	general: {
+		'de': {
+			// Facets
+			'gefiltert': 'gefiltert',
+			'Filter aufheben': 'Filter aufheben',
+			'Filter # aufheben': 'Filter # aufheben',
+			'Facetten': 'Facetten',
+			'facet-title-xtargets': 'Kataloge',
+			'facet-title-medium': 'Art',
+			'facet-title-author': 'Autoren',
+			'facet-title-language': 'Sprache',
+			'facet-title-country': 'Land',
+			'facet-title-source-type': 'Quellenart',
+			'facet-title-subject': 'Themengebiete',
+			'facet-title-filterDate': 'Jahre',
+			'# weitere anzeigen': '# weitere anzeigen',
+			// Detail display
+			'Im Katalog ansehen': 'Im Katalog ansehen.',
+			'enthaltendes Werk im Katalog ansehen': 'Alle zugehörigen Publikationen im Katalog ansehen.',
+			'enthaltendes Werk': 'zugehörige Publikationen',
+			'detail-label-title': 'Titel',
+			'detail-label-author': 'Autor',
+			'detail-label-author-plural': 'Autoren',
+			'detail-label-author-clean': 'Autor',
+			'detail-label-author-clean-plural': 'Autoren',
+			'detail-label-other-person': 'Person',
+			'detail-label-other-person-plural': 'Personen',
+			'detail-label-other-person-clean': 'Person',
+			'detail-label-other-person-clean-plural': 'Personen',
+			'detail-label-medium': 'Art',
+			'detail-label-description': 'Information',
+			'detail-label-description-plural': 'Informationen',
+			'detail-label-abstract': 'Abstract',
+			'detail-label-series-title': 'Reihe',
+			'detail-label-issn': 'ISSN',
+			'detail-label-acronym-issn': 'Internationale Standardseriennummer',
+			'detail-label-isbn-minimal': 'ISBN',
+			'detail-label-acronym-isbn-minimal': 'Internationale Standardbuchnummer',
+			'detail-label-doi': 'DOI',
+			'detail-label-acronym-doi': 'Document Object Identifier: Mit dem Link zu dieser Nummer kann das Dokument im Netz gefunden werden.',
+			'detail-label-doi-plural': 'DOIs',
+			'detail-label-keyword': 'Schlagwort',
+			'detail-label-keyword-plural': 'Schlagwörter',
+			'detail-label-classification-msc': 'MSC',
+			'detail-label-acronym-classification-msc': 'Mathematics Subject Classification',
+			'detail-label-map': 'Ort',
+			'detail-label-mapscale': 'Maßstab',
+			'detail-label-creator': 'erfasst von',
+			'detail-label-verfügbarkeit': 'Verfügbarkeit',
+			'elektronisch': 'digital',
+			'gedruckt': 'gedruckt',
+			'gemäß': 'gemäß',
+			'nach Schlagwort "#" suchen': 'nach Schlagwort \u201e#\u201c suchen',
+			'Ausgabe': 'Ausgabe',
+			/* Google Books status Strings from
+				http://code.google.com/intl/de-DE/apis/books/examples/translated-branding-elements.html	*/
+			'Google Books: Vollständige Ansicht': 'Google Books: Vollständige Ansicht',
+			'Google Books: Eingeschränkte Vorschau': 'Google Books: Eingeschränkte Vorschau',
+			'Vorschau schließen': 'Vorschau schließen',
+			'Umschlagbild': 'Umschlagbild',
+			// Download/Extra Links
+			'mehr Links': 'mehr Links',
+			'download-label-format-simple': 'Bibliographische Daten für diesen Treffer als * laden',
+			'download-label-format-all': 'Alle Ausgaben als * laden',
+			'download-label-submenu-format': 'Einzelne als * laden',
+			'download-label-submenu-index-format': 'Ausgabe *',
+			'download-label-ris': 'RIS',
+			'download-label-bibtex': 'BibTeX',
+			'KVK': 'deutschlandweit suchen',
+			'deutschlandweit im KVK suchen': 'Suche in deutschen Verbundkatalogen (KVK)',
+			'&lang=de': '&lang=de',
+			// Short Display
+			'von': 'von',
+			'In': 'In',
+			'et al.': 'et al.',
+			// General Information
+			'Suche...': 'Suche\u2026',
+			'keine Suchabfrage': 'keine Suchabfrage',
+			'Suche momentan nicht verfügbar.': 'Suche momentan nicht verfügbar.',
+			'keine Treffer gefunden': 'keine Treffer',
+			'+': '+',
+			'Es können nicht alle # Treffer geladen werden.': '+: Es können nicht alle # Treffer geladen werden. Bitte verwenden Sie einen spezifischeren Suchbegriff, um die Trefferzahl zu reduzieren.',
+			'...': '\u2026',
+			'Error indicator': '\u2022',
+			'Bei der Übertragung von Daten aus # der abgefragten Kataloge ist ein Fehler aufgetreten.': '\u2022: Bei der Übertragung von Daten aus # der abgefragten Kataloge ist ein Fehler aufgetreten.',
+			'In diesem Katalog gibt es noch # weitere Treffer.': 'In diesem Katalog gibt es noch # weitere Treffer, die wir nicht herunterladen und hier anzeigen können. Bitte verwenden Sie einen spezifischeren Suchbegriff, um die Trefferzahl zu reduzieren. Oder suchen Sie direkt im Katalog.',
+			'Nicht alle Datenbanken verfügbar.': 'Von Ihrem aktuellen Internetzugang haben sie nicht Zugriff auf alle Datenbanken.\nBei Zugriff aus einem deutschen Universitätsnetzwerk umfaßt Ihre Abfrage zusätzliche Datenbanken.',
+			'Zugang über:': 'Zugang über:',
+			'Gastzugang': 'Gastzugang',
+			// Pager
+			'Vorige Trefferseite anzeigen': 'Vorige Trefferseite anzeigen',
+			'Nächste Trefferseite anzeigen': 'Nächste Trefferseite anzeigen',
+			// Histogram Tooltip
+			'Treffer': 'Treffer',
+			// ZDB-JOP status labels
+			'frei verfügbar': 'frei verfügbar',
+			'teilweise frei verfügbar': 'teilweise frei verfügbar',
+			'verfügbar': 'verfügbar',
+			'teilweise verfügbar': 'teilweise verfügbar',
+			'nicht verfügbar': 'nicht verfügbar',
+			'diese Ausgabe nicht verfügbar': 'diese Ausgabe nicht verfügbar',
+			'Informationen bei der Zeitschriftendatenbank': 'Verfügbarkeitsinformationen bei der Zeitschriftendatenbank ansehen',
+			'[neuere Bände im Lesesaal 2]': '[neuere Bände im Lesesaal 2]',
+			// Link tooltip
+			'Erscheint in separatem Fenster.': 'Erscheint in separatem Fenster.',
+			// Search Form
+			'erweiterte Suche': 'erweiterte Suche',
+			'einfache Suche': 'einfache Suche',
+			// Status display
+			'Übertragungsstatus': 'Übertragungsstatus',
+			'[ausblenden]': '[ausblenden]',
+			'Status:': 'Status:',
+			'Aktive Abfragen:': 'Aktive Abfragen:',
+			'Geladene Datensätze:': 'Geladene Datensätze:',
+			'Datenbank': 'Datenbank',
+			'Code': 'Statuscode',
+			'Status': 'Status',
+			'Geladen': 'Geladen',
+			'Client_Working': 'arbeitet',
+			'Client_Idle': 'fertig',
+			'Client_Error': 'Fehler',
+			'Client_Disconnected': 'Verbindungsabbruch'
+		},
+
+		'en': {
+			// Facets
+			'gefiltert': 'filtered',
+			'Filter aufheben': 'Remove filter',
+			'Filter # aufheben': 'Remove filter #',
+			'Facetten': 'Facets',
+			'facet-title-xtargets': 'Catalogues',
+			'facet-title-medium': 'Type',
+			'facet-title-author': 'Authors',
+			'facet-title-language': 'Languages',
+			'facet-title-country': 'Countries',
+			'facet-title-source-type': 'Source Type',
+			'facet-title-subject': 'Subjects',
+			'facet-title-filterDate': 'Years',
+			'# weitere anzeigen': 'Show # more items',
+			// Detail display
+			'Im Katalog ansehen': 'View in catalogue.',
+			'enthaltendes Werk im Katalog ansehen': 'View all associated items in catalogue.',
+			'enthaltendes Werk': 'associated items',
+			'detail-label-title': 'Title',
+			'detail-label-author': 'Author',
+			'detail-label-author-plural': 'Authors',
+			'detail-label-author-clean': 'Author',
+			'detail-label-author-clean-plural': 'Authors',
+			'detail-label-other-person': 'Person',
+			'detail-label-other-person-plural': 'People',
+			'detail-label-other-person-clean': 'Person',
+			'detail-label-other-person-clean-plural': 'People',
+			'detail-label-medium': 'Type',
+			'detail-label-description': 'Information',
+			'detail-label-description-plural': 'Information',
+			'detail-label-abstract': 'Abstract',
+			'detail-label-series-title': 'Series',
+			'detail-label-issn': 'ISSN',
+			'detail-label-acronym-issn': 'International Standard Series Number',
+			'detail-label-isbn-minimal': 'ISBN',
+			'detail-label-acronym-isbn-minimal': 'International Standard Book Number',
+			'detail-label-doi': 'DOI',
+			'detail-label-acronym-doi': 'Document Object Identifier: Use the link to load the document.',
+			'detail-label-doi-plural': 'DOIs',
+			'detail-label-keyword': 'Keyword',
+			'detail-label-keyword-plural': 'Keywords',
+			'detail-label-classification-msc': 'MSC',
+			'detail-label-acronym-classification-msc': 'Mathematics Subject Classification',
+			'detail-label-map': 'Location',
+			'detail-label-mapscale': 'Scale',
+			'detail-label-creator': 'catalogued by',
+			'detail-label-verfügbarkeit': 'Availability',
+			'elektronisch': 'electronic',
+			'gedruckt': 'printed',
+			'gemäß': 'according to',
+			'nach Schlagwort "#" suchen': 'search for keyword \u201c#\u201d',
+			'Ausgabe': 'Edition',
+			/* Google Books status Strings from
+				http://code.google.com/intl/de-DE/apis/books/examples/translated-branding-elements.html	*/
+			'Google Books: Vollständige Ansicht': 'Google Books: Full view',
+			'Google Books: Eingeschränkte Vorschau': 'Google Books: Limited Preview',
+			'Vorschau schließen': 'Close Preview',
+			'Umschlagbild': 'Book Cover',
+			// Short Display
+			'von': 'of',
+			'In': 'In',
+			'et al.': 'et al.',
+			// Download/Extra Links
+			'mehr Links': 'additional Links',
+			'download-label-format-simple': 'Load bibliographic data for this result as *',
+			'download-label-format-all': 'Load all Editions as *',
+			'download-label-submenu-format': 'Load as *',
+			'download-label-submenu-index-format': 'Record *',
+			'download-label-ris': 'RIS',
+			'download-label-bibtex': 'BibTeX',
+			'KVK': 'search throughout Germany',
+			'deutschlandweit im KVK suchen': 'search for this item in German union catalogues (KVK)',
+			'&lang=de': '&lang=en',
+			// General Information
+			'Suche...': 'Searching\u2026',
+			'Suchdienst momentan nicht verfügbar.': 'Search is temporarily unavailable.',
+			'keine Treffer gefunden': 'no matching records',
+			'keine Suchabfrage': 'no search query',
+			'+': '+',
+			'Es können nicht alle # Treffer geladen werden.': '+: There are # results, not all of which can be loaded. Please use a more specific search query to reduce the number of results.',
+			'...': '\u2026',
+			'Error indicator': '\u2022',
+			'In diesem Katalog gibt es noch # weitere Treffer.': 'There are # additional results available in this catalogue which we cannot download and display. Please use a more specific search query.',
+			'Nicht alle Datenbanken verfügbar.': 'You do not have permission to access all catalogues from your current location.\n\
+		Please run the search from a German university network for more complete results.',
+			'Zugang über:': 'Access provided by:',
+			'Gastzugang': 'Guest Access',
+			// Pager
+			'Vorige Trefferseite anzeigen': 'Show next page of results',
+			'Nächste Trefferseite anzeigen': 'Show previous page of results',
+			// Histogram Tooltip
+			'Treffer': 'Treffer',
+			// ZDB-JOP status labels
+			'frei verfügbar': 'accessible for all',
+			'teilweise frei verfügbar': 'partially accessible for all',
+			'verfügbar': 'accessible',
+			'teilweise verfügbar': 'partially accessible',
+			'nicht verfügbar': 'not accessible',
+			'diese Ausgabe nicht verfügbar': 'this issue not accessible',
+			'Informationen bei der Zeitschriftendatenbank': 'View availability information at Zeitschriftendatenbank',
+			'[neuere Bände im Lesesaal 2]': '[current volumes in Lesesaal 2]',
+			// Link tooltip
+			'Erscheint in separatem Fenster.': 'Link opens in a new window.',
+			// Search Form
+			'erweiterte Suche': 'Extended Search',
+			'einfache Suche': 'Basic Search',
+			// Status display
+			'Übertragungsstatus': 'Status Information',
+			'[ausblenden]': '[hide]',
+			'Status:': 'Status:',
+			'Aktive Abfragen:': 'Active Queries:',
+			'Geladene Datensätze:': 'Loaded Records:',
+			'Datenbank': 'Database',
+			'Code': 'Status Code',
+			'Status': 'Status',
+			'Gesamt': 'Loaded',
+			'Client_Working': 'working',
+			'Client_Idle': 'done',
+			'Client_Error': 'Error',
+			'Client_Disconnected': 'disconnected'
+		}
 	}
 };
 
 
-/* Localised Media Types
+
+/*	config
+	Configuration Object.
 */
-var mediaTypeNames = {
-	'de': {
-		'article': 'Aufsatz',
-		'audio-visual': 'Film',
-		'book': 'Buch',
-		'electronic': 'Datei',
-		'letter': 'Brief',
-		'journal': 'Zeitschrift',
-		'map': 'Karte',
-		'microform': 'Mikroform',
-		'multivolume': 'Mehrere Bände',
-		'music-score': 'Noten',
-		'manuscript': 'Manuskript',
-		'other': 'Andere',
-		'recording': 'Tonaufnahme',
-		'website': 'Website',
-		'multiple': 'Verschiedene Medien',
-		'image': 'Bild'
-	},
-
-	'en': {
-		'article': 'Article',
-		'audio-visual': 'Film',
-		'book': 'Book',
-		'electronic': 'Computer file',
-		'journal': 'Journal',
-		'map': 'Map',
-		'microform': 'Microform',
-		'music-score': 'Music score',
-		'manuscript': 'Manuscript',
-		'multivolume': 'Multiple volumes',
-		'other': 'Other',
-		'recording': 'Recording',
-		'website': 'Website',
-		'multiple': 'Mixed media types',
-		'image': 'Image'
-	}
-};
-
-
-
-/* Localised Source Types (for faceting Guide Records)
+var config = {
+	pazpar2Path: '/pazpar2/search.pz2',
+/*
+TODO
+if (typeof(pazpar2Path) !== 'undefined') {
+	actualPazpar2Path = pazpar2Path;
+}
 */
-var sourceTypeNames = {
-	'de': {
-		'sf': 'Hochschul- und Forschungsinstitute',
-		'so1': 'Fachgesellschaften',
-		'so2': 'Landesdienste',
-		'sc': 'Kommerzielle Anbieter',
-		'per': 'Personen',
-		'ref': 'Nachschlagewerke',
-		'dat': 'Daten und Quellen',
-		'man': 'Anleitungen, Lehrmaterialien',
-		'fp': 'Forschungsprojekte',
-		'kn': 'Kongresse',
-		'web': 'Webverzeichnisse',
-		'bl': 'Bibliographien',
-		'lib': 'Bibliotheken, Archive, Kataloge',
-		'img': 'Bildersammlungen, Filme',
-		'mus': 'Museen, Ausstellungen',
-		'do': 'Software',
-		'ka': 'Karten und Atlanten',
-		'vc': 'Listen',
-		'art': 'Zeitschriften und Artikel'
+	serviceID: null,
+
+	showResponseType: '',
+
+	// number of records to fetch from pazpar2
+	fetchRecords: 1500,
+
+	/*	List of all facet types to loop over.
+		Don't forget to also set termlist attributes in the corresponding
+		metadata tags for the service.
+
+		It is crucial for the date histogram that 'filterDate' is the last item in this list.
+	*/
+	termLists: {
+		xtargets: {'maxFetch': 25, 'minDisplay': 1},
+		medium: {'maxFetch': 12, 'minDisplay': 1},
+		language: {'maxFetch': 5, 'minDisplay': 1}, // excluding the unknown item and with +2 'wiggle room'
+		// 'author': {'maxFetch': 10, 'minDisplay': 1},
+		filterDate: {'maxFetch': 10, 'minDisplay': 5}
 	},
 
-	'en': {
-		'sf': 'Academic and Research Institutions',
-		'so1': 'Scholarly Organizations',
-		'so2': 'Official Governmental Servers',
-		'sc': 'Commercial Providers',
-		'per': 'Persons',
-		'ref': 'Reference Works',
-		'dat': 'Data and Sources',
-		'man': 'Manuals, Teaching Materials',
-		'fp': 'Current Research Projects',
-		'kn': 'Congresses',
-		'web': 'Web Directories',
-		'bl': 'Bibliographies',
-		'lib': 'Libraries, Archives, Catalogs',
-		'img': 'Collections of pictures, videos',
-		'mus': 'Museums, Exhibitions',
-		'do': 'Software ',
-		'ka': 'Maps and Atlases',
-		'vc': 'Lists',
-		'art': 'Journals and Articles'
-	}
+	// Default sort order.
+	displaySort: [],
+	// Use Google Books for cover art when an ISBN or OCLC number is known?
+	useGoogleBooks: false,
+	// Use Google Maps to display the region covered by records?
+	useMaps: false,
+	// Query ZDB-JOP for availability information based for items with ISSN?
+	// ZDB-JOP needs to be reverse-proxied to /zdb/ (passing on the client IP)
+	// or /zdb-local/ (passing on the server’s IP) depending on ZDBUseClientIP.
+	useZDB: false,
+	ZDBUseClientIP: true,
+	// The maximum number of authors to display in the short result.
+	maxAuthors: 3,
+	// Display year facets using a histogram graphic?
+	useHistogramForYearFacets: true,
+	// Name of the site that can be used, e.g. for file names of downloaded files.
+	siteName: undefined,
+	// Add COinS elements to our results list for the benefit of zotero >= 3?
+	provideCOinSExport: true,
+	// Whether to include a link to Karlsruher Virtueller Katalog along with the export links.
+	showKVKLink: false,
+	// List of export formats we provide links for. An empty list suppresses the
+	// creation of export links. Supported list items are: 'ris', 'bibtex',
+	// 'ris-inline' and 'bibtex-inline'.
+	exportFormats: [],
+	// Offer submenus with items for each location in the export links?
+	showExportLinksForEachLocation: false,
+	// Function used to trigger search (to be overwritten by pazpar2-neuwerbungen).
+	triggerSearchFunction: triggerSearchForForm,
+	// Show keywords field in extended search and display linked keywords in detail view?
+	useKeywords: false,
+	// Object of URLs for form field autocompletion.
+	autocompleteURLs: {},
+	// Function called to set up autocomplete for form fields.
+	autocompleteSetupFunction: autocompleteSetupArray
 };
 
 
 
-/*	Localised Catalogue names
-*/
-var catalogueNames = {
-	'de': {
-		'OLC Mathematik': 'Artikel'
-	},
-
-	'en': {
-		'Geschichte Aufsätze': 'Essays: History',
-		'Anglistik Aufsätze': 'Essays: Literature',
-		'Alte Karten': 'Old Maps',
-		'OLC Mathematik': 'Articles',
-		'Dissertationen': 'Dissertations',
-		'Jahrbuch-Datenbank': 'Jahrbuch-Database',
-		'SUB Onlineressourcen': 'SUB Online Resources'
-	}
+return {
+	init: init,
+	initialisePazpar2: initialisePazpar2,
+	config: config,
+	overrideLocalisation: overrideLocalisation,
+	getPz2: getPz2,
+	isReady: isReady,
+	setSortCriteriaFromString: setSortCriteriaFromString,
+	resetPage: resetPage,
+	triggerSearchForForm: triggerSearchForForm,
+	trackPiwik: trackPiwik,
+	// handy for debugging:
+	displayHitList: displayHitList
 };
 
-
-
-/*	Localised Link Descriptions
-	For link terminology found in:
-	* GVK Catalogue records
-	* Repository stylesheets
-*/
-var linkDescriptions = {
-	'de': {
-		'Book review (H-Net)': 'Rezension',
-		'Buchrezension (H-Soz-u-Kult)': 'Rezension',
-		'Contributor biographical information': 'Biographische Informationen',
-		'Deutschlandweit zugänglich': 'deutschlandweit zugänglich',
-		'Document': 'Volltext',
-		'Gesamtes Dokument': 'Volltext',
-		'Inhaltsverzeichnis': 'Inhaltsverzeichnis',
-		'kostenfrei': 'kostenfrei',
-		'Leseprobe': 'Leseprobe',
-		'Link': 'Link',
-		'Publisher Description': 'Verlagsbeschreibung',
-		'Repository': 'Repository',
-		'Rezension': 'Rezension',
-		'Table of Contents': 'Inhaltsverzeichnis',
-		'Table of contents': 'Inhaltsverzeichnis',
-		'Table of contents only': 'Inhaltsverzeichnis',
-		'TOC': 'Inhaltsverzeichnis',
-		'Volltext': 'Volltext'
-	},
-
-	'en': {
-		'Book review (H-Net)': 'Review',
-		'Buchrezension (H-Soz-u-Kult)': 'Review',
-		'Contributor biographical information': 'Biographical Information',
-		'Deutschlandweit zugänglich': 'accessible in Germany',
-		'Document': 'Full Text',
-		'Gesamtes Dokument': 'Full Text',
-		'Inhaltsverzeichnis': 'Table of Contents',
-		'kostenfrei': 'free',
-		'Leseprobe': 'Excerpt',
-		'Link': 'Link',
-		'Publisher Description': 'Publisher Description',
-		'Repository': 'Repository',
-		'Rezension': 'Review',
-		'Table of Contents': 'Table of Contents',
-		'Table of contents': 'Table of Contents',
-		'Table of contents only': 'Table of Contents',
-		'TOC': 'Table of Contents',
-		'Volltext': 'Full text'
-	}
-};
+})();
