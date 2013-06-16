@@ -24,8 +24,8 @@ function pz2neuerwerbungenDOMReady () {
 	jQuery('.pz2-neuerwerbungenForm input[type="submit"]').hide();
 	restoreCookieState ();
 	// Overwrite pz-client.js search trigger function with our own.
-	triggerSearchFunction = neuerwerbungenRunSearchForForm;
-	triggerSearchFunction();
+	pz2client.config.triggerSearchFunction = neuerwerbungenRunSearchForForm;
+	pz2client.config.triggerSearchFunction();
 }
 
 
@@ -136,7 +136,7 @@ function neuerwerbungenRunSearchForForm (form) {
 	 * Only start the query if pazpar2 is initialised. Otherwise this function
 	 * will be called by on_myinit in pz2-client.js once initialisation has finished.
 	 */
-	if (domReadyFired && pz2Initialised) {
+	if (pz2client.isReady()) {
 		var myForm = form;
 		// If no form is passed use the first .pz2-neuerwerbungenForm.
 		if (myForm === undefined) {
@@ -146,14 +146,14 @@ function neuerwerbungenRunSearchForForm (form) {
 			}
 		}
 
-		setSortCriteriaFromString('date-d--author-a--title-a');
+		pz2client.setSortCriteriaFromString('date-d--author-a--title-a');
 		var jAtomLink = jQuery('.pz2-atomLink', form);
 		var linkElement = document.getElementById('pz2neuerwerbungen-atom-linkElement');
 
 		var query = searchQueryWithEqualsAndWildcard(form, '=', undefined);
 		if (query) {
 			query = query.replace('*', '?');
-			my_paz.search(query, 2000, null, null);
+			pz2client.getPz2().search(query, 2000, null, null);
 
 			// Only manipulate Atom link if it is present already.
 			if (jAtomLink.length > 0) {
@@ -172,7 +172,7 @@ function neuerwerbungenRunSearchForForm (form) {
 				linkElement.setAttribute('href', myAtomURL);
 			}
 
-			trackPiwik('search', query);
+			pz2client.trackPiwik('search', query);
 		}
 		else {
 			// There is no query: Remove the clickable Atom link and the Atom <link> element.
@@ -185,13 +185,13 @@ function neuerwerbungenRunSearchForForm (form) {
 			 * Manually set my_paz’ currQuery to undefined.
 			 * We cannot pass the empty string to my_paz.search because it throws an error.
 			 */
-			my_paz.currQuery = undefined;
+			pz2client.getPz2().currQuery = undefined;
 		}
 
-		resetPage();
+		pz2client.resetPage();
 	}
-	else if (!pz2Initialised) {
-		initialisePazpar2();
+	else {
+		pz2client.initialisePazpar2();
 	}
 }
 
