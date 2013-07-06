@@ -4375,7 +4375,7 @@ var MSIEVersion = function () {
 		or the one stored in localisations variable.
 	The localisation dictionary has ISO 639-1 language codes as keys.
 	For each of them there can be a dictionary with terms for that language.
-	In case the language dictionary is not present, the default ('de') is used.
+	In case the language dictionary is not present, the default ('en') is used.
 	input:	term - string to localise
 			dictionaryName (optional) - name of localisation object in the localisations object
 	output:	localised string
@@ -4389,13 +4389,13 @@ var localise = function (term, dictionaryName) {
 	if (!pageLanguage) {
 		pageLanguage = jQuery('html')[0].getAttribute('lang');
 		if (!pageLanguage) {
-			pageLanguage = 'de';
+			pageLanguage = 'en';
 		}
 	}
 
 	var languageCode = pageLanguage;
 	if (dictionary[pageLanguage] === null) {
-		languageCode = 'de';
+		languageCode = 'en';
 	}
 
 	var localised = dictionary[languageCode][term];
