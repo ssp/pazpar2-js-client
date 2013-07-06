@@ -17,7 +17,6 @@ var pz2client = (function () {
 	Status variables
 */
 var my_paz = undefined; // client from pz2.js
-var domReadyFired = false;
 var pz2Initialised = false;
 var pz2InitTimeout = undefined;
 var pageLanguage = undefined;
@@ -370,8 +369,6 @@ var callbacks = {
 	Needs to be defined before init.
 */
 var pz2ClientDomReady = function ()  {
-	domReadyFired = true;
-
 	jQuery('.pz2-searchForm').each( function(index, form) {
 			form.onsubmit = onFormSubmitEventHandler;
 			if (jQuery('form.pz2-searchForm').hasClass('pz2-extended')) {
@@ -408,23 +405,6 @@ var init = function (setup) {
 		config[key] = setup[key];
 	}
 
-	my_paz = new pz2( {
-		pazpar2path: config.pazpar2Path,
-		serviceId: config.serviceID,
-		usesessions: usesessions(),
-		oninit: callbacks.init,
-		onshow: callbacks.show,
-		showtime: 1000, //each timer (show, stat, term, bytarget) can be specified this way
-		onbytarget: callbacks.bytarget,
-		onstat: callbacks.stat,
-		errorhandler: callbacks.error,
-		/* We are not using pazpar2’s termlists but create our own.
-			onterm: callbacks.term,
-			termlist: termListNames.join(","),
-		*/
-		showResponseType: config.showResponseType
-	});
-
 	jQuery().ready(pz2ClientDomReady);
 };
 
@@ -434,6 +414,25 @@ var init = function (setup) {
 	Runs initialisation for pazpar2 or Service Proxy.
 */
 var initialiseService = function () {
+	if (!my_paz) {
+		my_paz = new pz2( {
+			pazpar2path: config.pazpar2Path,
+			serviceId: config.serviceID,
+			usesessions: usesessions(),
+			oninit: callbacks.init,
+			onshow: callbacks.show,
+			showtime: 1000, //each timer (show, stat, term, bytarget) can be specified this way
+			onbytarget: callbacks.bytarget,
+			onstat: callbacks.stat,
+			errorhandler: callbacks.error,
+			/* We are not using pazpar2’s termlists but create our own.
+				onterm: callbacks.term,
+				termlist: termListNames.join(","),
+			*/
+			showResponseType: config.showResponseType
+		});
+	}
+
 	if (usesessions()) {
 		initialisePazpar2();
 	}
@@ -2190,8 +2189,8 @@ var triggerSearchForForm = function (form, additionalQueryTerms) {
 	output:	 Boolean - whether the page is ready for starting a query.
 */
 var isReady = function () {
-	return domReadyFired && pz2Initialised;
-}
+	return pz2Initialised;
+};
 
 
 
