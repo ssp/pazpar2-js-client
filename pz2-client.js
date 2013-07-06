@@ -1978,7 +1978,7 @@ var autocompleteSetupArray = function (URL, fieldName) {
 
 
 /*	autocompleteSetupSolrSpellcheck
-	Autocomplete setup function for using a Solr spellchecker.
+	Autocomplete setup function for using a Solr spellchecker with JSON output.
 	Uses JSONP, so it may be on a different host.
 
 	Set autocompleteSetupFunction = autocompleteSetupSolrSpellcheck to use it.
@@ -1986,7 +1986,6 @@ var autocompleteSetupArray = function (URL, fieldName) {
 var autocompleteSetupSolrSpellcheck = function (URL, fieldName) {
 	return {
 		'source': function(request, response) {
-			console.log(request);
 			jQuery.getJSON(URL + request.term + '&wt=json&json.wrf=?', request, function (data) {
 				var suggestions = data.spellcheck.suggestions;
 				if (suggestions.length > 0) {
@@ -1995,6 +1994,28 @@ var autocompleteSetupSolrSpellcheck = function (URL, fieldName) {
 			});
 		}
 	};
+};
+
+
+
+/*    autocompleteSetupSolrSpellcheckServiceProxyXML
+    Autocomplete setup function for using a Solr spellchecker with XML output
+    provided by Service Proxy.
+
+    Set autocompleteSetupFunction = autocompleteSetupSolrSpellcheckServiceProxyXML to use it.
+*/
+var autocompleteSetupSolrSpellcheckServiceProxyXML = function (URL, fieldName) {
+    return {
+        'source': function(request, response) {
+            jQuery.get(URL + request.term, function (data) {
+                var suggestions = [];
+                $(data).find('item').each(function() {
+                    suggestions.push($(this).attr('name'));
+                });
+                response(suggestions);
+            });
+        }
+    };
 };
 
 
