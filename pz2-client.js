@@ -18,6 +18,7 @@ var pz2client = (function () {
 */
 var my_paz = undefined; // client from pz2.js
 var pz2Initialised = false;
+var errorCount = 0;
 var pz2InitTimeout = undefined;
 var pageLanguage = undefined;
 var institutionName = undefined;
@@ -316,17 +317,20 @@ var callbacks = {
 
 
 	error: function (error) {
+        errorCount++;
 		var errorCode = parseInt(error.code);
 
-		if (errorCode === 1 && this.request.status === 417) {
-			// The Pazpar2 session has expired: create a new one.
-			initialisePazpar2();
-		}
-		else if (errorCode === 100 && this.request.status === 417) {
-			// The Service Proxy session has expired / cookie got lost: create a new one.
-			initialiseServiceProxy();
-		}
-		else if (this.request.status === 503) {
+        if (errorCount < 3 && this.request.status < 500) {
+            if (errorCode === 1 && this.request.status === 417) {
+                // The Pazpar2 session has expired: create a new one.
+                initialisePazpar2();
+            }
+            else if (errorCode === 100 && this.request.status === 417) {
+                // The Service Proxy session has expired / cookie got lost: create a new one.
+                initialiseServiceProxy();
+            }
+        }
+		else  {
 			// The service is unavailable: Disable the search form.
 			var jRecordCount = jQuery('.pz2-recordCount');
 			jRecordCount.empty();
@@ -337,7 +341,9 @@ var callbacks = {
 			if (pz2InitTimeout !== undefined) {
 				clearTimeout(pz2InitTimeout);
 			}
-			pz2InitTimeout = setTimeout(initialisePazpar2, 15000);
+
+			pz2InitTimeout = setTimeout(initialiseService, 15000);
+            errorCount = 0;
 		}
 
 		// If  the error happens while loading, clear the current search term,
@@ -414,6 +420,8 @@ var init = function (setup) {
 	Runs initialisation for pazpar2 or Service Proxy.
 */
 var initialiseService = function () {
+    errorCount = 0;
+
 	if (!my_paz) {
 		my_paz = new pz2( {
 			pazpar2path: config.pazpar2Path,
