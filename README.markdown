@@ -71,6 +71,7 @@ The configuration of the [Lib AAC](http://aac.sub.uni-goettingen.de/) site can b
 			useKeywords = false;
 			exportFormats = ["ris","bibtex"];
 			displaySort = [{"fieldName":"date","direction":"descending"},{"fieldName":"author","direction":"ascending"},{"fieldName":"title","direction":"ascending"}];
+			termLists = {"xtargets":{"maxFetch":"25","minDisplay":"1"},"medium":{"maxFetch":"12","minDisplay":"1"},"language":{"maxFetch":"5","minDisplay":"1"},"filterDate":{"maxFetch":"10","minDisplay":"5"}};
 		</script>
 		<script type="text/javascript" src="pz2-client/flot/jquery.flot.js"></script>
 		<script type="text/javascript" src="pz2-client/flot/jquery.flot.selection.js"></script>
@@ -179,4 +180,4 @@ The markup consists of the following blocks inside the div#pazpar2:
 ## Acknowledgements
 
 * The button and media type graphics included with the scripts were created by [Henrik Cederblad](http://cederbladdesign.com/).
-* The included »pz2.js« script for handling the communication with pazpar2 [is a part of](http://git.indexdata.com/?p=pazpar2.git;a=blob_plain;f=js/pz2.js) Indexdata’s [pazpar2](http://www.indexdata.com/pazpar2) software with tiny modifications added.
+* The included »pz2.js« script for handling the communication with pazpar2 [is a part of](http://git.indexdata.com/?p=pazpar2.git;a=blob_plain;f=js/pz2.js) Index Data’s [pazpar2](http://www.indexdata.com/pazpar2) software with tiny modifications added.
