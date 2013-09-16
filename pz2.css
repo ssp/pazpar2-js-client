@@ -1,5 +1,4 @@
 /* MEDIA TYPE ICON FONT */
-
 @font-face {
 	font-family: 'subicons';
 	src:url('sub-iconfont/export/fonts/subicons.eot');
@@ -438,20 +437,25 @@
 
 /* RESULT ITEMS */
 .pz2-mediaIcon {
-	display:block;
+	display: block;
 	position: absolute;
+	left: 0;
 	height: 20px;
 	width: 20px;
 	font-size: 24px;
 }
 
 .pz2-mediaIcon:before, .pz2-mediaIcon:after {
+	display: block;
 	position: absolute;
+	height: 20px;
+	width: 20px;
+	text-indent: 0;
 	font-family: subicons;
-	speak: none;
 	font-weight: normal;
 	font-variant: normal;
 	text-transform: none;
+	speak: none;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
