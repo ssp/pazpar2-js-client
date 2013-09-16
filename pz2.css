@@ -374,7 +374,7 @@
 
 .pz2-prev:after, .pz2-next:after {
 	position: absolute;
-	top: -3px;
+	top: -0.2em;
 	width: 14px;
 	height: 14px;
 	font-family: subicons;
@@ -387,7 +387,7 @@
 }
 
 .pz2-next:after {
-	left: 52px;
+	left: 50px;
 	content: '\e053'
 }
 
