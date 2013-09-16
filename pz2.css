@@ -1,3 +1,20 @@
+/* MEDIA TYPE ICON FONT */
+
+@font-face {
+	font-family: 'subicons';
+	src:url('sub-iconfont/export/fonts/subicons.eot');
+	src:url('sub-iconfont/export/fonts/subicons.eot?#iefix') format('embedded-opentype'),
+		url('sub-iconfont/export/fonts/subicons.woff') format('woff'),
+		url('sub-iconfont/export/fonts/subicons.ttf') format('truetype'),
+		url('sub-iconfont/export/fonts/subicons.svg#subicons') format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
+
+
+
+/* BASIC ELEMENTS */
+
 #pazpar2 a {
 	text-decoration: none;
 }
@@ -158,9 +175,12 @@
 }
 
 .pz2-recordLink:after {
-	font-family: Helvetica, Arial, sans-serif;
-	content:'\0000bb';
-	margin-left: 0.33em;
+	position: relative;
+	bottom: -6px;
+	font-family: subicons;
+	font-size: 23px;
+	line-height: 4px;
+	content:'\e054';
 }
 
 .pz2-recordLink:hover:after {
@@ -259,7 +279,10 @@
 .pz2-termList-medium .pz2-mediaIcon {
 	position: absolute;
 	top: -1px;
-	left: -2px;
+}
+
+.pz2-termList-medium .pz2-mediaIcon:before, .pz2-termList-medium .pz2-mediaIcon:after {
+	left: -4px;
 }
 
 .pz2-facetCount {
@@ -338,9 +361,34 @@
 	text-align: center;
 }
 
-.pz2-next, .pz2-prev {
+.pz2-prev, .pz2-next {
+	display: inline-block;
 	position: relative;
+	top: 4px;
+	width: 14px;
+	height: 14px;
+	overflow: hidden;
+	text-indent: -100px;
 	font-family: Helvetica, Arial, sans-serif;
+}
+
+.pz2-prev:after, .pz2-next:after {
+	position: absolute;
+	top: -3px;
+	width: 14px;
+	height: 14px;
+	font-family: subicons;
+	font-size: 14px;
+}
+
+.pz2-prev:after {
+	left: 59px;
+	content: '\e051'
+}
+
+.pz2-next:after {
+	left: 52px;
+	content: '\e053'
 }
 
 .pz2-pageCount-0 {
@@ -389,34 +437,69 @@
 }
 
 /* RESULT ITEMS */
-
 .pz2-mediaIcon {
 	display:block;
+	position: absolute;
 	height: 20px;
 	width: 20px;
-	position: absolute;
-	left: -30px;
-	/* Media icon sprite. Position defaults to other/unknown icon. */
-	background: url(pz2-media-icons.png) transparent no-repeat;
-	background-position: 0px -40px;
+	font-size: 24px;
 }
 
-.pz2-mediaIcon.article { background-position: 0px 0px; }
-.pz2-mediaIcon.audio-visual { background-position: -20px 0px; }
-.pz2-mediaIcon.book { background-position: -40px 0px; }
-.pz2-mediaIcon.electronic { background-position: -60px 0px; }
-.pz2-mediaIcon.multivolume { background-position: -80px 0px; }
-.pz2-mediaIcon.letter { background-position: -100px 0px; }
-.pz2-mediaIcon.journal { background-position: 0px -20px; }
-.pz2-mediaIcon.map { background-position: -20px -20px; }
-.pz2-mediaIcon.microform { background-position: -40px -20px; }
-.pz2-mediaIcon.music-score { background-position: -60px -20px; }
-.pz2-mediaIcon.manuscript { background-position: -80px -20px; }
-.pz2-mediaIcon.recording { background-position: -20px -40px; }
-.pz2-mediaIcon.website { background-position: -40px -40px; }
-.pz2-mediaIcon.multiple { background-position: -60px -40px; }
-.pz2-mediaIcon.image { background-position: -80px -40px; }
+.pz2-mediaIcon:before, .pz2-mediaIcon:after {
+	position: absolute;
+	font-family: subicons;
+	speak: none;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
 
+.pz2-mediaIcon:before {
+	color: #f1f3f6;
+}
+
+.pz2-mediaIcon:after {
+	color: #00247d
+}
+
+.pz2-mediaIcon:before { content:'\e023'}
+.pz2-mediaIcon:after { content:'\e022'}
+/* .pz2-mediaIcon.article:before { content:'\e005'} */
+.pz2-mediaIcon.article:after { content:'\e004'}
+.pz2-mediaIcon.audio-visual:before { content:'\e011'}
+.pz2-mediaIcon.audio-visual:after { content:'\e010'}
+.pz2-mediaIcon.book:before { content:'\e001'}
+.pz2-mediaIcon.book:after { content:'\e000'}
+.pz2-mediaIcon.data:before { content:'\e00d'}
+.pz2-mediaIcon.data:after { content:'\e00c'}
+.pz2-mediaIcon.electronic:before { content:'\e00b'}
+.pz2-mediaIcon.electronic:after { content:'\e00a'}
+.pz2-mediaIcon.image:before { content:'\e01d'}
+.pz2-mediaIcon.image:after { content:'\e01c'}
+.pz2-mediaIcon.journal:before { content:'\e007'}
+.pz2-mediaIcon.journal:after { content:'\e006'}
+.pz2-mediaIcon.letter:before { content:'\e017'}
+.pz2-mediaIcon.letter:after { content:'\e016'}
+.pz2-mediaIcon.map:before { content:'\e00f'}
+.pz2-mediaIcon.map:after { content:'\e00e'}
+.pz2-mediaIcon.manuscript:before { content:'\e019'}
+.pz2-mediaIcon.manuscript:after { content:'\e018'}
+.pz2-mediaIcon.microform:before { content:'\e01b'}
+.pz2-mediaIcon.microform:after { content:'\e01a'}
+.pz2-mediaIcon.multiple:before { content:'\e021'}
+.pz2-mediaIcon.multiple:after { content:'\e020'}
+.pz2-mediaIcon.multivolume:before { content:'\e003'}
+.pz2-mediaIcon.multivolume:after { content:'\e002'}
+.pz2-mediaIcon.music-score:before { content:'\e015'}
+.pz2-mediaIcon.music-score:after { content:'\e014'}
+.pz2-mediaIcon.newspaper:before { content:'\e009'}
+.pz2-mediaIcon.newspaper:after { content:'\e008'}
+.pz2-mediaIcon.recording:before { content:'\e013'}
+.pz2-mediaIcon.recording:after { content:'\e012'}
+.pz2-mediaIcon.website:before { content:'\e01f'}
+.pz2-mediaIcon.website:after { content:'\e01e'}
 
 .pz2-title-main {
 	font-weight: bold;

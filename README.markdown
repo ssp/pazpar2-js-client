@@ -179,5 +179,5 @@ The markup consists of the following blocks inside the div#pazpar2:
 
 ## Acknowledgements
 
-* The button and media type graphics included with the scripts were created by [Henrik Cederblad](http://cederbladdesign.com/).
+* The [https://github.com/subugoe/sub-iconfont](media type icon font) and button graphics that included with the scripts were created by [Henrik Cederblad](http://cederbladdesign.com/).
 * The included »pz2.js« script for handling the communication with pazpar2 [is a part of](http://git.indexdata.com/?p=pazpar2.git;a=blob_plain;f=js/pz2.js) Index Data’s [pazpar2](http://www.indexdata.com/pazpar2) software with tiny modifications added.
