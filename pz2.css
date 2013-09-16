@@ -505,6 +505,30 @@
 .pz2-mediaIcon.website:before { content:'\e01f'}
 .pz2-mediaIcon.website:after { content:'\e01e'}
 
+/*
+	Use old-style bitmap icons for IE 7.
+*/
+*:first-child+html .pz2-mediaIcon {
+	background: url(pz2-media-icons.png) transparent no-repeat;
+	background-position: 0px -40px;
+}
+
+*:first-child+html .pz2-mediaIcon.article { background-position: 0px 0px; }
+*:first-child+html .pz2-mediaIcon.audio-visual { background-position: -20px 0px; }
+*:first-child+html .pz2-mediaIcon.book { background-position: -40px 0px; }
+*:first-child+html .pz2-mediaIcon.electronic { background-position: -60px 0px; }
+*:first-child+html .pz2-mediaIcon.multivolume { background-position: -80px 0px; }
+*:first-child+html .pz2-mediaIcon.letter { background-position: -100px 0px; }
+*:first-child+html .pz2-mediaIcon.journal { background-position: 0px -20px; }
+*:first-child+html .pz2-mediaIcon.map { background-position: -20px -20px; }
+*:first-child+html .pz2-mediaIcon.microform { background-position: -40px -20px; }
+*:first-child+html .pz2-mediaIcon.music-score { background-position: -60px -20px; }
+*:first-child+html .pz2-mediaIcon.manuscript { background-position: -80px -20px; }
+*:first-child+html .pz2-mediaIcon.recording { background-position: -20px -40px; }
+*:first-child+html .pz2-mediaIcon.website { background-position: -40px -40px; }
+*:first-child+html .pz2-mediaIcon.multiple { background-position: -60px -40px; }
+*:first-child+html .pz2-mediaIcon.image { background-position: -80px -40px; }
+
 .pz2-title-main {
 	font-weight: bold;
 }
