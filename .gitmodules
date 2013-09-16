@@ -3,4 +3,4 @@
 	url = git://github.com/flot/flot.git
 [submodule "sub-iconfont"]
 	path = sub-iconfont
-	url = git@github.com:subugoe/sub-iconfont.git
+	url = git://github.com/subugoe/sub-iconfont.git
