@@ -445,6 +445,11 @@
 	font-size: 24px;
 }
 
+
+.pz2-resultList .pz2-mediaIcon {
+	left: -38px;
+}
+
 .pz2-mediaIcon:before, .pz2-mediaIcon:after {
 	display: block;
 	position: absolute;
