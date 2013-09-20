@@ -1,11 +1,11 @@
 /* MEDIA TYPE ICON FONT */
 @font-face {
 	font-family: 'subicons';
-	src:url('sub-iconfont/export/fonts/subicons.eot');
-	src:url('sub-iconfont/export/fonts/subicons.eot?#iefix') format('embedded-opentype'),
-		url('sub-iconfont/export/fonts/subicons.woff') format('woff'),
-		url('sub-iconfont/export/fonts/subicons.ttf') format('truetype'),
-		url('sub-iconfont/export/fonts/subicons.svg#subicons') format('svg');
+	src:url('sub-iconfont/SUB-Icon-Font/fonts/subicons.eot');
+	src:url('sub-iconfont/SUB-Icon-Font/fonts/subicons.eot?#iefix') format('embedded-opentype'),
+		url('sub-iconfont/SUB-Icon-Font/fonts/subicons.woff') format('woff'),
+		url('sub-iconfont/SUB-Icon-Font/fonts/subicons.ttf') format('truetype'),
+		url('sub-iconfont/SUB-Icon-Font/fonts/subicons.svg#subicons') format('svg');
 	font-weight: normal;
 	font-style: normal;
 }
