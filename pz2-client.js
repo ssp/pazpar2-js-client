@@ -17,6 +17,7 @@ var pz2client = (function () {
 	Status variables
 */
 var my_paz = undefined; // client from pz2.js
+var pz2InitRequestStartTime = 0;
 var pz2Initialised = false;
 var errorCount = 0;
 var pz2InitTimeout = undefined;
@@ -48,6 +49,7 @@ var targetStatus = {};
 var callbacks = {
 
 	init: function (data) {
+		pz2InitRequestStartTime = 0; // The request has returned: set time to 0.
 		my_paz.stat();
 		my_paz.bytarget();
 		pz2Initialised = true;
@@ -427,6 +429,7 @@ var initialiseService = function () {
 			pazpar2path: config.pazpar2Path,
 			serviceId: config.serviceID,
 			usesessions: usesessions(),
+			autoInit: false,
 			oninit: callbacks.init,
 			onshow: callbacks.show,
 			showtime: 1000, //each timer (show, stat, term, bytarget) can be specified this way
@@ -439,6 +442,13 @@ var initialiseService = function () {
 			*/
 			showResponseType: config.showResponseType
 		});
+		
+		// Only run init if the previous init is more than 15s ago.
+		var currentTime = (new Date).getTime();
+		if (pz2InitRequestStartTime + 15 < currentTime) {
+			pz2InitRequestStartTime = currentTime;
+			my_paz.init(undefined, my_paz.serviceId);
+		}
 	}
 
 	if (usesessions()) {
