@@ -294,13 +294,15 @@
 }
 
 #pz2-histogram-tooltip {
-	font-weight: bold;
-	font-size: 71%;
-	background: #fff;
+	display: none;
+	position: absolute;
 	border: 1px solid #f6f3ff;
 	padding: 2px;
-	background-color: #fff;
 	opacity: 0.8;
+	background: #fff;
+	background-color: #fff;
+	font-size: 71%;
+	font-weight: bold;
 }
 
 
