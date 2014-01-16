@@ -6080,37 +6080,42 @@ var localisations = {
 			'article': 'Aufsatz',
 			'audio-visual': 'Film',
 			'book': 'Buch',
+			'data': 'Daten',
 			'electronic': 'Datei',
-			'letter': 'Brief',
+			'image': 'Bild',
 			'journal': 'Zeitschrift',
+			'letter': 'Brief',
+			'manuscript': 'Manuskript',
 			'map': 'Karte',
 			'microform': 'Mikroform',
+			'multiple': 'Verschiedene Medien',
 			'multivolume': 'Mehrere Bände',
 			'music-score': 'Noten',
-			'manuscript': 'Manuskript',
+			'newspaper': 'Zeitung',
 			'other': 'Andere',
 			'recording': 'Tonaufnahme',
-			'website': 'Website',
-			'multiple': 'Verschiedene Medien',
-			'image': 'Bild'
+			'website': 'Website'
 		},
-
+		
 		'en': {
 			'article': 'Article',
 			'audio-visual': 'Film',
 			'book': 'Book',
+			'data': 'Data',
 			'electronic': 'Computer file',
+			'image': 'Image',
 			'journal': 'Journal',
+			'letter': 'Letter',
+			'manuscript': 'Manuscript',
 			'map': 'Map',
 			'microform': 'Microform',
 			'music-score': 'Music score',
-			'manuscript': 'Manuscript',
+			'multiple': 'Mixed media types',
 			'multivolume': 'Multiple volumes',
+			'newspaper': 'Newspaper',
 			'other': 'Other',
 			'recording': 'Recording',
-			'website': 'Website',
-			'multiple': 'Mixed media types',
-			'image': 'Image'
+			'website': 'Website'
 		}
 	},
 
