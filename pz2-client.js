@@ -1952,7 +1952,7 @@ var facetListForType = function (type, preferOriginalFacets) {
 			else {
 				hideTooltip();
 			}
-		});
+		};
 		
 		jGraphDiv.bind('plothover', function(event, ranges, item) {
 			updateTooltip(event, {'xaxis': {'from': ranges.x, 'to': ranges.x}}, ranges.pageX);
