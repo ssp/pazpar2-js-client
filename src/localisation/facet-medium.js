@@ -2,7 +2,6 @@
  * Localised media type names.
  * For displaying the value of the »medium« field in pz2_client.
  */
-
 pz2_client.prototype.localisations['facet-medium'] = {
 
 	'de': {

@@ -312,7 +312,7 @@
 }
 
 .pz2-histogramContainer {
-	margin-left: -8px;
+	margin: -0.5em 0 2.5em -8px;
 }
 
 #pz2-histogram-tooltip {

@@ -1,8 +1,7 @@
 /**
  * Localised source type names.
- * Used for facets in »sub-guides« results.
+ * Used for facets in »sub-guide« target results.
  */
-
 pz2_client.prototype.localisations['facet-source-type'] = {
 
 	'de': {

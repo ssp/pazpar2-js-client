@@ -1,7 +1,6 @@
-/*
+/**
  * Localised language names for ISO 639-2/B language codes.
  */
-
 pz2_client.prototype.localisations['facet-language'] = {
 
 	'de': {

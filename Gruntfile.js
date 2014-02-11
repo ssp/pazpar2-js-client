@@ -19,8 +19,10 @@ module.exports = function(grunt) {
 		concat: {
 			build: {
 				src: [
-					'src/pz2-client.js',
-					'src/localisation.js',
+					'src/main.js',
+					'src/parts/config.js',
+					'src/parts/init.js',
+					'src/parts/*.js',
 					'src/localisation/*'
 				],
 				dest: 'pz2-client.js'
@@ -29,17 +31,17 @@ module.exports = function(grunt) {
 
 		uglify: {
 			options: {
-			  banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
 			},
 			build: {
-			  src: 'pz2-client.js',
-			  dest: 'pz2-client.min.js'
+				src: 'pz2-client.js',
+				dest: 'pz2-client.min.js'
 			}
 		},
 
 		watch: {
 			files: ['<%= jshint.files %>'],
-			tasks: ['concat', 'uglify']
+			tasks: ['concat', 'uglify', 'jshint']
 		}
 
 	});

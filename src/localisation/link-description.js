@@ -1,10 +1,10 @@
-/*	Localised Link Descriptions
-	For link terminology found in:
-	* GVK Catalogue records
-	* Repository records
-*/
-
-pz2_client.prototype.localisation['link-description'] = {
+/**
+ * Localised Link Descriptions
+ * For link terminology found in:
+ * * GVK Catalogue records
+ * * Repository records
+ */
+pz2_client.prototype.localisations['link-description'] = {
 
 	'de': {
 		'Book review (H-Net)': 'Rezension',
@@ -47,4 +47,5 @@ pz2_client.prototype.localisation['link-description'] = {
 		'TOC': 'Table of Contents',
 		'Volltext': 'Full text'
 	}
+	
 };

@@ -2,7 +2,6 @@
  * Labels for metadata export and additional search links
  * at the bottom of the detail view.
  */
-
 pz2_client.prototype.localisations.export = {
 
 	'de': {
@@ -12,8 +11,8 @@ pz2_client.prototype.localisations.export = {
 		'all': 'Alle Ausgaben als * laden',
 		'submenu-format': 'Einzelne als * laden',
 		'submenu-index-format': 'Ausgabe *',
-		'ris': 'RIS',
-		'bibtex': 'BibTeX',
+		'format-ris': 'RIS',
+		'format-bibtex': 'BibTeX',
 
 		'KVK': 'deutschlandweit suchen',
 		'deutschlandweit im KVK suchen': 'Suche in deutschen Verbundkatalogen (KVK)',
@@ -27,8 +26,8 @@ pz2_client.prototype.localisations.export = {
 		'all': 'Load all Editions as *',
 		'submenu-format': 'Load as *',
 		'submenu-index-format': 'Record *',
-		'ris': 'RIS',
-		'bibtex': 'BibTeX',
+		'format-ris': 'RIS',
+		'format-bibtex': 'BibTeX',
 
 		'KVK': 'search throughout Germany',
 		'deutschlandweit im KVK suchen': 'search for this item in German union catalogues (KVK)',

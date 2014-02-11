@@ -2,7 +2,6 @@
  * Localised catalogue names.
  * To override the target name defined in the configuration if needed.
  */
-
 pz2_client.prototype.localisations['facet-xtargets'] = {
 
 	'de': {

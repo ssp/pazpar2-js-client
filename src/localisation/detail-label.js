@@ -2,7 +2,6 @@
  * Localised field names.
  * Used in detail display.
  */
-
 pz2_client.prototype.localisations['detail-label'] = {
 
 	'de': {

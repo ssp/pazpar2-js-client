@@ -1,7 +1,6 @@
 /**
  * Localised facet names.
  */
-
 pz2_client.prototype.localisations.facet = {
 
 	'de': {

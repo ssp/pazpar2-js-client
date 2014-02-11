@@ -16,20 +16,13 @@
  * @returns {string} localised string
  */
 pz2_client.prototype.localise = function (term, dictionaryName) {
-	var dictionary = localisations.general;
-	if (dictionaryName && localisations[dictionaryName]) {
-		dictionary = localisations[dictionaryName];
+	var dictionary = this.localisations.general;
+	if (dictionaryName && this.localisations[dictionaryName]) {
+		dictionary = this.localisations[dictionaryName];
 	}
 
-	if (!pageLanguage) {
-		pageLanguage = jQuery('html')[0].getAttribute('lang');
-		if (!pageLanguage) {
-			pageLanguage = 'en';
-		}
-	}
-
-	var languageCode = pageLanguage;
-	if (dictionary[pageLanguage] === null) {
+	var languageCode = this.pageLanguage;
+	if (dictionary[this.pageLanguage] === null) {
 		languageCode = 'en';
 	}
 
@@ -57,10 +50,10 @@ pz2_client.prototype.localise = function (term, dictionaryName) {
  */
 pz2_client.prototype.overrideLocalisation = function (languageCode, key, localisedString) {
 	// First figure out the correct object to override the localisation in.
-	var localisationObject = localisations.general;
-	for (var localisationType in localisations) {
+	var localisationObject = this.localisations.general;
+	for (var localisationType in this.localisations) {
 		if (key.substr(0, localisationType.length) === localisationType) {
-			localisationObject = localisations[localisationType];
+			localisationObject = this.localisations[localisationType];
 			key = key.substr(localisationType.length + 1);
 			break;
 		}

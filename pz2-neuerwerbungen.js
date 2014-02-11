@@ -153,7 +153,7 @@ function neuerwerbungenRunSearchForForm (form) {
 		var query = searchQueryWithEqualsAndWildcard(form, '=', undefined);
 		if (query) {
 			query = query.replace('*', '?');
-			pz2client.getPz2().search(query, 2000, null, null);
+			pz2client.my_pz2.search(query, 2000, null, null);
 
 			// Only manipulate Atom link if it is present already.
 			if (jAtomLink.length > 0) {
@@ -185,7 +185,7 @@ function neuerwerbungenRunSearchForForm (form) {
 			 * Manually set my_paz’ currQuery to undefined.
 			 * We cannot pass the empty string to my_paz.search because it throws an error.
 			 */
-			pz2client.getPz2().currQuery = undefined;
+			pz2client.my_paz.currQuery = undefined;
 		}
 
 		pz2client.resetPage();
