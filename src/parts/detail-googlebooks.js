@@ -166,7 +166,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 			if (!previewContainerDiv) {
 				previewContainerDiv = document.createElement('div');
 				previewContainerDiv.setAttribute('id', previewContainerDivName);
-				jQuery('#page').get(0).appendChild(previewContainerDiv);
+				jQuery('html').get(0).appendChild(previewContainerDiv);
 
 				var titleBarDiv = document.createElement('div');
 				jQuery(titleBarDiv).addClass('googlePreview-titleBar');
