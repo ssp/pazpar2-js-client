@@ -43,6 +43,13 @@ pz2_client.prototype.updateFacetLists = function () {
 				that.filterArray[kind] = [term];
 			}
 
+			// Mark with class for selected facet. Remove spaces from strings.
+			var baseName = 'pz2-term-selected-' + kind.replace(' ', '-');
+			var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(' ', '-');
+			jQuery('#pazpar2')
+				.addClass(baseName)
+				.addClass(baseName + '-' + termString);
+
 			that.curPage = 1;
 			that.updateAndDisplay();
 
@@ -59,20 +66,34 @@ pz2_client.prototype.updateFacetLists = function () {
 		*/
 		var delimitResults = function (kind, term) {
 			if (that.filterArray[kind]) {
+				var jPazpar2 = jQuery('#pazpar2');
+				var baseName = 'pz2-term-selected-' + kind.replace(' ', '-');
 				if (term) {
 					// if a term is given only delete occurrences of 'term' from the filter
+					var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(' ', '-');
 					for (var index = that.filterArray[kind].length -1; index >= 0; index--) {
 						if (that.filterArray[kind][index] === term) {
 							that.filterArray[kind].splice(index,1);
 						}
 					}
+					jPazpar2.removeClass(baseName + '-' + termString);
+
 					if (that.filterArray[kind].length === 0) {
+						// all terms of this kind have been removed: remove kind from filterArray
 						that.filterArray[kind] = undefined;
+						jPazpar2.removeClass(baseName);
 					}
 				}
 				else {
 					// if no term is given, delete the complete filter
 					that.filterArray[kind] = undefined;
+					var classes = jPazpar2.attr('class').split(' ');
+					for (var classIndex in classes) {
+						var className = classes[classIndex];
+						if (className.substr(0, baseName.length) === baseName) {
+							jPazpar2.removeClass(className);
+						}
+					}
 				}
 
 				that.updateAndDisplay();
