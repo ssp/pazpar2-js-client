@@ -326,14 +326,14 @@ pz2_client.prototype.updateFacetLists = function () {
 				showLink.setAttribute('href', '#');
 
 				var showAllFacetsOfType = function () {
-					var containingList = that.parentElement.parentElement;
+					var containingList = jQuery(this).parents('[facettype]');
 
 					// Fade in the hidden elemens and hide the Show All link.
 					jQuery('.pz2-facet-hidden', containingList).slideDown(300);
 					jQuery('.pz2-facet-showAll', containingList).fadeOut(200);
 
 					// Store the current state in the termLists object for the current facet type.
-					var facetType = containingList.getAttribute('facetType');
+					var facetType = containingList.attr('facetType');
 					that.config.termLists[facetType].showAll = true;
 					return false;
 				};
