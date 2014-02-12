@@ -6,7 +6,7 @@
 
 /**
  * Return localised term using the passed dictionary
- *	or the one stored in localisations.default.
+ * or the one stored in localisations.default.
  * The localisation dictionary has ISO 639-1 language codes as keys.
  * For each of them there can be a dictionary with terms for that language.
  * In case the language dictionary is not present, the default ('en') is used.
@@ -16,22 +16,25 @@
  * @returns {string} localised string
  */
 pz2_client.prototype.localise = function (term, dictionaryName) {
+	var localised = term;
+
 	var dictionary = this.localisations.general;
 	if (dictionaryName && this.localisations[dictionaryName]) {
 		dictionary = this.localisations[dictionaryName];
 	}
 
-	var languageCode = this.pageLanguage;
-	if (dictionary[this.pageLanguage] === null) {
-		languageCode = 'en';
+	var languageDict = dictionary[this.pageLanguage];
+	if (languageDict === undefined) {
+		languageDict = dictionary['en'];
 	}
 
-	var localised = dictionary[languageCode][term];
-	if (localised === undefined) {
-		localised = term;
-		// console.log('No localisation for: "' + term + '"');
+	if (languageDict && languageDict[term] !== undefined) {
+		localised = languageDict[term];
 	}
-
+	else if (dictionary['en'][term] !== undefined) {
+		localised = languageDict[term];
+	}
+	
 	return localised;
 };
 
