@@ -12,6 +12,19 @@ pz2_client.prototype.init = function (setup) {
 		this.config[key] = setup[key];
 	}
 
+	// Determine the page’s language as set in html/@lang for localisations.
+	// If not set, use English.
+	var HTMLLanguage = jQuery('html').attr('lang');
+	if (HTMLLanguage.length === 2) {
+		this.pageLanguage = HTMLLanguage;
+	}
+	else if (HTMLLanguage.length > 2 && HTMLLanguage[2] === '_') {
+		this.pageLanguage = HTMLLanguage.substring(0, 2);
+	}
+	else {
+		this.pageLanguage = 'en';
+	}
+
 	// Set up handlers for form submission and extended/simple search toggling.
 	var pRemoveExtendedSearch = jQuery.proxy(this.removeExtendedSearch, this);
 	var pAddExtendedSearch = jQuery.proxy(this.addExtendedSearch, this);
@@ -33,23 +46,26 @@ pz2_client.prototype.init = function (setup) {
 	// Add event handers for the status display to record count.
 	jQuery('.pz2-recordCount').click(jQuery.proxy(this.toggleStatus, this));
 
+	// Set up local storage if possible.
+	if (jQuery.localStorage) {
+		this.storage = jQuery.initNamespaceStorage('pazpar2');
+	}
+
+	// Add links for optional features if so configured
+	var linkDiv = document.createElement('div');
+	linkDiv.setAttribute('class', 'pz2-featureLinks');
+	jQuery('#pazpar2').prepend(linkDiv);
+	if (this.config.addHistoryLink && this.config.historyItems > 0) {
+		var historyLink = document.createElement('a');
+		linkDiv.appendChild(historyLink);
+		historyLink.setAttribute('href', '#');
+		historyLink.setAttribute('class', 'pz2-historyLink');
+		historyLink.onclick = jQuery.proxy(this.showHistory, this);
+		historyLink.appendChild(document.createTextNode(this.localise('Suchgeschichte')));
+	}
+
 	// Add event handlers for autocomplete.
 	this.setupAutocomplete();
-
-	// Determine the page’s language as set in html/@lang for localisations.
-	// If not set, use English.
-	if (!this.pageLanguage) {
-		var HTMLLanguage = jQuery('html').attr('lang');
-		if (HTMLLanguage.length === 2) {
-			this.pageLanguage = HTMLLanguage;
-		}
-		else if (HTMLLanguage.length > 2 && HTMLLanguage[2] === '_') {
-			this.pageLanguage = HTMLLanguage.substring(0, 2);
-		}
-		else {
-			this.pageLanguage = 'en';
-		}
-	}
 
 	// Remove the no-JS warning.
 	jQuery('#pazpar2').removeClass('pz2-noJS');

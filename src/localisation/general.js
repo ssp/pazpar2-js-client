@@ -53,6 +53,8 @@ pz2_client.prototype.localisations.general = {
 		// Search Form
 		'erweiterte Suche': 'erweiterte Suche',
 		'einfache Suche': 'einfache Suche',
+		// Extra feature links
+		'Suchgeschichte': 'Suchgeschichte',
 		// Status display
 		'Übertragungsstatus': 'Übertragungsstatus',
 		'[ausblenden]': '[ausblenden]',
@@ -118,6 +120,8 @@ pz2_client.prototype.localisations.general = {
 		// Search Form
 		'erweiterte Suche': 'Extended Search',
 		'einfache Suche': 'Basic Search',
+		// Extra feature links
+		'Suchgeschichte': 'Search History',
 		// Status display
 		'Übertragungsstatus': 'Status Information',
 		'[ausblenden]': '[hide]',

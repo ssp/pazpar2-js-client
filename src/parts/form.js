@@ -65,6 +65,39 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 	};
 
 
+
+	/**
+	 * Store the passed query string at the beginning of the history
+	 * in local storage.
+	 * Remove potentially existing entry with the same query string and
+	 * ensure the configured maximum history size is not exceeded.
+	 *
+	 * @param {string} queryString - the query string to add to the history
+	 */
+	var addToHistory = function (queryString) {
+		if (that.storage && that.config.historyItems > 0) {
+			var history = that.storage.localStorage.get('history') || [];
+			for (var historyIndex in history) {
+				if (history[historyIndex].queryString === queryString) {
+					history.splice(historyIndex, 1);
+					break;
+				}
+			}
+			var searchData = {
+				service: that.my_paz.serviceId,
+				queryString: queryString,
+				time: (new Date()).getTime()
+			};
+
+			history.unshift(searchData);
+			history.splice(that.config.historyItems, history.length - that.config.historyItems);
+			that.storage.localStorage.set('history', history);
+		}
+	};
+
+
+
+	var that = this;
 	var myForm = form;
 	// If no form is passed use the first .pz2-searchForm.
 	if (!myForm) {
@@ -76,10 +109,10 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 	// Deal with additional query terms if there are any.
 	if (additionalQueryTerms !== undefined) {
-		this.curAdditionalQueryTerms = additionalQueryTerms;
+		that.curAdditionalQueryTerms = additionalQueryTerms;
 	}
 
-	if (this.isReady()) {
+	if (that.isReady()) {
 		var searchChunks = [];
 		addSearchStringForFieldToArray('all', searchChunks);
 		var isExtendedSearch = jQuery(myForm).hasClass('pz2-extended');
@@ -89,19 +122,20 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 			addSearchStringForFieldToArray('subject', searchChunks);
 			addSearchStringForFieldToArray('date', searchChunks);
 		}
-		searchChunks = searchChunks.concat(this.curAdditionalQueryTerms);
+		searchChunks = searchChunks.concat(that.curAdditionalQueryTerms);
 		var searchTerm = searchChunks.join(' and ');
 		searchTerm = searchTerm.replace('*', '?');
-		if (searchTerm !== '' && searchTerm !== this.curSearchTerm) {
-			this.loadSelectsInForm(myForm);
-			this.my_paz.search(searchTerm, this.config.fetchRecords, this.curSort, this.curFilter);
-			this.curSearchTerm = searchTerm;
-			this.resetPage();
-			this.trackPiwik('search', searchTerm);
+		if (searchTerm !== '' && searchTerm !== that.curSearchTerm) {
+			that.loadSelectsInForm(myForm);
+			that.my_paz.search(searchTerm, that.config.fetchRecords, that.curSort, that.curFilter);
+			addToHistory(searchTerm);
+			that.curSearchTerm = searchTerm;
+			that.resetPage();
+			that.trackPiwik('search', searchTerm);
 		}
 	}
 	else {
-		this.initialiseService();
+		that.initialiseService();
 	}
 };
 

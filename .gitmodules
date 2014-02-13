@@ -4,3 +4,6 @@
 [submodule "sub-iconfont"]
 	path = sub-iconfont
 	url = git://github.com/subugoe/sub-iconfont.git
+[submodule "jquery-storage"]
+	path = jquery-storage
+	url = git@github.com:julien-maurel/jQuery-Storage-API.git

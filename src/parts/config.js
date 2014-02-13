@@ -61,5 +61,9 @@ pz2_client.prototype.config = {
 	// Object of URLs for form field autocompletion.
 	autocompleteURLs: {},
 	// Function called to set up autocomplete for form fields.
-	autocompleteSetupFunction: this.autocompleteSetupArray
+	autocompleteSetupFunction: this.autocompleteSetupArray,
+	// Number of recent searches to store.
+	historyItems: 99,
+	// Whether to shoe the link for the history feature
+	addHistoryLink: true
 };

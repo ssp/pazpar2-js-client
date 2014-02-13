@@ -5,18 +5,20 @@
  */
 pz2_client.prototype.setupAutocomplete = function () {
 	if (jQuery.ui && jQuery.ui.autocomplete && typeof(this.config.autocompleteSetupFunction) === 'function') {
-		var selected = function (event, ui) {
+		var that = this;
+
+		var selectionHandler = function (event, ui) {
 			event.target.value = ui.item.value;
-			this.config.triggerSearchFunction(null);
+			that.trackPiwik('autocomplete');
+			jQuery.proxy(that.config.triggerSearchFunction, that)();
 		};
 
-
-		for (var fieldName in this.config.autocompleteURLs) {
-			var URL = this.config.autocompleteURLs[fieldName];
-			var autocompleteConfiguration = this.config.autocompleteSetupFunction(URL, fieldName);
+		for (var fieldName in that.config.autocompleteURLs) {
+			var URL = that.config.autocompleteURLs[fieldName];
+			var autocompleteConfiguration = jQuery.proxy(that.config.autocompleteSetupFunction, that, URL, fieldName)();
+			autocompleteConfiguration['select'] = selectionHandler;
 			var jField = jQuery('#pz2-field-' + fieldName);
 			jField.autocomplete(autocompleteConfiguration);
-			jField.on('autocompleteselect', selected);
 		}
 	}
 };
@@ -29,7 +31,7 @@ pz2_client.prototype.setupAutocomplete = function () {
  * to load terms from the given URL on the host which is expected to return
  * a JSON array.
  *
- * Set autocompleteSetupFunction = pz2client.autocompleteSetupArray to use it.
+ * Configure autocompleteSetupFunction = pz2client.autocompleteSetupArray to use it.
  *
  * @param {string} URL
  * @param {string} fieldName
@@ -45,7 +47,7 @@ pz2_client.prototype.autocompleteSetupArray = function (URL, fieldName) {
  * Autocomplete setup function for using a Solr spellchecker with JSON output.
  * Uses JSONP, so it may be on a different host.
  *
- * Set autocompleteSetupFunction = pz2client.autocompleteSetupSolrSpellcheck to use it.
+ * Configure autocompleteSetupFunction = pz2client.autocompleteSetupSolrSpellcheck to use it.
  *
  * @param {type} URL
  * @param {type} fieldName
@@ -70,7 +72,7 @@ pz2_client.prototype.autocompleteSetupSolrSpellcheck = function (URL, fieldName)
  * Autocomplete setup function for using a Solr spellchecker with XML output
  * provided by Service Proxy.
  *
- * Set autocompleteSetupFunction = pz2_client.autocompleteSetupSolrSpellcheckServiceProxyXML to use it.
+ * Configure autocompleteSetupFunction = pz2_client.autocompleteSetupSolrSpellcheckServiceProxyXML to use it.
  *
  * @param {type} URL
  * @param {type} fieldName
