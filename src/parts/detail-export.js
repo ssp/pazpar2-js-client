@@ -158,8 +158,8 @@ pz2_client.prototype.exportLinks = function (data) {
 			form.method = 'POST';
 			var scriptPath = 'typo3conf/ext/pazpar2/Resources/Public/pz2-client/converter/convert-pazpar2-record.php';
 			var scriptGetParameters = {'format': exportFormat};
-			if (pageLanguage !== undefined) {
-				scriptGetParameters.language = pageLanguage;
+			if (this.pageLanguage !== undefined) {
+				scriptGetParameters.language = this.pageLanguage;
 			}
 			if (that.config.siteName !== undefined) {
 				scriptGetParameters.filename = that.config.siteName;
