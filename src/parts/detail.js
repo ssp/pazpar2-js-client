@@ -694,7 +694,6 @@ pz2_client.prototype.renderDetails = function (data) {
 	if (data) {
 		detailsDiv = document.createElement('div');
 		jQuery(detailsDiv).addClass('pz2-details');
-		detailsDiv.setAttribute('id', 'det_' + that.HTMLIDForRecordData(data));
 
 		var detailsList = document.createElement('dl');
 		detailsDiv.appendChild(detailsList);

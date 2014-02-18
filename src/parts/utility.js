@@ -101,34 +101,6 @@ pz2_client.prototype.MSIEVersion = function () {
 
 
 /**
- * Replaces characters from pazpar2 ids which are not allowed in HTML ids.
- *
- * @param {object} recordData
- * @returns {string}
- */
-pz2_client.prototype.HTMLIDForRecordData = function (recordData) {
-	var result;
-
-	if (recordData.recid[0] !== undefined) {
-		result = recordData.recid[0].replace(/ /g, '-pd-').replace(/\//g, '-pe-').replace(/\./g,'-pf-');
-	}
-
-	return result;
-};
-
-
-
-/**
- * Transform HTML id back to original pazpar id.
- * @param {string} – HTML id
- * @returns {string} - record id this HTML id belongs to
- */
-pz2_client.prototype.recordIDForHTMLID = function (HTMLID) {
-	return HTMLID.replace(/-pd-/g, ' ').replace(/-pe-/g, '/').replace(/-pf-/g, '.');
-};
-
-
-
 /**
  * Convenince method to append an item to another one, even if undefineds and arrays are involved.
  *
