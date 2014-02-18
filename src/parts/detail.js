@@ -744,9 +744,9 @@ pz2_client.prototype.renderDetails = function (data) {
 		that.appendInfoToContainer( keywordsDetailLine(), detailsList);
 
 		that.appendInfoToContainer( locationDetails(), detailsList );
-		that.appendGoogleBooksElementTo( data, detailsList );
-		that.appendInfoToContainer( that.mapDetailLine(data), detailsList );
 		that.addZDBInfoIntoElement( data, detailsList );
+		that.appendInfoToContainer( that.mapDetailLine(data), detailsList );
+		that.appendGoogleBooksElementTo( data, detailsList );
 		that.appendInfoToContainer( that.exportLinks(data), detailsDiv );
 	}
 
