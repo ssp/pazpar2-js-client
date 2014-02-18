@@ -40,7 +40,11 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 		};
 
 
+
 		var searchString = jQuery('#pz2-field-' + fieldName, myForm).val();
+		if (that.config.removeDiacriticsBeforeSearch) {
+			searchString = that.removeDiacritics(searchString);
+		}
 		var indexName = fieldName;
 
 		if (searchString && searchString !== '') {

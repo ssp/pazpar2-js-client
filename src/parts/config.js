@@ -64,6 +64,8 @@ pz2_client.prototype.config = {
 	autocompleteSetupFunction: this.autocompleteSetupArray,
 	// Number of recent searches to store.
 	historyItems: 99,
-	// Whether to shoe the link for the history feature
-	addHistoryLink: true
+	// Whether to show the link for the history feature
+	addHistoryLink: false,
+	// Whether to convert accented characters into ASCII before submitting the search
+	removeDiacriticsBeforeSearch: false
 };
