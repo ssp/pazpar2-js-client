@@ -28,6 +28,8 @@ pz2_client.prototype.updateFacetLists = function () {
 	 */
 	var facetListForType = function (type, preferOriginalFacets) {
 
+		var classNameRegEx = /[ ,.\/]/g;
+
 		/*	limitResults
 			Adds a filter for term for the data of type kind. Then redisplays.
 			input:	* kind - string with name of facet type
@@ -45,7 +47,7 @@ pz2_client.prototype.updateFacetLists = function () {
 
 			// Mark with class for selected facet. Remove spaces from strings.
 			var baseName = 'pz2-term-selected-' + kind.replace(' ', '-');
-			var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(' ', '-');
+			var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(classNameRegEx, '-');
 			jQuery('#pazpar2')
 				.addClass(baseName)
 				.addClass(baseName + '-' + termString);
@@ -67,10 +69,10 @@ pz2_client.prototype.updateFacetLists = function () {
 		var delimitResults = function (kind, term) {
 			if (that.filterArray[kind]) {
 				var jPazpar2 = jQuery('#pazpar2');
-				var baseName = 'pz2-term-selected-' + kind.replace(' ', '-');
+				var baseName = 'pz2-term-selected-' + kind.replace(classNameRegEx, '-');
 				if (term) {
 					// if a term is given only delete occurrences of 'term' from the filter
-					var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(' ', '-');
+					var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(classNameRegEx, '-');
 					for (var index = that.filterArray[kind].length -1; index >= 0; index--) {
 						if (that.filterArray[kind][index] === term) {
 							that.filterArray[kind].splice(index,1);
