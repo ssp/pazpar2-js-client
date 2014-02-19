@@ -298,8 +298,8 @@ pz2_client.prototype.updateFacetLists = function () {
 						// we need to add the overflow indicator.
 						var hitOverflow = target.hits - target.records;
 						if (hitOverflow > 0) {
-							count.appendChild(document.createTextNode(that.localise('+')));
-							var titleString = that.localise('In diesem Katalog gibt es noch # weitere Treffer.');
+							count.appendChild(document.createTextNode(that.localise('+', 'status')));
+							var titleString = that.localise('In diesem Katalog gibt es noch # weitere Treffer.', 'status');
 							titleString = titleString.replace('#', hitOverflow);
 							item.title = titleString;
 						}
@@ -307,11 +307,11 @@ pz2_client.prototype.updateFacetLists = function () {
 					else if (target.state === 'Client_Working') {
 						// While transfers from the target are still running, append an
 						// ellipsis to indicate that we are busy.
-						count.appendChild(document.createTextNode(that.localise('...')));
+						count.appendChild(document.createTextNode(that.localise('...', 'status')));
 					}
 					else if (target.state === 'Client_Error' || target.state === 'Client_Disconnected') {
 						// If an error occurred for the target, indicate that.
-						count.appendChild(document.createTextNode(that.localise('Error indicator')));
+						count.appendChild(document.createTextNode(that.localise('Error indicator', 'status')));
 					}
 				}
 
@@ -333,7 +333,7 @@ pz2_client.prototype.updateFacetLists = function () {
 							cancelLink.setAttribute('href', '#');
 							jCancelLink.addClass('pz2-facetCancel');
 							jCancelLink.click(facetItemDeselect);
-							cancelLink.appendChild(document.createTextNode(that.localise('Filter aufheben')));
+							cancelLink.appendChild(document.createTextNode(that.localise('Filter aufheben', 'facets')));
 							break;
 						}
 					}
@@ -363,7 +363,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				};
 
 				jQuery(showLink).click(showAllFacetsOfType);
-				var showLinkText = that.localise('# weitere anzeigen').replace('#', invisibleCount);
+				var showLinkText = that.localise('# weitere anzeigen', 'facets').replace('#', invisibleCount);
 				showLink.appendChild(document.createTextNode(showLinkText));
 			}
 
@@ -389,7 +389,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				if (that.filterArray['filterDate'][0].from !== that.filterArray['filterDate'][0].to - 1) {
 					yearString += '-' + (that.filterArray['filterDate'][0].to - 1);
 				}
-				var cancelLinkText = that.localise('Filter # aufheben').replace('#', yearString);
+				var cancelLinkText = that.localise('Filter # aufheben', 'facets').replace('#', yearString);
 				cancelLink.appendChild(document.createTextNode(cancelLinkText));
 			}
 
@@ -542,7 +542,7 @@ pz2_client.prototype.updateFacetLists = function () {
 							var term = parseInt(terms[termIndex].name, 10);
 							if (term === range.from) {
 								var hitCount = terms[termIndex].freq;
-								displayString = term.toString() + ': ' + hitCount + ' ' + that.localise('Treffer');
+								displayString = term.toString() + ': ' + hitCount + ' ' + that.localise('Treffer', 'facets');
 								break;
 							}
 						}
@@ -587,7 +587,7 @@ pz2_client.prototype.updateFacetLists = function () {
 			container.appendChild(heading);
 			var headingText = that.localise(type, 'facet');
 			if (isFilteredForType(type)) {
-				headingText += ' [' + that.localise('gefiltert') + ']';
+				headingText += ' [' + that.localise('gefiltert', 'facets') + ']';
 			}
 			heading.appendChild(document.createTextNode(headingText));
 
@@ -615,7 +615,7 @@ pz2_client.prototype.updateFacetLists = function () {
 
 		var mainHeading = document.createElement('h4');
 		container.appendChild(mainHeading);
-		mainHeading.appendChild(document.createTextNode(that.localise('Facetten')));
+		mainHeading.appendChild(document.createTextNode(that.localise('Facetten', 'facets')));
 
 		for (var facetType in that.config.termLists ) {
 			container.appendChild(facetListForType(facetType));

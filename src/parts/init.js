@@ -208,15 +208,15 @@ pz2_client.prototype.oninit = function (data) {
 		if (this.institutionName !== undefined) {
 			var accessMessage;
 			if (this.institutionName === 'Gastzugang') {
-				accessMessage = this.localise('Gastzugang');
+				accessMessage = this.localise('Gastzugang', 'access');
 			}
 			else {
-				accessMessage =  this.localise('Zugang über:') + ' ' + institutionName;
+				accessMessage =  this.localise('Zugang über:', 'access') + ' ' + institutionName;
 			}
 
 			var accessNote;
 			if (this.allTargetsActive === false) {
-				accessNote = this.localise('Nicht alle Datenbanken verfügbar.');
+				accessNote = this.localise('Nicht alle Datenbanken verfügbar.', 'access');
 			}
 
 			jQuery(document).ready(function () {

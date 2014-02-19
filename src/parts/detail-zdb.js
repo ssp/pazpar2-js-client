@@ -269,14 +269,14 @@ pz2_client.prototype.addZDBInfoIntoElement = function (data, element) {
 			if (electronicInfos) {
 				var electronicHeading = document.createElement('h5');
 				container.appendChild(electronicHeading);
-				electronicHeading.appendChild(document.createTextNode(that.localise('elektronisch')));
+				electronicHeading.appendChild(document.createTextNode(that.localise('elektronisch', 'detail')));
 				container.appendChild(electronicInfos);
 			}
 
 			if (printInfos) {
 				var printHeading = document.createElement('h5');
 				container.appendChild(printHeading);
-				printHeading.appendChild(document.createTextNode(that.localise('gedruckt')));
+				printHeading.appendChild(document.createTextNode(that.localise('gedruckt', 'detail')));
 				container.appendChild(printInfos);
 			}
 

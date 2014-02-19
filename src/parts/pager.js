@@ -77,7 +77,7 @@ pz2_client.prototype.updatePagers = function () {
 			previousLink = document.createElement('a');
 			previousLink.setAttribute('href', '#');
 			jPreviousLink.click(pagerPrev);
-			previousLink.title = that.localise('Vorige Trefferseite anzeigen');
+			previousLink.title = that.localise('Vorige Trefferseite anzeigen', 'pager');
 		}
 		jPreviousLink.addClass('pz2-prev');
 		previousLink.appendChild(document.createTextNode('«'));
@@ -125,7 +125,7 @@ pz2_client.prototype.updatePagers = function () {
 			nextLink = document.createElement('a');
 			nextLink.setAttribute('href', '#');
 			jNextLink.click(pagerNext);
-			nextLink.title = that.localise('Nächste Trefferseite anzeigen');
+			nextLink.title = that.localise('Nächste Trefferseite anzeigen', 'pager');
 		}
 		jNextLink.addClass('pz2-next');
 		nextLink.appendChild(document.createTextNode('»'));
@@ -141,7 +141,7 @@ pz2_client.prototype.updatePagers = function () {
 			var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.recPerPage);
 			infoString = String(firstIndex + 1) + '-' +
 				String(firstIndex + numberOfRecordsOnPage) +
-				' ' + that.localise('von') + ' ' +
+				' ' + that.localise('von', 'pager') + ' ' +
 				String(that.displayHitList.length);
 
 			// Determine transfer status and append indicators about it to
@@ -175,16 +175,16 @@ pz2_client.prototype.updatePagers = function () {
 
 			var titleText = [];
 			if (resultOverflow.length > 0) {
-				infoString += that.localise('+');
-				var overflowMessage = that.localise('Es können nicht alle # Treffer geladen werden.');
+				infoString += that.localise('+', 'status');
+				var overflowMessage = that.localise('Es können nicht alle # Treffer geladen werden.', 'status');
 				titleText.push(overflowMessage.replace('#', totalResultCount));
 			}
 			if (transfersBusy.length > 0) {
-				infoString += that.localise('...');
+				infoString += that.localise('...', 'status');
 			}
 			if (hasError.length > 0) {
-				infoString += that.localise('Error indicator');
-				var errorMessage = that.localise('Bei der Übertragung von Daten aus # der abgefragten Kataloge ist ein Fehler aufgetreten.');
+				infoString += that.localise('Error indicator', 'status');
+				var errorMessage = that.localise('Bei der Übertragung von Daten aus # der abgefragten Kataloge ist ein Fehler aufgetreten.', 'status');
 				titleText.push(errorMessage.replace('#', hasError.length));
 			}
 
@@ -194,22 +194,22 @@ pz2_client.prototype.updatePagers = function () {
 			// non-trivial property.
 			for  (var filterIndex  in that.filterArray) {
 				if (that.filterArray[filterIndex] !== undefined) {
-					infoString += ' [' + that.localise('gefiltert') + ']';
+					infoString += ' [' + that.localise('gefiltert', 'facets') + ']';
 					break;
 				}
 			}
 		}
 		else {
 			if (!that.my_paz.currQuery) {
-				infoString = that.localise('keine Suchabfrage');
+				infoString = that.localise('keine Suchabfrage', 'status');
 			}
 			else if (that.my_paz.activeClients === 0) {
-				infoString = that.localise('keine Treffer gefunden');
+				infoString = that.localise('keine Treffer gefunden', 'status');
 				jRecordCount.addClass('pz2-noResults');
 				that.updateProgressBar(100);
 			}
 			else {
-				infoString = that.localise('Suche...');
+				infoString = that.localise('Suche...', 'status');
 			}
 		}
 

@@ -134,7 +134,7 @@ pz2_client.prototype.renderDetails = function (data) {
 				var ISSN = data[fieldName][ISSNIndex].substr(0,9);
 				if (jQuery.inArray(ISSN, ISSNList) === -1) {
 					if (ISSNTypes[ISSNTypeIndex] !== '') {
-						ISSN += ' (' + that.localise(ISSNTypes[ISSNTypeIndex]) + ')';
+						ISSN += ' (' + that.localise(ISSNTypes[ISSNTypeIndex], 'detail') + ')';
 					}
 					ISSNList.push(ISSN);
 				}
@@ -213,7 +213,7 @@ pz2_client.prototype.renderDetails = function (data) {
 
 				var linkURL = document.location.href.split('?')[0] + '?' + jQuery.param(parameters);
 				linkElement.setAttribute('href', linkURL);
-				var titleString = that.localise('nach Schlagwort "#" suchen').replace('#', subject);
+				var titleString = that.localise('nach Schlagwort "#" suchen', 'detail').replace('#', subject);
 				linkElement.setAttribute('title', titleString);
 				jQuery(linkElement).click(searchForSubject);
 
@@ -273,7 +273,7 @@ pz2_client.prototype.renderDetails = function (data) {
 				MSCNotes.push(noteIndex);
 			}
 			if (MSCNotes.length > 0) {
-				MSCString += ' (' + that.localise('gemäß') + ' ' + MSCNotes.join(', ') + ')';
+				MSCString += ' (' + that.localise('gemäß', 'detail') + ' ' + MSCNotes.join(', ') + ')';
 			}
 
 			infoElements = [document.createTextNode(MSCString)];
@@ -616,10 +616,10 @@ pz2_client.prototype.renderDetails = function (data) {
 			if (URL && data['md-medium'][0] !== 'article') {
 				var linkElement = document.createElement('a');
 				linkElement.setAttribute('href', URL);
-				linkElement.title = that.localise('enthaltendes Werk im Katalog ansehen');
+				linkElement.title = that.localise('enthaltendes Werk im Katalog ansehen', 'detail');
 				that.turnIntoNewWindowLink(linkElement);
 				jQuery(linkElement).addClass('pz2-detail-parentCatalogueLink');
-				linkElement.appendChild(document.createTextNode(that.localise('enthaltendes Werk')));
+				linkElement.appendChild(document.createTextNode(that.localise('enthaltendes Werk', 'detail')));
 				result = [linkElement, document.createTextNode(' ')];
 			}
 
@@ -641,7 +641,7 @@ pz2_client.prototype.renderDetails = function (data) {
 			if (URL && targetName) {
 				linkElement = document.createElement('a');
 				linkElement.setAttribute('href', URL);
-				linkElement.title = that.localise('Im Katalog ansehen');
+				linkElement.title = that.localise('Im Katalog ansehen', 'detail');
 				that.turnIntoNewWindowLink(linkElement);
 				jQuery(linkElement).addClass('pz2-detail-catalogueLink');
 				linkElement.appendChild(document.createTextNode(targetName));
@@ -661,7 +661,7 @@ pz2_client.prototype.renderDetails = function (data) {
 
 			var detailsHeading = document.createElement('dt');
 			locationDetails.push(detailsHeading);
-			detailsHeading.appendChild(document.createTextNode(that.localise('Ausgabe')+':'));
+			detailsHeading.appendChild(document.createTextNode(that.localise('Ausgabe', 'detail') + ':'));
 
 			var detailsData = document.createElement('dd');
 			locationDetails.push(detailsData);

@@ -213,7 +213,7 @@ pz2_client.prototype.createResultItem = function (hit) {
 		mediaClass = 'multiple';
 	}
 	jQuery(iconElement).addClass('pz2-mediaIcon ' + mediaClass);
-	iconElement.title = that.localise(mediaClass, 'medium');
+	iconElement.title = that.localise(mediaClass, 'facet-medium');
 
 	that.appendInfoToContainer(titleInfo(), linkElement);
 	var authors = authorInfo();

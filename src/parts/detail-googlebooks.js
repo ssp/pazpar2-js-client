@@ -113,10 +113,10 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 						buttonImage.setAttribute('src', buttonImageURL);
 						var buttonAltText = 'Google Books';
 						if (selectedBook.preview === 'full') {
-							buttonAltText = that.localise('Google Books: Vollständige Ansicht');
+							buttonAltText = that.localise('Google Books: Vollständige Ansicht', 'detail-googlebooks');
 						}
 						else if (selectedBook.preview === 'partial') {
-							buttonAltText = that.localise('Google Books: Eingeschränkte Vorschau');
+							buttonAltText = that.localise('Google Books: Eingeschränkte Vorschau', 'detail-googlebooks');
 						}
 						buttonImage.setAttribute('alt', buttonAltText);
 						bookLink.appendChild(buttonImage);
@@ -127,7 +127,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 							var coverArtImage = document.createElement('img');
 							bookLink.appendChild(coverArtImage);
 							coverArtImage.setAttribute('src', selectedBook.thumbnail_url);
-							coverArtImage.setAttribute('alt', that.localise('Umschlagbild'));
+							coverArtImage.setAttribute('alt', that.localise('Umschlagbild', 'detail-googlebooks'));
 							jQuery(coverArtImage).addClass('bookCover');
 						}
 
@@ -185,7 +185,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 				};
 
 				jCloseBoxLink.click(onClosePreview);
-				closeBoxLink.appendChild(document.createTextNode(that.localise('Vorschau schließen')));
+				closeBoxLink.appendChild(document.createTextNode(that.localise('Vorschau schließen', 'detail-googlebooks')));
 
 				previewDiv = document.createElement('div');
 				previewDiv.setAttribute('id', previewDivName);

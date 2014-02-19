@@ -49,12 +49,12 @@ pz2_client.prototype.onbytarget = function (data) {
 
 	var caption = document.createElement('caption');
 	table.appendChild(caption);
-	caption.appendChild(document.createTextNode(this.localise('Übertragungsstatus')));
+	caption.appendChild(document.createTextNode(this.localise('Übertragungsstatus', 'status')));
 	var closeLink = document.createElement('a');
 	caption.appendChild(closeLink);
 	closeLink.setAttribute('href', '#');
 	jQuery(closeLink).click(jQuery.proxy(this.toggleStatus, this));
-	closeLink.appendChild(document.createTextNode(this.localise('[ausblenden]')));
+	closeLink.appendChild(document.createTextNode(this.localise('[ausblenden]', 'status')));
 
 	var thead = document.createElement('thead');
 	table.appendChild(thead);
@@ -62,20 +62,20 @@ pz2_client.prototype.onbytarget = function (data) {
 	thead.appendChild(tr);
 	var td = document.createElement('th');
 	tr.appendChild(td);
-	td.appendChild(document.createTextNode(this.localise('Datenbank')));
+	td.appendChild(document.createTextNode(this.localise('Datenbank', 'status')));
 	td.id = 'pz2-target-name';
 	td = document.createElement('th');
 	tr.appendChild(td);
-	td.appendChild(document.createTextNode(this.localise('Geladen')));
+	td.appendChild(document.createTextNode(this.localise('Geladen', 'status')));
 	td.id = 'pz2-target-loaded';
 	td = document.createElement('th');
 	tr.appendChild(td);
-	td.appendChild(document.createTextNode(this.localise('Treffer')));
+	td.appendChild(document.createTextNode(this.localise('Treffer', 'status')));
 	td.id = 'pz2-target-hits';
 	td = document.createElement('th');
 	tr.appendChild(td);
 	jQuery(td).addClass('pz2-target-status');
-	td.appendChild(document.createTextNode(this.localise('Status')));
+	td.appendChild(document.createTextNode(this.localise('Status', 'status')));
 	td.id = 'pz2-target-status';
 
 	var tbody = document.createElement('tbody');
@@ -86,7 +86,7 @@ pz2_client.prototype.onbytarget = function (data) {
 		tbody.appendChild(tr);
 		td = document.createElement('th');
 		tr.appendChild(td);
-		td.appendChild(document.createTextNode(this.localise(data[i].name, 'catalogueNames')));
+		td.appendChild(document.createTextNode(this.localise(data[i].name, 'facet-xtargets')));
 		td.title = data[i].id;
 		td.setAttribute('headers', 'pz2-target-name');
 		td = document.createElement('td');
@@ -103,9 +103,9 @@ pz2_client.prototype.onbytarget = function (data) {
 		td.setAttribute('headers', 'pz2-target-hits');
 		td = document.createElement('td');
 		tr.appendChild(td);
-		td.appendChild(document.createTextNode(this.localise(data[i].state)));
+		td.appendChild(document.createTextNode(this.localise(data[i].state, 'status')));
 		if (parseInt(data[i].diagnostic, 10) !== 0) {
-			td.setAttribute('title', this.localise('Code') + ': ' + data[i].diagnostic);
+			td.setAttribute('title', this.localise('Code', 'status') + ': ' + data[i].diagnostic);
 		}
 		td.setAttribute('headers', 'pz2-target-status');
 
@@ -146,11 +146,11 @@ pz2_client.prototype.onstat = function (data) {
 
 		var heading = document.createElement('h4');
 		statDiv.appendChild(heading);
-		heading.appendChild(document.createTextNode(this.localise('Status:')));
+		heading.appendChild(document.createTextNode(this.localise('Status:', 'status')));
 
-		var statusText = this.localise('Aktive Abfragen:') + ' ' +
+		var statusText = this.localise('Aktive Abfragen:', 'status') + ' ' +
 			data.activeclients + '/' + data.clients + ' – ' +
-			this.localise('Geladene Datensätze:') + ' ' +
+			this.localise('Geladene Datensätze:', 'status') + ' ' +
 			data.records + '/' + data.hits;
 		statDiv.appendChild(document.createTextNode(statusText));
 	}
@@ -181,7 +181,7 @@ pz2_client.prototype.onerror = function (that, error) {
 		// The service is unavailable: Disable the search form.
 		var jRecordCount = jQuery('.pz2-recordCount');
 		jRecordCount.empty();
-		var message = that.localise('Suche momentan nicht verfügbar.');
+		var message = that.localise('Suche momentan nicht verfügbar.', 'status');
 		jRecordCount.text(message);
 		jRecordCount.addClass('pz2-noResults');
 
