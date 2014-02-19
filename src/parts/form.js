@@ -41,14 +41,15 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 
 
-		var searchString = jQuery('#pz2-field-' + fieldName, myForm).val();
-		if (that.config.removeDiacriticsBeforeSearch) {
-			searchString = that.removeDiacritics(searchString);
-		}
 		var indexName = fieldName;
+		var searchString = jQuery('#pz2-field-' + fieldName, myForm).val();
 
 		if (searchString && searchString !== '') {
 			searchString = jQuery.trim(searchString);
+			if (that.config.removeDiacriticsBeforeSearch) {
+				searchString = that.removeDiacritics(searchString);
+			}
+
 			if (fieldName === 'all') {
 				if (jQuery('#pz2-checkbox-fulltext:checked', myForm).length > 0) {
 					indexName = 'fulltext';
