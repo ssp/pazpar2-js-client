@@ -270,7 +270,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				var link = document.createElement('a');
 				item.appendChild(link);
 				link.setAttribute('href', '#');
-				link.onclick = facetItemSelect;
+				jQuery(link).click(facetItemSelect);
 
 				// 'Progress bar'
 				var progressBar = document.createElement('div');
@@ -328,10 +328,11 @@ pz2_client.prototype.updateFacetLists = function () {
 						if (facet.name === that.filterArray[type][filterIndex]) {
 							jItem.addClass('pz2-activeFacet');
 							var cancelLink = document.createElement('a');
+							var jCancelLink = jQuery(cancelLink);
 							item.appendChild(cancelLink);
 							cancelLink.setAttribute('href', '#');
-							jQuery(cancelLink).addClass('pz2-facetCancel');
-							cancelLink.onclick = facetItemDeselect;
+							jCancelLink.addClass('pz2-facetCancel');
+							jCancelLink.click(facetItemDeselect);
 							cancelLink.appendChild(document.createTextNode(that.localise('Filter aufheben')));
 							break;
 						}
@@ -361,7 +362,7 @@ pz2_client.prototype.updateFacetLists = function () {
 					return false;
 				};
 
-				showLink.onclick = showAllFacetsOfType;
+				jQuery(showLink).click(showAllFacetsOfType);
 				var showLinkText = that.localise('# weitere anzeigen').replace('#', invisibleCount);
 				showLink.appendChild(document.createTextNode(showLinkText));
 			}
@@ -379,10 +380,11 @@ pz2_client.prototype.updateFacetLists = function () {
 
 			if (isFilteredForType('filterDate')) {
 				var cancelLink = document.createElement('a');
+				var jCancelLink = jQuery(cancelLink);
 				histogramContainer.appendChild(cancelLink);
 				cancelLink.setAttribute('href', '#');
-				jQuery(cancelLink).addClass('pz2-facetCancel pz2-activeFacet');
-				cancelLink.onclick = facetItemDeselect;
+				jCancelLink.addClass('pz2-facetCancel pz2-activeFacet');
+				jCancelLink.click(facetItemDeselect);
 				var yearString = that.filterArray['filterDate'][0].from;
 				if (that.filterArray['filterDate'][0].from !== that.filterArray['filterDate'][0].to - 1) {
 					yearString += '-' + (that.filterArray['filterDate'][0].to - 1);
@@ -489,7 +491,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				limitResults('filterDate', newRange);
 			};
 
-			jGraphDiv.bind("plotclick", function (event, pos, item) {
+			jGraphDiv.on('plotclick', function (event, pos, item) {
 				if (item && item.datapoint) {
 					var year = item.datapoint[0];
 					var ranges = {'xaxis': {'from': year, 'to': year + 1} };
@@ -497,11 +499,11 @@ pz2_client.prototype.updateFacetLists = function () {
 				}
 			});
 
-			jGraphDiv.bind('plotselected', function(event, ranges) {
+			jGraphDiv.on('plotselected', function(event, ranges) {
 				selectRanges(ranges);
 			});
 
-			jGraphDiv.bind('plotunselected', function(event) {
+			jGraphDiv.on('plotunselected', function(event) {
 				delimitResults('filterDate');
 			});
 
@@ -555,11 +557,11 @@ pz2_client.prototype.updateFacetLists = function () {
 				}
 			};
 
-			jGraphDiv.bind('plothover', function(event, ranges, item) {
+			jGraphDiv.on('plothover', function(event, ranges, item) {
 				updateTooltip(event, {'xaxis': {'from': ranges.x, 'to': ranges.x}}, ranges.pageX);
 			});
 
-			jGraphDiv.bind('plotselecting', function (event, info) {
+			jGraphDiv.on('plotselecting', function (event, info) {
 				histogramContainer.currentSelection = info;
 				updateTooltip(event, info);
 			});

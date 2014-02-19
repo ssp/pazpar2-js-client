@@ -186,7 +186,7 @@ pz2_client.prototype.exportLinks = function (data) {
 				setTimeout(function(){that.trackPiwik('export/' + exportFormat);}, 500);
 				return true;
 			};
-			form.onsubmit = trackOnSubmit;
+			jQuery(form).submit(trackOnSubmit);
 		}
 
 		return form;

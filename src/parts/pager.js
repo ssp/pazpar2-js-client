@@ -72,13 +72,14 @@ pz2_client.prototype.updatePagers = function () {
 		var pageNumbersContainer = jPageNumbersContainer[0];
 
 		var previousLink = document.createElement('span');
+		var jPreviousLink = jQuery(previousLink);
 		if (that.curPage > 1) {
 			previousLink = document.createElement('a');
 			previousLink.setAttribute('href', '#');
-			previousLink.onclick = pagerPrev;
+			jPreviousLink.click(pagerPrev);
 			previousLink.title = that.localise('Vorige Trefferseite anzeigen');
 		}
-		jQuery(previousLink).addClass('pz2-prev');
+		jPreviousLink.addClass('pz2-prev');
 		previousLink.appendChild(document.createTextNode('«'));
 		pageNumbersContainer.appendChild(previousLink);
 
@@ -97,7 +98,7 @@ pz2_client.prototype.updatePagers = function () {
 				if(pageNumber !== that.curPage) {
 					var linkElement = document.createElement('a');
 					linkElement.setAttribute('href', '#');
-					linkElement.onclick = pagerGoto;
+					jQuery(linkElement).click(pagerGoto);
 					linkElement.appendChild(document.createTextNode(pageNumber));
 					pageItem.appendChild(linkElement);
 				}
@@ -119,13 +120,14 @@ pz2_client.prototype.updatePagers = function () {
 		}
 
 		var nextLink = document.createElement('span');
+		var jNextLink = jQuery(nextLink);
 		if (pages - that.curPage > 0) {
 			nextLink = document.createElement('a');
 			nextLink.setAttribute('href', '#');
-			nextLink.onclick = pagerNext;
+			jNextLink.click(pagerNext);
 			nextLink.title = that.localise('Nächste Trefferseite anzeigen');
 		}
-		jQuery(nextLink).addClass('pz2-next');
+		jNextLink.addClass('pz2-next');
 		nextLink.appendChild(document.createTextNode('»'));
 		pageNumbersContainer.appendChild(nextLink);
 

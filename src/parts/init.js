@@ -60,7 +60,7 @@ pz2_client.prototype.init = function (setup) {
 		linkDiv.appendChild(historyLink);
 		historyLink.setAttribute('href', '#');
 		historyLink.setAttribute('class', 'pz2-historyLink');
-		historyLink.onclick = jQuery.proxy(this.showHistory, this);
+		jQuery(historyLink).click(jQuery.proxy(this.showHistory, this));
 		historyLink.appendChild(document.createTextNode(this.localise('Suchgeschichte')));
 	}
 

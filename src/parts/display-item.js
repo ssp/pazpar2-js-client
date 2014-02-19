@@ -197,10 +197,11 @@ pz2_client.prototype.createResultItem = function (hit) {
 	jQuery(LI).data('record', hit);
 
 	var linkElement = document.createElement('a');
+	var jLinkElement = jQuery(linkElement);
 	LI.appendChild(linkElement);
 	linkElement.setAttribute('href', '#');
-	jQuery(linkElement).addClass('pz2-recordLink');
-	linkElement.onclick = toggleDetails;
+	jLinkElement.addClass('pz2-recordLink');
+	jLinkElement.click(toggleDetails);
 
 	var iconElement = document.createElement('span');
 	linkElement.appendChild(iconElement);

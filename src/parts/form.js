@@ -204,7 +204,7 @@ pz2_client.prototype.addExtendedSearch = function (event, dontTrack) {
 
 	// switch the link to a simple search link
 	jQuery('.pz2-extendedLink', jFormContainer)
-		.unbind()
+		.off('click')
 		.click(jQuery.proxy(this.removeExtendedSearch, this))
 		.empty()
 		.text(this.localise('einfache Suche'));
@@ -241,7 +241,7 @@ pz2_client.prototype.removeExtendedSearch  = function (event, dontTrack) {
 
 	// switch the link to an extended search link
 	jQuery('.pz2-extendedLink', jFormContainer)
-		.unbind()
+		.off('click')
 		.click(jQuery.proxy(this.addExtendedSearch, this))
 		.empty()
 		.text(this.localise('erweiterte Suche'));

@@ -88,7 +88,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 							Depending on the features of the Preview, it opens interactively
 							on top of our view or in a new window.
 
-							output: DOMElement - a Element with href and possibly onclick
+							output: DOMElement - a Element with href and possibly click event handler
 						*/
 
 						var createGoogleBooksLink = function () {
@@ -96,7 +96,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 							bookLink.setAttribute('href', selectedBook.preview_url);
 							that.turnIntoNewWindowLink(bookLink);
 							if (selectedBook.embeddable === true) {
-								bookLink.onclick = openPreview;
+								jQuery(bookLink).click(openPreview);
 							}
 							return bookLink;
 						};
@@ -173,8 +173,9 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 				previewContainerDiv.appendChild(titleBarDiv);
 
 				var closeBoxLink = document.createElement('a');
+				var jCloseBoxLink = jQuery(closeBoxLink);
 				titleBarDiv.appendChild(closeBoxLink);
-				jQuery(closeBoxLink).addClass('googlePreview-closeBox');
+				jCloseBoxLink.addClass('googlePreview-closeBox');
 				closeBoxLink.setAttribute('href', '#');
 
 				var onClosePreview = function () {
@@ -183,7 +184,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 					return false;
 				};
 
-				closeBoxLink.onclick = onClosePreview;
+				jCloseBoxLink.click(onClosePreview);
 				closeBoxLink.appendChild(document.createTextNode(that.localise('Vorschau schließen')));
 
 				previewDiv = document.createElement('div');

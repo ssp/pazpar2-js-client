@@ -215,7 +215,7 @@ pz2_client.prototype.renderDetails = function (data) {
 				linkElement.setAttribute('href', linkURL);
 				var titleString = that.localise('nach Schlagwort "#" suchen').replace('#', subject);
 				linkElement.setAttribute('title', titleString);
-				linkElement.onclick = searchForSubject;
+				jQuery(linkElement).click(searchForSubject);
 
 				linkElement.appendChild(document.createTextNode(subject));
 				infoElement.appendChild(linkElement);
