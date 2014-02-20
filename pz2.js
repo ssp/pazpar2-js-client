@@ -287,13 +287,17 @@ pz2.prototype =
         else
             var start = 0;
 
-	      var searchParams = { 
+        var searchParams = {
           "command": "search",
           "query": this.currQuery, 
           "session": this.sessionID,
           "windowid" : this.windowid
         };
-	
+
+        if( sort !== undefined ) {
+          this.currentSort = sort;
+          searchParams["sort"] = sort;
+        }
         if (filter !== undefined) searchParams["filter"] = filter;
         if (this.mergekey) searchParams["mergekey"] = this.mergekey;
         if (this.rank) searchParams["rank"] = this.rank;
@@ -577,7 +581,8 @@ pz2.prototype =
                 "command": "termlist", 
                 "session": this.sessionID, 
                 "name": this.termKeys,
-                "windowid" : this.windowid
+                "windowid" : this.windowid,
+                "version" : this.version
             },
             function(data) {
                 if ( data.getElementsByTagName("termlist") ) {
@@ -607,13 +612,23 @@ pz2.prototype =
                                     .childNodes[0].nodeValue || 'ERROR'
                             };
 
+                            // Only for xtargets: id, records, filtered
                             var termIdNode = 
                                 terms[j].getElementsByTagName("id");
                             if(terms[j].getElementsByTagName("id").length)
                                 term["id"] = 
                                     termIdNode[0].childNodes[0].nodeValue;
                             termList[listName][j] = term;
-                        }
+
+							var recordsNode  = terms[j].getElementsByTagName("records");
+							if (recordsNode && recordsNode.length)
+							term["records"] = recordsNode[0].childNodes[0].nodeValue;
+
+							var filteredNode  = terms[j].getElementsByTagName("filtered");
+							if (filteredNode && filteredNode.length)
+							term["filtered"] = filteredNode[0].childNodes[0].nodeValue;
+
+		                }
                     }
 
                     context.termCounter++;
@@ -658,7 +673,8 @@ pz2.prototype =
               "command": "bytarget",
               "session": this.sessionID,
               "block": 1,
-              "windowid" : this.windowid
+              "windowid" : this.windowid,
+              "version": this.version
             },
             function(data) {
                 if ( data.getElementsByTagName("status")[0]
