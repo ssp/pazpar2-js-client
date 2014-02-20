@@ -9,10 +9,10 @@
 pz2_client.prototype.onshow = function (data) {
 
 	/*	extractNewestDates
-		Looks for the 'date' array in the passed record and returns an array
+		Looks for the md-date array in the passed record and returns an array
 		of integers containing the numbers represented by the last four
 		consecutive digits in each member.
-		input:	array (possibly a pazpar2 record or a record’s location element
+		input:	array (a pazpar2 record or a record’s location element)
 		output:	array of integers
 	*/
 	var extractNewestDates = function (record) {
@@ -50,6 +50,8 @@ pz2_client.prototype.onshow = function (data) {
 		}
 	};
 
+
+
 	for (var hitNumber in data.hits) {
 		var hit = data.hits[hitNumber];
 		var hitID = hit.recid[0];
@@ -58,14 +60,25 @@ pz2_client.prototype.onshow = function (data) {
 			if (oldHit) {
 				hit.detailsDivVisible = oldHit.detailsDivVisible;
 				if (oldHit.location.length === hit.location.length) {
-					// preserve old details Div, if the location info hasn't changed
-					hit.detailsDiv = this.hitList[hitID].detailsDiv;
+					// Preserve existing LI and details DIV, if the location info
+					// has not changed. Otherwise they will be recreated using
+					// the updated data.
+					hit.li = oldHit.li;
+					hit.detailsDiv = oldHit.detailsDiv;
 				}
 			}
 
-			// Make sure the 'medium' field exists by setting it to 'other' if necessary.
-			if (!hit['md-medium']) {
-				hit['md-medium'] = ['other'];
+			if (!this.config.usePazpar2Facets) {
+				// Make sure the 'medium' field exists by setting it to 'other' if necessary.
+				if (!hit['md-medium']) {
+					hit['md-medium'] = ['other'];
+				}
+
+				// If there is no language information, set the language code to zzz
+				// (undefined) to ensure we get a facet for this case as well.
+				if (!hit['md-language']) {
+					hit['md-language'] = ['zzz'];
+				}
 			}
 
 			// Create the integer 'filterDate' field for faceting.
@@ -77,12 +90,6 @@ pz2_client.prototype.onshow = function (data) {
 				hit['md-multivolume-title'] = [hit['md-series-title'][0]];
 			}
 
-			// If there is no language information, set the language code to zzz
-			// (undefined) to ensure we get a facet for this case as well.
-			if (!hit['md-language']) {
-				hit['md-language'] = ['zzz'];
-			}
-
 			// Sort the location array to have the newest item first
 			hit.location.sort(sortNewestFirst);
 
@@ -90,13 +97,16 @@ pz2_client.prototype.onshow = function (data) {
 		}
 	}
 
-	this.updateAndDisplay();
+	if (this.curSource === 'query') {
+		this.updateAndDisplay(this.hitList);
+	}
 };
 
 
 
 /**
  * Update displayHitList and displayHitListUpToDate, then redraw.
+ *
  * @returns {undefined}
  */
 pz2_client.prototype.updateAndDisplay = function () {
@@ -292,10 +302,21 @@ pz2_client.prototype.updateAndDisplay = function () {
 
 
 	var that = this;
+	var hitList;
+	if (that.curSource === 'query') {
+		// Use the query results.
+		hitList = that.hitList;
+	}
+	else {
+		// Use a copy of the clipboard.
+		hitList = jQuery.extend(true, {}, that.getClipboard());
+	}
 
-	var filterResults = displayLists(that.hitList);
+	var filterResults = displayLists(hitList);
 	that.displayHitList = filterResults[0];
 	that.displayHitListUpToDate = filterResults[1];
 	that.display();
-	that.updateFacetLists();
+	if (!that.config.usePazpar2Facets || that.config.curSource === 'history') {
+		that.updateFacetLists();
+	}
 };

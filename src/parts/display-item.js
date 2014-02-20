@@ -236,7 +236,7 @@ pz2_client.prototype.createResultItem = function (hit) {
 	}
 
 	if (that.config.useClipboard) {
-		that.addClipboardLinkForRecordToContainer(LI);
+		that.appendClipboardLinkForRecordToContainer(LI);
 	}
 
 	hit.li = LI;

@@ -209,6 +209,7 @@ pz2_client.prototype.exportLinks = function (data) {
 		if (form) {
 			item = document.createElement('li');
 			item.appendChild(form);
+			item.setAttribute('class', 'pz2-exportItem');
 		}
 
 		return item;

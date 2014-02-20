@@ -40,6 +40,8 @@ pz2_client.prototype.config = {
 	ZDBUseClientIP: true,
 	// The maximum number of authors to display in the short result.
 	maxAuthors: 3,
+	// Use facet data as provided by pazpar2 or create our own?
+	usePazpar2Facets: false,
 	// Display year facets using a histogram graphic?
 	useHistogramForYearFacets: true,
 	// Name of the site that can be used, e.g. for file names of downloaded files.
@@ -64,8 +66,12 @@ pz2_client.prototype.config = {
 	autocompleteSetupFunction: this.autocompleteSetupArray,
 	// Number of recent searches to store.
 	historyItems: 99,
-	// Whether to show the link for the history feature
+	// Whether to show the link to display the history
 	addHistoryLink: false,
+	// Whether to offer storing results in the clipboard
+	useClipboard: false,
+	// Whether to show the link to display the clipboard
+	addClipboardLink: false,
 	// Whether to convert accented characters into ASCII before submitting the search
 	removeDiacriticsBeforeSearch: false
 };

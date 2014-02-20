@@ -32,6 +32,7 @@ function pz2_client () {
 	this.curFilter = null;
 	this.curSearchTerm = null;
 	this.curAdditionalQueryTerms = [];
+	this.curSource = 'query'; // 'query' for results, 'clipboard' for the clipboard
 
 	this.facetData = {}; // stores faceting information as sent by pazpar2
 	this.filterArray = {};

@@ -628,7 +628,7 @@ a.pz2-detail-parentCatalogueLink:hover {
 	position: relative;
 }
 
-#pz2-results .pz2-extraLinksLabel {
+.pz2-extraLinksLabel {
 	display: none;
 }
 
@@ -636,18 +636,18 @@ a.pz2-detail-parentCatalogueLink:hover {
 	text-align: right;
 }
 
-#pz2-results .pz2-extraLinks ul li {
+.pz2-extraLinks ul li {
 	display: inline;
 	padding: 0px;
 	list-style-type: none;
 }
 
-#pz2-results .pz2-extraLinks form,
-#pz2-results .pz2-extraLinks input {
+.pz2-extraLinks form,
+.pz2-extraLinks input {
 	display: inline;
 }
 
-#pz2-results .pz2-extraLinks ul li input {
+.pz2-extraLinks ul li input {
 	border: 0px none;
 	background: transparent;
 	cursor: pointer;
@@ -662,12 +662,12 @@ a.pz2-detail-parentCatalogueLink:hover {
 }
 
 #pz2-results .pz2-extraLinks:hover ul li input,
-#pz2-results .pz2-extraLinks:hover ul li a {
+.pz2-extraLinks:hover ul li a {
 	color: #000;
 }
 
 #pz2-results .pz2-extraLinks ul li input:hover,
-#pz2-results .pz2-extraLinks ul li a:hover {
+.pz2-extraLinks ul li a:hover {
 	text-decoration: underline;
 }
 
@@ -821,4 +821,71 @@ pz2-client.js removes this once it it loaded.
 	margin: 0 0 0 3em;
 	list-style-position: outside;
 	list-style-type: decimal;
+}
+
+
+/* CLIPBOARD DISPLAY */
+
+.pz2-featureLinks {
+	position: absolute;
+	right: 0;
+	top: -1.5em;
+}
+
+.pz2-clipboardLink {
+	margin-left: 1em;
+}
+
+.pz2-clipboardLink[items]:after {
+	content: ' (' attr(items) ')';
+}
+
+.pz2-addToClipboardLink {
+	display: none;
+	position: absolute;
+	top: 0px;
+	bottom: 0px;
+	left: -15px;
+	width: 15px;
+	text-align: center;
+}
+
+.pz2-resultList li:hover .pz2-addToClipboardLink {
+	display: block;
+}
+
+#pz2-clipboardHeading {
+	position: absolute;
+}
+
+#pz2-clipboardHeading h3 {
+	font-size: 200%;
+	display: inline;
+}
+
+#pz2-clipboardHeading a {
+	display: inline;
+	margin-left: 1em;
+}
+
+#pz2-clipboardHeading .pz2-removeClipboardLink:before {
+	content: '«';
+}
+
+#pz2-clipboardHeading .pz2-extraLinks {
+	margin-left: 1em;
+}
+
+#pz2-clipboardHeading .pz2-extraLinks ul {
+	display: inline;
+	text-align: inherit;
+}
+
+#pz2-clipboardHeading .pz2-extraLinks ul li {
+	margin-right: 0.5em;
+}
+
+.pz2-clipboardVisible .pz2-recordCount,
+.pz2-clipboardVisible .pz2-pager .pz2-progressIndicator {
+	display: none;
 }

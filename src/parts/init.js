@@ -63,6 +63,7 @@ pz2_client.prototype.init = function (setup) {
 		jQuery(historyLink).click(jQuery.proxy(this.showHistory, this));
 		historyLink.appendChild(document.createTextNode(this.localise('Suchgeschichte')));
 	}
+	this.appendClipboardLinkToContainer(linkDiv);
 
 	// Add event handlers for autocomplete.
 	this.setupAutocomplete();
