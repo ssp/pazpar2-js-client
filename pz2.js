@@ -742,7 +742,7 @@ pz2.prototype =
 ** AJAX HELPER CLASS ***********************************************************
 ********************************************************************************
 */
-var pzHttpRequest = function ( url, errorHandler ) {
+var pzHttpRequest = function (url, errorHandler, cookieDomain) {
         this.maxUrlLength = 512;
         this.request = null;
         this.url = url;
@@ -751,6 +751,7 @@ var pzHttpRequest = function ( url, errorHandler ) {
         this.requestHeaders = {};
         this.isXDomain = false;
         this.domainRegex = /https?:\/\/([^:/]+).*/;
+		this.cookieDomain = cookieDomain || null;
 
         var xhr = new XMLHttpRequest();
         if ("withCredentials" in xhr) {
@@ -817,6 +818,7 @@ pzHttpRequest.prototype =
 
     _getDomainFromUrl: function (url)
     {
+      if (this.cookieDomain) return this.cookieDomain; //explicit cookie domain
       var m = this.domainRegex.exec(url);
       return (m && m.length > 1) ? m[1] : null;
     },
@@ -828,6 +830,7 @@ pzHttpRequest.prototype =
 
     _isCrossDomain: function (domain)
     {
+      if (this.cookieDomain) return true; //assume xdomain is cookie domain set
       return !this._strEndsWith(domain, document.domain);
     },
 
