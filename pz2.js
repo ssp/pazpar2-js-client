@@ -749,17 +749,19 @@ var pzHttpRequest = function (url, errorHandler, cookieDomain) {
         this.errorHandler = errorHandler || null;
         this.async = true;
         this.requestHeaders = {};
-        this.isXDomain = false;
+        this.isXDR = false;
         this.domainRegex = /https?:\/\/([^:/]+).*/;
 		this.cookieDomain = cookieDomain || null;
 
         var xhr = new XMLHttpRequest();
+        var domain = this._getDomainFromUrl(url);
         if ("withCredentials" in xhr) {
           // XHR for Chrome/Firefox/Opera/Safari.
-        } else if (typeof XDomainRequest != "undefined") {
-          // XDomainRequest for IE.
+        } else if (domain && this._isCrossDomain(domain) &&
+            typeof XDomainRequest != "undefined") {
+          // use XDR (IE7/8) when no other way
           xhr = new XDomainRequest();
-          this.isXDomain = true;
+          this.isXDR = true;
         } else {
           // CORS not supported.
         }
@@ -888,12 +890,12 @@ pzHttpRequest.prototype =
           }
         }
         this.request.open( type, url, this.async );
-        if (!this.isXDomain) {
+        if (!this.isXDR) {
           //setting headers is only allowed with XHR
          for (var key in this.requestHeaders)
             this.request.setRequestHeader(key, this.requestHeaders[key]);
         }
-        if (this.isXDomain) {
+        if (this.isXDR) {
           this.request.onload = function () {
             //fake XHR props
             context.request.status = 200;
@@ -934,7 +936,7 @@ pzHttpRequest.prototype =
 				var errorInformation = '';
 				var errNode = null;
 				// xdomainreq does not have responseXML
-				if (this.isXDomain) {
+				if (this.isXDR) {
 					if (this.request.contentType.match(/\/xml/)){
 						var dom = new ActiveXObject('Microsoft.XMLDOM');
 						dom.async = false;
