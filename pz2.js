@@ -171,7 +171,7 @@ pz2.prototype =
         this.stop();
             
         if ( this.resetCallback )
-                this.resetCallback();
+                this.resetCallback(this.windowid);
     },
 
     init: function (sessionId, serviceId) 
@@ -215,7 +215,7 @@ pz2.prototype =
                                 context.keepAlive
                             );
                         if ( context.initCallback )
-                            context.initCallback(data);
+                            context.initCallback(this.windowid);
                     }
                     else
                         context.throwError('Init failed. Malformed WS resonse.',
@@ -362,7 +362,7 @@ pz2.prototype =
                                 },
                                 delay
                             );
-                    context.statCallback(stat);
+                    context.statCallback(stat, this.windowid);
                 }
                 else
                     context.throwError('Stat failed. Malformed WS resonse.',
@@ -397,7 +397,7 @@ pz2.prototype =
               "sort": this.currentSort,
               "block": 1,
               "type": this.showResponseType,
-              "windowid": window.windowid
+              "windowid": this.windowid
           };
         if (query_state) {
             requestParameters["query-state"] = query_state;
@@ -469,7 +469,7 @@ pz2.prototype =
                   context.show();
                 }, 
                 delay);
-            context.showCallback(show);
+            context.showCallback(show, this.windowid);
           }
         );
     },
@@ -488,7 +488,7 @@ pz2.prototype =
             "command": "record", 
             "session": this.sessionID,
             "id": this.currRecID,
-            "windowid" : window.name
+            "windowid" : this.windowid
         };
 	
 	this.currRecOffset = null;
@@ -521,7 +521,7 @@ pz2.prototype =
                     record = new Array();
                     record['xmlDoc'] = data;
                     record['offset'] = context.currRecOffset;
-                    callback(record, args);
+                    callback(record, args, this.windowid);
                 //pz2 record
                 } else if ( recordNode = 
                     data.getElementsByTagName("record")[0] ) {
@@ -551,7 +551,7 @@ pz2.prototype =
                                   },
                                   delay
                                );                                    
-                    callback(record, args);
+                    callback(record, args, this.windowid);
                 }
                 else
                     context.throwError('Record failed. Malformed WS resonse.',
@@ -577,7 +577,7 @@ pz2.prototype =
                 "command": "termlist", 
                 "session": this.sessionID, 
                 "name": this.termKeys,
-                "windowid" : window.windowid
+                "windowid" : this.windowid
             },
             function(data) {
                 if ( data.getElementsByTagName("termlist") ) {
@@ -628,7 +628,7 @@ pz2.prototype =
                                 delay
                             );
                    
-                   context.termlistCallback(termList);
+                   context.termlistCallback(termList, this.windowid);
                 }
                 else
                     context.throwError('Termlist failed. Malformed WS resonse.',
@@ -658,7 +658,7 @@ pz2.prototype =
               "command": "bytarget",
               "session": this.sessionID,
               "block": 1,
-              "windowid" : window.name
+              "windowid" : this.windowid
             },
             function(data) {
                 if ( data.getElementsByTagName("status")[0]
@@ -706,7 +706,7 @@ pz2.prototype =
                                 delay
                             );
 
-                    context.bytargetCallback(bytarget);
+                    context.bytargetCallback(bytarget, this.windowid);
                 }
                 else
                     context.throwError('Bytarget failed. Malformed WS resonse.',
