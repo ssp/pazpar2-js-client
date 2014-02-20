@@ -19,6 +19,7 @@ module.exports = function(grunt) {
 		concat: {
 			build: {
 				src: [
+					'pz2.js',
 					'src/main.js',
 					'src/parts/config.js',
 					'src/parts/init.js',
@@ -40,7 +41,7 @@ module.exports = function(grunt) {
 		},
 
 		watch: {
-			files: ['<%= jshint.files %>'],
+			files: ['<%= jshint.files %>', 'pz2.js'],
 			tasks: ['concat', 'uglify', 'jshint']
 		}
 
