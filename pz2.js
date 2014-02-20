@@ -73,7 +73,9 @@ var pz2 = function ( paramArray )
     this.initStatusOK = false;
     this.pingStatusOK = false;
     this.searchStatusOK = false;
-    
+	this.mergekey = paramArray.mergekey || null;
+	this.rank = paramArray.rank || null;
+
     // for sorting
     this.currentSort = "relevance";
 
@@ -291,8 +293,9 @@ pz2.prototype =
           "windowid" : window.name
         };
 	
-        if (filter !== undefined)
-	        searchParams["filter"] = filter;
+        if (filter !== undefined) searchParams["filter"] = filter;
+        if (this.mergekey) searchParams["mergekey"] = this.mergekey;
+        if (this.rank) searchParams["rank"] = this.rank;
 
         // copy additional parmeters, do not overwrite
         if (addParamsArr != undefined) {
@@ -746,16 +749,20 @@ var pzHttpRequest = function ( url, errorHandler ) {
         this.errorHandler = errorHandler || null;
         this.async = true;
         this.requestHeaders = {};
-        
-        if ( window.XMLHttpRequest ) {
-            this.request = new XMLHttpRequest();
-        } else if ( window.ActiveXObject ) {
-            try {
-                this.request = new ActiveXObject( 'Msxml2.XMLHTTP' );
-            } catch (err) {
-                this.request = new ActiveXObject( 'Microsoft.XMLHTTP' );
-            }
+        this.isXDomain = false;
+        this.domainRegex = /https?:\/\/([^:/]+).*/;
+
+        var xhr = new XMLHttpRequest();
+        if ("withCredentials" in xhr) {
+          // XHR for Chrome/Firefox/Opera/Safari.
+        } else if (typeof XDomainRequest != "undefined") {
+          // XDomainRequest for IE.
+          xhr = new XDomainRequest();
+          this.isXDomain = true;
+        } else {
+          // CORS not supported.
         }
+        this.request = xhr;
 };
 
 
@@ -808,17 +815,101 @@ pzHttpRequest.prototype =
         return encoded;
     },
 
+    _getDomainFromUrl: function (url)
+    {
+      var m = this.domainRegex.exec(url);
+      return (m && m.length > 1) ? m[1] : null;
+    },
+
+    _strEndsWith: function (str, suffix)
+    {
+      return str.indexOf(suffix, str.length - suffix.length) !== -1;
+    },
+
+    _isCrossDomain: function (domain)
+    {
+      return !this._strEndsWith(domain, document.domain);
+    },
+
+    getCookie: function (sKey) {
+      return decodeURI(document.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*"
+        + encodeURI(sKey).replace(/[\-\.\+\*]/g, "\\$&")
+        + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null;
+    },
+
+    setCookie: function (sKey, sValue, vEnd, sPath, sDomain, bSecure) {
+      if (!sKey || /^(?:expires|max\-age|path|domain|secure)$/i.test(sKey)) {
+        return false;
+      }
+      var sExpires = "";
+      if (vEnd) {
+        switch (vEnd.constructor) {
+          case Number:
+            sExpires = vEnd === Infinity
+              ? "; expires=Fri, 31 Dec 9999 23:59:59 GMT"
+              : "; max-age=" + vEnd;
+            break;
+          case String:
+            sExpires = "; expires=" + vEnd;
+            break;
+          case Date:
+            sExpires = "; expires=" + vEnd.toGMTString();
+            break;
+        }
+      }
+      document.cookie = encodeURI(sKey) + "=" + encodeURI(sValue)
+        + sExpires
+        + (sDomain ? "; domain=" + sDomain : "")
+        + (sPath ? "; path=" + sPath : "")
+        + (bSecure ? "; secure" : "");
+      return true;
+    },
+
     _send: function ( type, url, data, callback)
     {
         var context = this;
         this.callback = callback;
         this.async = true;
-        this.request.open( type, url, this.async );
-        for (var key in this.requestHeaders)
-            this.request.setRequestHeader(key, this.requestHeaders[key]);
-        this.request.onreadystatechange = function () {
-            context._handleResponse(url); /// url used ONLY for error reporting
+        //we never do withCredentials, so if it's CORS and we have
+        //session cookie, resend it
+        var domain = this._getDomainFromUrl(url);
+        if (domain && this._isCrossDomain(domain) &&
+            this.getCookie(domain+":SESSID")) {
+          //rewrite the URL
+          var sessparam = ';jsessionid=' + this.getCookie(domain+":SESSID");
+          var q = url.indexOf('?');
+          if (q == -1) {
+            url += sessparam;
+          } else {
+            url = url.substring(0, q) + sessparam + url.substring(q);
+          }
         }
+        this.request.open( type, url, this.async );
+        if (!this.isXDomain) {
+          //setting headers is only allowed with XHR
+         for (var key in this.requestHeaders)
+            this.request.setRequestHeader(key, this.requestHeaders[key]);
+        }
+        if (this.isXDomain) {
+          this.request.onload = function () {
+            //fake XHR props
+            context.request.status = 200;
+            context.request.readyState = 4;
+            //handle
+            context._handleResponse(url);
+          }
+          this.request.onerror = function () {
+            //fake XHR props
+            context.request.status = 417; //not really, but what can we do
+            context.request.readyState = 4;
+            //handle
+            context._handleResponse(url);
+          }
+        } else {
+			this.request.onreadystatechange = function () {
+            context._handleResponse(url); /// url used ONLY for error reporting
+          }
+		}
         this.request.send(data);
     },
 
@@ -830,7 +921,7 @@ pzHttpRequest.prototype =
             return this.url;
     },
 
-    _handleResponse: function (savedUrlForErrorReporting)
+    _handleResponse: function (requestUrl)
     {
 		if ( this.request.readyState == 4 ) {
 			if (this.request.status != 200) {
@@ -839,6 +930,17 @@ pzHttpRequest.prototype =
 				var errorCode;
 				var errorInformation = '';
 				var errNode = null;
+				// xdomainreq does not have responseXML
+				if (this.isXDomain) {
+					if (this.request.contentType.match(/\/xml/)){
+						var dom = new ActiveXObject('Microsoft.XMLDOM');
+						dom.async = false;
+						dom.loadXML(this.request.responseText);
+						this.request.responseXML = dom;
+					} else {
+						this.request.responseXML = null;
+					}
+				}
 				if (this.request.responseXML
 					&& (errNode = this.request.responseXML.documentElement)
 					&& errNode.nodeName == 'error') {
@@ -864,8 +966,8 @@ pzHttpRequest.prototype =
 					throw err;
 				}
 			}
-			else if (this.request.status == 200 && this.request.responseXML == null) {
-				if (this.request.responseText != null) {
+			else if (this.request.status === 200 && this.request.responseXML === null) {
+				if (this.request.responseText !== null) {
 					//assume JSON
 					var json = null;
 					var text = this.request.responseText;
@@ -877,28 +979,14 @@ pzHttpRequest.prototype =
 							json = JSON.parse(text);
 						}
 						catch (e) {
-							// Safari: eval will fail as well. Considering trying JSON2 (non-native implementation) instead
-							/* DEBUG only works in mk2-mobile
-							if (document.getElementById("log"))
-								document.getElementById("log").innerHTML = "" + e + " " + length + ": " + text;
-							*/
-							try {
-								json = eval("(" + text + ")");
-							}
-							catch (e) {
-								/* DEBUG only works in mk2-mobile
-								if (document.getElementById("log"))
-								document.getElementById("log").innerHTML = "" + e + " " + length + ": " + text;
-								*/
-							}
 						}
 					}
 
 					this.callback(json, "json");
 					}
 				else {
-					var err = new Error("XML response is empty but no error " +
-				                         "for " + savedUrlForErrorReporting);
+					var err = new Error("XML/Text response is empty but no error " +
+					                    "for " + requestUrl);
 					err.code = -1;
 					if (this.errorHandler) {
 						this.errorHandler(err);
@@ -909,6 +997,14 @@ pzHttpRequest.prototype =
 				}
 			}
 			else if (this.request.status == 200) {
+                //set cookie manually only if cross-domain
+                var domain = this._getDomainFromUrl(requestUrl);
+                if (domain && this._isCrossDomain(domain)) {
+                  var jsessionId = this.request.responseXML
+                    .documentElement.getAttribute('jsessionId');
+                  if (jsessionId)
+                    this.setCookie(domain+":SESSID", jsessionId);
+                }
 				this.callback(this.request.responseXML);
 			}
 			else {
