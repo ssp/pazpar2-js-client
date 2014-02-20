@@ -71,37 +71,6 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 
 
-	/**
-	 * Store the passed query string at the beginning of the history
-	 * in local storage.
-	 * Remove potentially existing entry with the same query string and
-	 * ensure the configured maximum history size is not exceeded.
-	 *
-	 * @param {string} queryString - the query string to add to the history
-	 */
-	var addToHistory = function (queryString) {
-		if (that.storage && that.config.historyItems > 0) {
-			var history = that.storage.localStorage.get('history') || [];
-			for (var historyIndex in history) {
-				if (history[historyIndex].queryString === queryString) {
-					history.splice(historyIndex, 1);
-					break;
-				}
-			}
-			var searchData = {
-				service: that.my_paz.serviceId,
-				queryString: queryString,
-				time: (new Date()).getTime()
-			};
-
-			history.unshift(searchData);
-			history.splice(that.config.historyItems, history.length - that.config.historyItems);
-			that.storage.localStorage.set('history', history);
-		}
-	};
-
-
-
 	var that = this;
 	var myForm = form;
 	// If no form is passed use the first .pz2-searchForm.
@@ -133,7 +102,8 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 		if (searchTerm !== '' && searchTerm !== that.curSearchTerm) {
 			that.loadSelectsInForm(myForm);
 			that.my_paz.search(searchTerm, that.config.fetchRecords, that.curSort, that.curFilter);
-			addToHistory(searchTerm);
+			that.addToHistory(searchTerm);
+			that.hideHistory();
 			that.curSearchTerm = searchTerm;
 			that.resetPage();
 			that.trackPiwik('search', searchTerm);
@@ -164,6 +134,7 @@ pz2_client.prototype.onFormSubmitEventHandler = function (event) {
 		form = event.currentTarget;
 	}
 	jQuery.proxy(this.config.triggerSearchFunction, this, [form])();
+
 	return false;
 };
 

@@ -51,18 +51,11 @@ pz2_client.prototype.init = function (setup) {
 		this.storage = jQuery.initNamespaceStorage('pazpar2');
 	}
 
-	// Add links for optional features if so configured
+	// Add links for optional features if so configured.
 	var linkDiv = document.createElement('div');
 	linkDiv.setAttribute('class', 'pz2-featureLinks');
 	jQuery('#pazpar2').prepend(linkDiv);
-	if (this.config.addHistoryLink && this.config.historyItems > 0) {
-		var historyLink = document.createElement('a');
-		linkDiv.appendChild(historyLink);
-		historyLink.setAttribute('href', '#');
-		historyLink.setAttribute('class', 'pz2-historyLink');
-		jQuery(historyLink).click(jQuery.proxy(this.showHistory, this));
-		historyLink.appendChild(document.createTextNode(this.localise('Suchgeschichte')));
-	}
+	this.appendHistoryLinkToContainer(linkDiv);
 	this.appendClipboardLinkToContainer(linkDiv);
 
 	// Add event handlers for autocomplete.

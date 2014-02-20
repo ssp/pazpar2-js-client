@@ -795,7 +795,7 @@ pz2-client.js removes this once it it loaded.
 
 /* HISTORY DISPLAY */
 
-#pz2-searchHistory {
+#pz2-history {
 	position: absolute;
 	top: 0px;
 	left: 50px;
@@ -807,7 +807,7 @@ pz2-client.js removes this once it it loaded.
 	z-index: 100;
 }
 
-#pz2-searchHistory ol {
+#pz2-history ol {
 	max-height: 350px;
 	overflow: auto;
 	padding: 0;
@@ -816,12 +816,28 @@ pz2-client.js removes this once it it loaded.
 	column-count: 3;
 }
 
-#pz2-searchHistory li {
+#pz2-history li {
 	display: list-item;
 	margin: 0 0 0 3em;
 	list-style-position: outside;
 	list-style-type: decimal;
 }
+
+#pz2-history.pz2-empty ol {
+	-webkit-column-count: 1;
+	-moz-column-count: 1;
+	column-count: 1;
+}
+
+#pz2-history.pz2-empty ol li {
+	list-style-type: circle;
+}
+
+#pz2-history.pz2-empty .pz2-deleteButton {
+	display: none;
+}
+
+
 
 
 /* CLIPBOARD DISPLAY */
