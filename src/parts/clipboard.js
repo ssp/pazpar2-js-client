@@ -143,7 +143,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	jQuery('.pz2-clipboardLink').off('click').click(jQuery.proxy(this.hideClipboard, this));
 
 	var jForm = jQuery('.pz2-searchForm');
-	jForm.fadeOut('fast');
+	jForm.animate({'opacity': 0}, 'fast');
 	
 	var heading = document.createElement('div');
 	heading.setAttribute('id', 'pz2-clipboardHeading');
@@ -237,7 +237,7 @@ pz2_client.prototype.hideClipboard = function (event) {
 		jQuery(this).remove();
 	});
 
-	jQuery('.pz2-searchForm').fadeIn('fast');
+	jQuery('.pz2-searchForm').animate({'opacity': 1}, 'fast');
 
 	this.curSource = 'query';
 	this.updateAndDisplay();
