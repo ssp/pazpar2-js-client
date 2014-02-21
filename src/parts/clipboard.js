@@ -181,7 +181,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	exports.setAttribute('class', 'pz2-extraLinks');
 	this.updateExportLinks();
 
-	this.curSource = 'history';
+	this.curSource = 'clipboard';
 	this.updateAndDisplay();
 
 	return false;
