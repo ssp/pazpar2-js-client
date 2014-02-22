@@ -49,7 +49,7 @@ pz2_client.prototype.display = function () {
 	// Replace old results list
 	var OL = createResultsList();
 	var jResults = jQuery('#pz2-results');
-	jQuery('*', jResults).detach();
+	jQuery('.pz2-resultList', jResults).detach();
 	jResults.append(OL);
 
 	that.updatePagers();
