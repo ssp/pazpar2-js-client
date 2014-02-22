@@ -196,6 +196,6 @@ pz2_client.prototype.onerror = function (that, error) {
 	// If  the error happens while loading, clear the current search term,
 	// to allow restarting the search.
 	if (that.my_paz.activeClients > 0) {
-		that.curSearchTerm = null;
+		that.curQuery = null;
 	}
 };

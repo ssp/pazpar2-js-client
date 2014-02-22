@@ -749,6 +749,8 @@ pz2_client.prototype.renderDetails = function (data) {
 		that.appendInfoToContainer( that.exportLinks(data), detailsDiv );
 	}
 
+	that.highlightSearchTerms(detailsDiv);
+
 	return detailsDiv;
 
 };

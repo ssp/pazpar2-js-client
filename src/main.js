@@ -30,7 +30,8 @@ function pz2_client () {
 	this.curPage = 1;
 	this.curSort = [];
 	this.curFilter = null;
-	this.curSearchTerm = null;
+	this.curQuery = null;
+	this.curQueryTerms = [];
 	this.curAdditionalQueryTerms = [];
 	this.curSource = 'query'; // 'query' for results, 'clipboard' for the clipboard
 

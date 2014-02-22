@@ -71,5 +71,7 @@ pz2_client.prototype.config = {
 	// Whether to offer storing results in the clipboard
 	useClipboard: false,
 	// Whether to show the link to display the clipboard
-	addClipboardLink: false
+	addClipboardLink: false,
+	// Whether to highlight the search terms in result display
+	highlightSearchTerms: false
 };

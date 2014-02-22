@@ -241,6 +241,7 @@ pz2_client.prototype.createResultItem = function (hit) {
 
 	hit.li = LI;
 	that.runMathJax(LI);
+	that.highlightSearchTerms(LI);
 
 	return LI;
 };

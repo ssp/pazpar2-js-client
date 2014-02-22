@@ -7,26 +7,28 @@
  * @returns {boolean}
  */
 pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms) {
-	/*	addSearchStringForFieldToArray
-		Creates the appropriate search string for the passed field name and
-			adds it to the passed array.
-		pazpar2-style search strings are 'fieldname=searchTerm'.
 
-		inputs:	fieldName - string
-				array - array containing the search strings
-	*/
-	var addSearchStringForFieldToArray = function (fieldName, array) {
+	/**
+	 * Extract the search terms for field name and:
+	 * * add the CCL search string for it to the closure’s searchChunks array
+	 * * add its terms to the closure’s search Terms array
+	 *
+	 * @param {string} fieldName - name of the pazpar2 search field / CCL index
+	 * @returns {undefined}
+	 */
+	var addSearchStringForField = function (fieldName) {
 
-		/*	createSearchString
-			Makes a pazpar2-style search string for the given index name and search term.
-			If this.configured to do so, 'and', 'not' and 'or' in the search string will
-				be replaced by the boolean operator with a following index name and '='.
-
-			inputs:	indexName - string, e.g. 'subject'
-					searchString - string e.g. 'rocket not science'
-			output: string - e.g. '(subject=rocket not subject=science)'
-		*/
-		var createSearchString = function (indexName, searchString) {
+		/**
+		 * Return a CCL search string for the given index name and search term.
+		 * If operating on the »all« index, use the default CCL index without a name.
+		 * On other indexes »and«, »not« and »or« in the search string will be
+		 * replaced by the boolean operator with a following index name and '='.
+		 * 
+		 * @param {string} indexName - name of the CCL index, e.g. »subject«
+		 * @param {string} searchString - e.g. »rocket not science«
+		 * @returns {string} - the CCL query, e.g. »(subject=rocket not subject=science)«
+		 */
+		var CCLQuery = function (indexName, searchString) {
 			var search = searchString;
 			if (indexName !== 'all') {
 				search = indexName + '=' + searchString;
@@ -61,7 +63,9 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 				searchString = '"' + searchString.replace(/^[\s"]*/, '').replace(/[\s"]*$/, '') + '"';
 			}
 
-			array.push(createSearchString(indexName, searchString));
+			queryParts.push(CCLQuery(indexName, searchString));
+
+			jQuery.merge(queryTerms, searchString.toLowerCase().replace(/[\s.-;,/:"']+/g, ' ').split(' '));
 		}
 	};
 
@@ -69,6 +73,9 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 	var that = this;
 	var myForm = form;
+	var queryParts = [];
+	var queryTerms = [];
+
 	// If no form is passed use the first .pz2-searchForm.
 	if (!myForm) {
 		var searchForms = jQuery('.pz2-searchForm');
@@ -83,26 +90,26 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 	}
 
 	if (that.isReady()) {
-		var searchChunks = [];
-		addSearchStringForFieldToArray('all', searchChunks);
+		addSearchStringForField('all');
 		var isExtendedSearch = jQuery(myForm).hasClass('pz2-extended');
 		if (isExtendedSearch) {
-			addSearchStringForFieldToArray('title', searchChunks);
-			addSearchStringForFieldToArray('person', searchChunks);
-			addSearchStringForFieldToArray('subject', searchChunks);
-			addSearchStringForFieldToArray('date', searchChunks);
+			addSearchStringForField('title');
+			addSearchStringForField('person');
+			addSearchStringForField('subject');
+			addSearchStringForField('date');
 		}
-		searchChunks = searchChunks.concat(that.curAdditionalQueryTerms);
-		var searchTerm = searchChunks.join(' and ');
-		searchTerm = searchTerm.replace('*', '?');
-		if (searchTerm !== '' && searchTerm !== that.curSearchTerm) {
+		queryParts = queryParts.concat(that.curAdditionalQueryTerms);
+		var query = queryParts.join(' and ');
+		query = query.replace('*', '?');
+		if (query !== '' && query !== that.curQuery) {
 			that.loadSelectsInForm(myForm);
-			that.my_paz.search(searchTerm, that.config.fetchRecords, that.curSort, that.curFilter);
-			that.addToHistory(searchTerm);
+			that.my_paz.search(query, that.config.fetchRecords, that.curSort, that.curFilter);
+			that.addToHistory(query);
 			that.hideHistory();
-			that.curSearchTerm = searchTerm;
+			that.curQuery = query;
+			that.curQueryTerms = queryTerms;
 			that.resetPage();
-			that.trackPiwik('search', searchTerm);
+			that.trackPiwik('search', query);
 		}
 	}
 	else {
