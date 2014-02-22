@@ -90,6 +90,8 @@ pz2_client.prototype.addToClipboard = function (event) {
 		this.appendClipboardLinkForRecordToContainer(jLI[0]);
 	}
 
+	that.trackPiwik('clipboard/add');
+
 	return false;
 };
 
@@ -111,6 +113,8 @@ pz2_client.prototype.deleteFromClipboard = function (event) {
 
 	this.setClipboard(clipboard);
 
+	this.trackPiwik('clipboard/remove');
+
 	return false;
 };
 
@@ -125,6 +129,8 @@ pz2_client.prototype.deleteFromClipboard = function (event) {
  */
 pz2_client.prototype.deleteAllFromClipboard = function (event) {
 	this.setClipboard({});
+
+	this.trackPiwik('clipboard/clear');
 
 	return false;
 };
@@ -184,6 +190,8 @@ pz2_client.prototype.showClipboard = function (event) {
 	this.curSource = 'clipboard';
 	this.updateAndDisplay();
 
+	this.trackPiwik('clipboard/show');
+
 	return false;
 };
 
@@ -241,6 +249,8 @@ pz2_client.prototype.hideClipboard = function (event) {
 
 	this.curSource = 'query';
 	this.updateAndDisplay();
+
+	this.trackPiwik('clipboard/hide');
 
 	return false;
 };
