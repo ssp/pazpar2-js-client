@@ -872,6 +872,7 @@ pz2-client.js removes this once it it loaded.
 
 #pz2-clipboardHeading {
 	position: absolute;
+	z-index: 100;
 }
 
 #pz2-clipboardHeading h3 {
