@@ -71,7 +71,5 @@ pz2_client.prototype.config = {
 	// Whether to offer storing results in the clipboard
 	useClipboard: false,
 	// Whether to show the link to display the clipboard
-	addClipboardLink: false,
-	// Whether to convert accented characters into ASCII before submitting the search
-	removeDiacriticsBeforeSearch: false
+	addClipboardLink: false
 };
