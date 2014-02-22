@@ -45,6 +45,8 @@ pz2_client.prototype.addToHistory = function (queryString) {
 		history.splice(this.config.historyItems, history.length - this.config.historyItems);
 		this.setHistory(history);
 	}
+
+	return false;
 };
 
 
@@ -70,6 +72,8 @@ pz2_client.prototype.updateHistory = function () {
 			this.hideHistory();
 			jQuery('#pz2-field-all').val(jQuery(event.target).text());
 			jQuery.proxy(this.config.triggerSearchFunction, this)();
+
+			this.trackPiwik('history/search');
 
 			return false;
 		};
@@ -114,15 +118,16 @@ pz2_client.prototype.updateHistory = function () {
 pz2_client.prototype.showHistory = function () {
 
 	/**
-	 * Event handler for deleting the history link.
+	 * Event handler for the delete history link.
 	 * Remove all entries and update the display.
 	 *
 	 * @param {Event} event
 	 * @returns {undefined}
 	 */
-	var deleteHistory = function (event) {
+	var clearHistory = function (event) {
 		this.setHistory([]);
 		this.updateHistory();
+		this.trackPiwik('history/clear');
 	};
 
 
@@ -153,7 +158,7 @@ pz2_client.prototype.showHistory = function () {
 		heading.appendChild(document.createTextNode(' '));
 		heading.appendChild(deleteButton);
 		deleteButton.setAttribute('href', '#');
-		jQuery(deleteButton).click(jQuery.proxy(deleteHistory, that));
+		jQuery(deleteButton).click(jQuery.proxy(clearHistory, that));
 		deleteButton.setAttribute('class', 'pz2-deleteButton');
 		deleteButton.appendChild(document.createTextNode(that.localise('[Einträge löschen]', 'form-history')));
 
@@ -164,9 +169,11 @@ pz2_client.prototype.showHistory = function () {
 		var jContainer = jQuery(container);
 		jContainer.hide();
 		jQuery('#pazpar2').append(container);
-		this.updateHistory();
+		that.updateHistory();
 		jContainer.slideDown('fast');
 	}
+
+	that.trackPiwik('history/show');
 
 	return false;
 };
@@ -188,6 +195,8 @@ pz2_client.prototype.hideHistory = function () {
 		jHistory.slideUp('fast', function () {
 			jQuery(this).remove();
 		});
+
+		this.trackPiwik('history/hide');
 	}
 	
 	return false;
