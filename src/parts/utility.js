@@ -22,6 +22,7 @@ pz2_client.prototype.resetPage = function () {
  * Remove duplicate entries from an array.
  * The first occurrence of any item is kept, later ones are removed.
  * This function works in place and alters the original array.
+ *
  * @param {array} information - array to remove duplicate entries from.
  * @returns {undefined}
  */
@@ -101,8 +102,7 @@ pz2_client.prototype.MSIEVersion = function () {
 
 
 /**
-/**
- * Convenince method to append an item to another one, even if undefineds and arrays are involved.
+ * Convenience method to append an item to another one, even if undefineds and arrays are involved.
  *
  * @param {DOMElement} info - the element to insert
  * @param {type} container - the element to insert info into
@@ -152,14 +152,15 @@ pz2_client.prototype.turnIntoNewWindowLink = function (link) {
 
 
 
-/*	fieldContentsInRecord
-	Returns array of data from a record's md-fieldName field.
-		* special case for xtargets which is mapped to location/@name
-		* special case for date which uses the date from each location rather than the merged range
-	input:	fieldName - name of the field to use
-			record - pazpar2 record
-	output:	array with content of the field in the record
-*/
+/**
+ * Returns array of data from a record’s md-fieldName field.
+ * * special case for xtargets which is mapped to location/@name
+ * * special case for date which uses the date from each location rather than the merged range
+ *
+ * @param {string} fieldName - name of the field to use
+ * @param {object} record - pazpar2 record
+ * @returns {Array} - content of the field in the record
+ */
 pz2_client.prototype.fieldContentsInRecord = function (fieldName, record) {
 	var result = [];
 

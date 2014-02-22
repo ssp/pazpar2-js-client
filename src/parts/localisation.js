@@ -34,6 +34,10 @@ pz2_client.prototype.localise = function (term, dictionaryName) {
 	else if (dictionary['en'][term] !== undefined) {
 		localised = languageDict[term];
 	}
+	else {
+		// for debugging
+		// if (!dictionaryName.match(/^(detail-label|facet-)/)) { console.log(term + ' - ' + dictionaryName); }
+	}
 	
 	return localised;
 };
