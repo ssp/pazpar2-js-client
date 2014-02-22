@@ -20,7 +20,7 @@ pz2_client.prototype.localisations['facet-medium'] = {
 		'multivolume': 'Mehrere Bände',
 		'music-score': 'Noten',
 		'newspaper': 'Zeitung',
-		'other': 'Andere',
+		'other': 'unbekannt',
 		'recording': 'Tonaufnahme',
 		'website': 'Website'
 	},
@@ -41,7 +41,7 @@ pz2_client.prototype.localisations['facet-medium'] = {
 		'multiple': 'Mixed media types',
 		'multivolume': 'Multiple volumes',
 		'newspaper': 'Newspaper',
-		'other': 'Other',
+		'other': 'unknown',
 		'recording': 'Recording',
 		'website': 'Website'
 	}
