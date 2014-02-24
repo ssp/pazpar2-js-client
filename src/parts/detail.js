@@ -665,7 +665,8 @@ pz2_client.prototype.renderDetails = function (data) {
 
 			var detailsData = document.createElement('dd');
 			locationDetails.push(detailsData);
-			jQuery(detailsData).addClass('pz2-location');
+			var jDetailsData = jQuery(detailsData);
+			jDetailsData.addClass('pz2-location');
 			location.element = detailsData;
 
 			that.appendInfoToContainer( detailInfoItem('edition'), detailsData );
@@ -681,7 +682,21 @@ pz2_client.prototype.renderDetails = function (data) {
 			that.appendInfoToContainer( parentLink(), detailsData );
 			that.appendInfoToContainer( catalogueLink(), detailsData );
 
-			if (detailsData.childNodes.length === 0) {locationDetails = [];}
+			// Remove the trailing »;« from the end of the last .pz2-info.
+			var jLastChild = jDetailsData.children('.pz2-info').last();
+			if (jLastChild.length > 0) {
+				var lastChild = jLastChild[0];
+				var lastLastChild = lastChild.lastChild;
+				if (lastLastChild.nodeType === 3) {
+					if (lastLastChild.textContent.match(/\s*;\s*/)) {
+						lastLastChild.textContent = ' ';
+					}
+				}
+			}
+			
+			if (detailsData.childNodes.length === 0) {
+				locationDetails = [];
+			}
 		}
 
 		return locationDetails;
