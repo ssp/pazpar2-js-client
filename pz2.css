@@ -859,6 +859,10 @@ pz2-client.js removes this once it it loaded.
 	display: none;
 }
 
+.pz2-historyVisible .pz2-historyLink {
+	background: #f00;
+	color: #fff;
+}
 
 
 
@@ -899,4 +903,9 @@ pz2-client.js removes this once it it loaded.
 .pz2-clipboardVisible .pz2-recordCount,
 .pz2-clipboardVisible .pz2-pager .pz2-progressIndicator {
 	display: none;
+}
+
+.pz2-clipboardVisible .pz2-clipboardLink {
+	background: #f00;
+	color: #fff;
 }
