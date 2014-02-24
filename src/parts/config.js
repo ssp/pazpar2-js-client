@@ -50,6 +50,8 @@ pz2_client.prototype.config = {
 	provideCOinSExport: true,
 	// Whether to include a link to Karlsruher Virtueller Katalog along with the export links.
 	showKVKLink: false,
+	// Whether to include an OpenURL link (base URL can be set in localisation)
+	showOpenURLLink: false,
 	// List of export formats we provide links for. An empty list suppresses the
 	// creation of export links. Supported list items are: 'ris', 'bibtex',
 	// 'ris-inline' and 'bibtex-inline'.

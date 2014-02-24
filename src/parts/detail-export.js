@@ -255,12 +255,14 @@ pz2_client.prototype.exportLinks = function (data) {
 
 
 
-	/*	KVKItem
-		Returns a list item containing a link to a KVK catalogue search for data.
-		Uses ISBN or title/author data for the search.
-		input:	data - pazpar2 record
-		output:	DOMLIElement
-	*/
+	/**
+	 * Return a list item with a link for KVK catalogue search for the record
+	 * passed in data.
+	 * Uses ISBN or title/author data for the search.
+	 *
+	 * @param {object} data - pazpar2 record
+	 * @returns {DOMElement} - li element
+	 */
 	var KVKItem = function (data) {
 		var KVKItem;
 
@@ -323,10 +325,41 @@ pz2_client.prototype.exportLinks = function (data) {
 			that.turnIntoNewWindowLink(KVKLink);
 
 			KVKItem = document.createElement('li');
+			KVKItem.setAttribute('class', 'pz2-KVKSearch');
 			KVKItem.appendChild(KVKLink);
 		}
 
 		return KVKItem;
+	};
+
+
+
+
+	/**
+	 * Return a list item with a link for an OpenURL search for record.
+	 * The OpenURL base URL can be set in localisation.
+	 *
+	 * @param {object} record - pazpar2 record
+	 * @returns {DOMElement} - li element
+	 */
+	var openURLItem = function (record) {
+		var openURLItem;
+
+		var parameterString = that.OpenURLParameterStringForRecord(record);
+		if (parameterString) {
+			openURLItem = document.createElement('li');
+			openURLItem.setAttribute('class', 'pz2-openURLSearch');
+
+			var a = document.createElement('a');
+			openURLItem.appendChild(a);
+			var URL = that.localise('openURLBaseURL', 'export') + parameterString;
+			a.setAttribute('href', URL);
+
+			a.appendChild(document.createTextNode(that.localise('In Bibliothek finden', 'export')));
+			that.turnIntoNewWindowLink(a);
+		}
+
+		return openURLItem;
 	};
 
 
@@ -340,6 +373,10 @@ pz2_client.prototype.exportLinks = function (data) {
 
 	if (that.config.showKVKLink) {
 		that.appendInfoToContainer(KVKItem(data), extraLinkList);
+	}
+
+	if (that.config.showOpenURLLink) {
+		that.appendInfoToContainer(openURLItem(data), extraLinkList);
 	}
 
 	if (data.location.length === 1) {

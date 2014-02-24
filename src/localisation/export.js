@@ -16,7 +16,10 @@ pz2_client.prototype.localisations.export = {
 
 		'KVK': 'deutschlandweit suchen',
 		'deutschlandweit im KVK suchen': 'Suche in deutschen Verbundkatalogen (KVK)',
-		'&lang=de': '&lang=de'
+		'&lang=de': '&lang=de',
+
+		'openURLBaseURL': 'http://openurlgw.hbz-nrw.de/gw?',
+		'In Bibliothek finden': 'In Bibliothek finden'
 	},
 
 	'en': {
@@ -31,7 +34,10 @@ pz2_client.prototype.localisations.export = {
 
 		'KVK': 'search throughout Germany',
 		'deutschlandweit im KVK suchen': 'search for this item in German union catalogues (KVK)',
-		'&lang=de': '&lang=en'
+		'&lang=de': '&lang=en',
+
+		'openURLBaseURL': 'http://openurlgw.hbz-nrw.de/gw?',
+		'In Bibliothek finden': 'Find in library'
 	}
 
 };
