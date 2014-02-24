@@ -13,21 +13,13 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 	var booksLoaded = function () {
 		// Create list of search terms from ISBN and OCLC numbers.
 		var searchTerms = [];
-		for (var locationNumber in data.location) {
-			var numberField = String(data.location[locationNumber]['md-isbn']);
-			var matches = numberField.replace(/-/g,'').match(/[0-9]{9,12}[0-9xX]/g);
-			if (matches) {
-				for (var ISBNMatchNumber = 0; ISBNMatchNumber < matches.length; ISBNMatchNumber++) {
-					searchTerms.push('ISBN:' + matches[ISBNMatchNumber]);
-				}
-			}
-			numberField = String(data.location[locationNumber]['md-oclc-number']);
-			matches = numberField.match(/[0-9]{4,}/g);
-			if (matches) {
-				for (var OCLCMatchNumber = 0; OCLCMatchNumber < matches.length; OCLCMatchNumber++) {
-					searchTerms.push('OCLC:' + matches[OCLCMatchNumber]);
-				}
-			}
+		var ISBNs = that.ISBNsForRecord(data);
+		for (var ISBNIndex in ISBNs) {
+			searchTerms.push('ISBN:' + ISBNs[ISBNIndex]);
+		}
+		var OCLCNumbers = that.OCLCNumbersForRecord(data);
+		for (var OCLCNumberIndex in OCLCNumbers) {
+			searchTerms.push('OCLC:' + OCLCNumbers[OCLCNumberIndex]);
 		}
 
 		if (searchTerms.length > 0) {

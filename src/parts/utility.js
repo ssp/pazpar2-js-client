@@ -256,3 +256,51 @@ pz2_client.prototype.detailLineBasic = function (titleElement, dataElement, attr
 
 	return line;
 };
+
+
+
+/**
+ * Return array with hyphen-less ISBNs from all the record’s locations.
+ *
+ * @param {object} record
+ * @returns {Array}
+ */
+pz2_client.prototype.ISBNsForRecord = function (record) {
+	var ISBNs = [];
+
+	for (var locationNumber in record.location) {
+		var ISBNField = String(record.location[locationNumber]['md-isbn']);
+		var matches = ISBNField.replace(/-/g,'').match(/[0-9]{9,12}[0-9xX]/g);
+		if (matches) {
+			for (var ISBNMatchNumber = 0; ISBNMatchNumber < matches.length; ISBNMatchNumber++) {
+				ISBNs.push(matches[ISBNMatchNumber]);
+			}
+		}
+	}
+
+	return ISBNs;
+};
+
+
+
+/**
+ * Return array with OCLC numbers from all the record’s locations.
+ *
+ * @param {object} record
+ * @returns {Array}
+ */
+pz2_client.prototype.OCLCNumbersForRecord = function (record) {
+	var OCLCNumbers = [];
+
+	for (var locationNumber in record.location) {
+		var OCLCNumberField = String(record.location[locationNumber]['md-oclc-number']);
+		var matches = OCLCNumberField.match(/[0-9]{4,}/g);
+		if (matches) {
+			for (var OCLCMatchNumber = 0; OCLCMatchNumber < matches.length; OCLCMatchNumber++) {
+				OCLCNumbers.push(matches[OCLCMatchNumber]);
+			}
+		}
+	}
+
+	return OCLCNumbers;
+};
