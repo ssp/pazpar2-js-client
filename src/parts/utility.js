@@ -5,10 +5,10 @@
  * @returns {undefined}
  */
 pz2_client.prototype.resetPage = function () {
-	this.curPage = 1;
+	this.currentView.page = 1;
 	this.hitList = {};
 	this.displayHitList = [];
-	this.filterArray = {};
+	this.currentView.filters = {};
 	for (var facetIndex in this.config.termLists) {
 		this.config.termLists[facetIndex].showAll = undefined;
 	}

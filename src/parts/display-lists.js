@@ -2,7 +2,7 @@
  * Converts a given list of data to thes list used for display by:
  *  1. applying filters
  *  2. sorting
- * according to the setup in the displaySort and filterArray configuration.
+ * according to the setup in the displaySort and filters configuration.
  *
  * @param {type} list
  * @returns {array}
@@ -11,7 +11,7 @@ pz2_client.prototype.displayLists = function (list) {
 
 	/*	filter
 		Returns filtered lists of pazpar2 records according to the current
-		filterArray. The first list are the results to display. The second list
+		filters. The first list are the results to display. The second list
 		are the results satisfying all filters except the date ones. It is used
 		for drawing the date histogram.
 
@@ -31,10 +31,10 @@ pz2_client.prototype.displayLists = function (list) {
 			var matches = true;
 			var matchesEverythingNotTheDate = true;
 			for (var facetType in that.config.termLists) {
-				for (var filterIndex in that.filterArray[facetType]) {
+				for (var filterIndex in that.currentView.filters[facetType]) {
 					matches = false;
 					matchesEverythingNotTheDate = false;
-					var filterValue = that.filterArray[facetType][filterIndex];
+					var filterValue = that.currentView.filters[facetType][filterIndex];
 					if (facetType === 'xtargets') {
 						for (var locationIndex in record.location) {
 							matches = (record.location[locationIndex]['@name'] === filterValue);

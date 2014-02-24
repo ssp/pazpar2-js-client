@@ -1,5 +1,5 @@
 /**
- * Go through all terms in curQueryTerms and highlight their occurrences
+ * Go through all terms in currentView.queryTerms and highlight their occurrences
  * inside element.
  *
  * @param {DOMElement} element - highlight the content of this
@@ -49,8 +49,8 @@ pz2_client.prototype.highlightSearchTerms = function (element) {
 
 
 	if (this.config.highlightSearchTerms) {
-		for (var termIndex in this.curQueryTerms) {
-			var term = this.curQueryTerms[termIndex];
+		for (var termIndex in this.currentView.queryTerms) {
+			var term = this.currentView.queryTerms[termIndex];
 			if (term) {
 				addHighlight(element, term);
 			}

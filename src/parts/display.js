@@ -14,8 +14,8 @@ pz2_client.prototype.display = function () {
 	var createResultsList = function () {
 		var OL = document.createElement('ol');
 		OL.setAttribute('class', 'pz2-resultList');
-		var firstIndex = that.recPerPage * (that.curPage - 1);
-		var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.recPerPage);
+		var firstIndex = that.currentView.recPerPage * (that.currentView.page - 1);
+		var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.currentView.recPerPage);
 		OL.setAttribute('start', firstIndex + 1);
 
 		for (var i = 0; i < numberOfRecordsOnPage; i++) {

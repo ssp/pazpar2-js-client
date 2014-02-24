@@ -91,7 +91,7 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 	// Deal with additional query terms if there are any.
 	if (additionalQueryTerms !== undefined) {
-		that.curAdditionalQueryTerms = additionalQueryTerms;
+		that.currentView.additionalQueryTerms = additionalQueryTerms;
 	}
 
 	if (that.isReady()) {
@@ -103,16 +103,16 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 			addSearchStringForField('subject');
 			addSearchStringForField('date');
 		}
-		queryParts = queryParts.concat(that.curAdditionalQueryTerms);
+		queryParts = queryParts.concat(that.currentView.additionalQueryTerms);
 		var query = queryParts.join(' and ');
 		query = query.replace('*', '?');
-		if (query !== '' && query !== that.curQuery) {
+		if (query !== '' && query !== that.currentView.query) {
 			that.loadSelectsInForm(myForm);
-			that.my_paz.search(query, that.config.fetchRecords, that.curSort, that.curFilter);
+			that.my_paz.search(query, that.config.fetchRecords, that.currentView.sort, that.currentView.filter);
 			that.addToHistory(query);
 			that.hideHistory();
-			that.curQuery = query;
-			that.curQueryTerms = queryTerms;
+			that.currentView.query = query;
+			that.currentView.queryTerms = queryTerms;
 			that.resetPage();
 			that.trackPiwik('search', query);
 		}
@@ -250,7 +250,7 @@ pz2_client.prototype.loadSelectsInForm = function (form) {
 
 	var jPerPageSelect = jQuery('.pz2-perPage option:selected', form);
 	if (jPerPageSelect.length > 0) {
-		this.recPerPage = jPerPageSelect.val();
+		this.currentView.recPerPage = jPerPageSelect.val();
 	}
 };
 
@@ -260,7 +260,7 @@ pz2_client.prototype.loadSelectsInForm = function (form) {
  * Takes the passed sort value string with sort criteria separated by --
  * and labels and value inside the criteria separated by -, [this strange
  * format is owed to escaping problems when creating a Fluid template for the form]
- * parses them and sets the displaySort and curSort settings accordingly.
+ * parses them and sets the displaySort and currentView.sort settings accordingly.
  * If the sort form is not present, the sort order stored in displaySort is used.
  *
  * @param {string} sortString
@@ -293,5 +293,5 @@ pz2_client.prototype.setSortCriteriaFromString = function (sortString) {
 		}
 	}
 
-	this.curSort = curSortArray.join(',');
+	this.currentView.sort = curSortArray.join(',');
 };

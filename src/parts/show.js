@@ -97,7 +97,7 @@ pz2_client.prototype.onshow = function (data) {
 		}
 	}
 
-	if (this.curSource === 'query') {
+	if (this.currentView.type === 'query') {
 		this.updateAndDisplay(this.hitList);
 	}
 };
@@ -114,7 +114,7 @@ pz2_client.prototype.updateAndDisplay = function () {
 	 * Converts a given list of data to thes list used for display by:
 	 *  1. applying filters
 	 *  2. sorting
-	 * according to the setup in the displaySort and filterArray configuration.
+	 * according to the setup in the displaySort and filters configuration.
 	 *
 	 * @param {type} list
 	 * @returns {array}
@@ -123,7 +123,7 @@ pz2_client.prototype.updateAndDisplay = function () {
 
 		/*	filter
 			Returns filtered lists of pazpar2 records according to the current
-			filterArray. The first list are the results to display. The second list
+			filters. The first list are the results to display. The second list
 			are the results satisfying all filters except the date ones. It is used
 			for drawing the date histogram.
 
@@ -143,10 +143,10 @@ pz2_client.prototype.updateAndDisplay = function () {
 				var matches = true;
 				var matchesEverythingNotTheDate = true;
 				for (var facetType in that.config.termLists) {
-					for (var filterIndex in that.filterArray[facetType]) {
+					for (var filterIndex in that.currentView.filters[facetType]) {
 						matches = false;
 						matchesEverythingNotTheDate = false;
-						var filterValue = that.filterArray[facetType][filterIndex];
+						var filterValue = that.currentView.filters[facetType][filterIndex];
 						if (facetType === 'xtargets') {
 							for (var locationIndex in record.location) {
 								matches = (record.location[locationIndex]['@name'] === filterValue);
@@ -303,7 +303,7 @@ pz2_client.prototype.updateAndDisplay = function () {
 
 	var that = this;
 	var hitList;
-	if (that.curSource === 'query') {
+	if (that.currentView.type === 'query') {
 		// Use the query results.
 		hitList = that.hitList;
 	}
@@ -316,7 +316,7 @@ pz2_client.prototype.updateAndDisplay = function () {
 	that.displayHitList = filterResults[0];
 	that.displayHitListUpToDate = filterResults[1];
 	that.display();
-	if (!that.config.usePazpar2Facets || that.config.curSource === 'history') {
+	if (!that.config.usePazpar2Facets || that.currentView.type === 'history') {
 		that.updateFacetLists();
 	}
 };

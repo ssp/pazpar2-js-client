@@ -11,7 +11,7 @@ pz2_client.prototype.updatePagers = function () {
 		return:	false
 	*/
 	var showPage = function (pageNumber, link) {
-		that.curPage = Math.min( Math.max(0, pageNumber), Math.ceil(that.displayHitList.length / that.recPerPage) );
+		that.currentView.page = Math.min( Math.max(0, pageNumber), Math.ceil(that.displayHitList.length / that.currentView.recPerPage) );
 		that.display();
 		that.trackPiwik('page', pageNumber);
 	};
@@ -39,7 +39,7 @@ pz2_client.prototype.updatePagers = function () {
 		return:	false
 	*/
 	var pagerNext = function () {
-		showPage(that.curPage + 1);
+		showPage(that.currentView.page + 1);
 		return false;
 	};
 
@@ -50,7 +50,7 @@ pz2_client.prototype.updatePagers = function () {
 		return:	false
 	*/
 	var pagerPrev = function () {
-		showPage(that.curPage - 1);
+		showPage(that.currentView.page - 1);
 		return false;
 	};
 
@@ -63,7 +63,7 @@ pz2_client.prototype.updatePagers = function () {
 	 * @param {DOMElement} element - element to place the pager into
 	 */
 	var createPager = function(element) {
-		var pages = Math.ceil(that.displayHitList.length / that.recPerPage);
+		var pages = Math.ceil(that.displayHitList.length / that.currentView.recPerPage);
 
 		// Update pager
 		var jPageNumbersContainer = jQuery('.pz2-pageNumbers', element);
@@ -73,7 +73,7 @@ pz2_client.prototype.updatePagers = function () {
 
 		var previousLink = document.createElement('a');
 		var jPreviousLink = jQuery(previousLink);
-		if (that.curPage > 1) {
+		if (that.currentView.page > 1) {
 			previousLink.setAttribute('href', '#');
 			jPreviousLink.click(pagerPrev);
 			previousLink.title = that.localise('Vorige Trefferseite anzeigen', 'pager');
@@ -90,11 +90,11 @@ pz2_client.prototype.updatePagers = function () {
 		var inBlockGap = false;
 
 		for(var pageNumber = 1; pageNumber <= pages; pageNumber++) {
-			if (pageNumber < 5 || Math.abs(pageNumber - that.curPage) < 3 || pages < pageNumber + 4) {
+			if (pageNumber < 5 || Math.abs(pageNumber - that.currentView.page) < 3 || pages < pageNumber + 4) {
 				var pageItem = document.createElement('li');
 				pageList.appendChild(pageItem);
 				pageItem.setAttribute('pageNumber', pageNumber);
-				if(pageNumber !== that.curPage) {
+				if(pageNumber !== that.currentView.page) {
 					var linkElement = document.createElement('a');
 					linkElement.setAttribute('href', '#');
 					jQuery(linkElement).click(pagerGoto);
@@ -120,7 +120,7 @@ pz2_client.prototype.updatePagers = function () {
 
 		var nextLink = document.createElement('a');
 		var jNextLink = jQuery(nextLink);
-		if (pages - that.curPage > 0) {
+		if (pages - that.currentView.page > 0) {
 			nextLink.setAttribute('href', '#');
 			jNextLink.click(pagerNext);
 			nextLink.title = that.localise('Nächste Trefferseite anzeigen', 'pager');
@@ -135,8 +135,8 @@ pz2_client.prototype.updatePagers = function () {
 		// Add record count information
 		var infoString;
 		if (that.displayHitList.length > 0) {
-			var firstIndex = that.recPerPage * (that.curPage - 1);
-			var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.recPerPage);
+			var firstIndex = that.currentView.recPerPage * (that.currentView.page - 1);
+			var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.currentView.recPerPage);
 			infoString = String(firstIndex + 1) + '-' +
 				String(firstIndex + numberOfRecordsOnPage) +
 				' ' + that.localise('von', 'pager') + ' ' +
@@ -188,10 +188,10 @@ pz2_client.prototype.updatePagers = function () {
 
 			jRecordCount.attr('title', titleText.join('\n'));
 
-			// Mark results as filtered if the this.filterArray has a
+			// Mark results as filtered if the currentView.filters has a
 			// non-trivial property.
-			for  (var filterIndex  in that.filterArray) {
-				if (that.filterArray[filterIndex] !== undefined) {
+			for  (var filterIndex  in that.currentView.filters) {
+				if (that.currentView.filters[filterIndex] !== undefined) {
 					infoString += ' [' + that.localise('gefiltert', 'facets') + ']';
 					break;
 				}

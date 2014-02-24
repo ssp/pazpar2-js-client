@@ -36,13 +36,13 @@ pz2_client.prototype.updateFacetLists = function () {
 					* term - string that needs to match the facet
 		*/
 		var limitResults = function (kind, term) {
-			if (that.filterArray[kind]) {
+			if (that.currentView.filters[kind]) {
 				// add additional condition to an existing filter
-				that.filterArray[kind].push(term);
+				that.currentView.filters[kind].push(term);
 			}
 			else {
 				// the first filter of its kind: create array
-				that.filterArray[kind] = [term];
+				that.currentView.filters[kind] = [term];
 			}
 
 			// Mark with class for selected facet. Remove spaces from strings.
@@ -52,7 +52,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				.addClass(baseName)
 				.addClass(baseName + '-' + termString);
 
-			that.curPage = 1;
+			that.currentView.page = 1;
 			that.updateAndDisplay();
 
 			that.trackPiwik('facet/limit', kind);
@@ -67,28 +67,28 @@ pz2_client.prototype.updateFacetLists = function () {
 							all terms are removed if term is omitted.
 		*/
 		var delimitResults = function (kind, term) {
-			if (that.filterArray[kind]) {
+			if (that.currentView.filters[kind]) {
 				var jPazpar2 = jQuery('#pazpar2');
 				var baseName = 'pz2-term-selected-' + kind.replace(classNameRegEx, '-');
 				if (term) {
 					// if a term is given only delete occurrences of 'term' from the filter
 					var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(classNameRegEx, '-');
-					for (var index = that.filterArray[kind].length -1; index >= 0; index--) {
-						if (that.filterArray[kind][index] === term) {
-							that.filterArray[kind].splice(index,1);
+					for (var index = that.currentView.filters[kind].length -1; index >= 0; index--) {
+						if (that.currentView.filters[kind][index] === term) {
+							that.currentView.filters[kind].splice(index,1);
 						}
 					}
 					jPazpar2.removeClass(baseName + '-' + termString);
 
-					if (that.filterArray[kind].length === 0) {
+					if (that.currentView.filters[kind].length === 0) {
 						// all terms of this kind have been removed: remove kind from filterArray
-						that.filterArray[kind] = undefined;
+						that.currentView.filters[kind] = undefined;
 						jPazpar2.removeClass(baseName);
 					}
 				}
 				else {
 					// if no term is given, delete the complete filter
-					that.filterArray[kind] = undefined;
+					that.currentView.filters[kind] = undefined;
 					var classes = jPazpar2.attr('class').split(' ');
 					for (var classIndex in classes) {
 						var className = classes[classIndex];
@@ -131,8 +131,8 @@ pz2_client.prototype.updateFacetLists = function () {
 		*/
 		var isFilteredForType = function (type) {
 			var result = false;
-			if (that.filterArray[type]) {
-				result = (that.filterArray[type].length > 0);
+			if (that.currentView.filters[type]) {
+				result = (that.currentView.filters[type].length > 0);
 			}
 			return result;
 		};
@@ -153,7 +153,7 @@ pz2_client.prototype.updateFacetLists = function () {
 			*/
 			var isFiltered = function () {
 				var isFiltered = false;
-				for (var filterType in that.filterArray) {
+				for (var filterType in that.currentView.filters) {
 					isFiltered = isFilteredForType(filterType);
 					if (isFiltered) {break;}
 				}
@@ -324,8 +324,8 @@ pz2_client.prototype.updateFacetLists = function () {
 
 				// Mark facets which are currently active and add button to remove faceting.
 				if (isFilteredForType(type)) {
-					for (var filterIndex in that.filterArray[type]) {
-						if (facet.name === that.filterArray[type][filterIndex]) {
+					for (var filterIndex in that.currentView.filters[type]) {
+						if (facet.name === that.currentView.filters[type][filterIndex]) {
 							jItem.addClass('pz2-activeFacet');
 							var cancelLink = document.createElement('a');
 							var jCancelLink = jQuery(cancelLink);
@@ -385,9 +385,9 @@ pz2_client.prototype.updateFacetLists = function () {
 				cancelLink.setAttribute('href', '#');
 				jCancelLink.addClass('pz2-facetCancel pz2-activeFacet');
 				jCancelLink.click(facetItemDeselect);
-				var yearString = that.filterArray['filterDate'][0].from;
-				if (that.filterArray['filterDate'][0].from !== that.filterArray['filterDate'][0].to - 1) {
-					yearString += '-' + (that.filterArray['filterDate'][0].to - 1);
+				var yearString = that.currentView.filters['filterDate'][0].from;
+				if (that.currentView.filters['filterDate'][0].from !== that.currentView.filters['filterDate'][0].to - 1) {
+					yearString += '-' + (that.currentView.filters['filterDate'][0].to - 1);
 				}
 				var cancelLinkText = that.localise('Filter # aufheben', 'facets').replace('#', yearString);
 				cancelLink.appendChild(document.createTextNode(cancelLinkText));
@@ -487,7 +487,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				var newRange = roundedRange(ranges.xaxis);
 				plot.setSelection({'xaxis': newRange}, true);
 				hideTooltip();
-				that.filterArray['filterDate'] = undefined;
+				that.currentView.filters['filterDate'] = undefined;
 				limitResults('filterDate', newRange);
 			};
 
@@ -568,8 +568,8 @@ pz2_client.prototype.updateFacetLists = function () {
 
 			jGraphDiv.mouseout(hideTooltip);
 
-			for (var filterIndex in that.filterArray['filterDate']) {
-				plot.setSelection({'xaxis': that.filterArray['filterDate'][filterIndex]}, true);
+			for (var filterIndex in that.currentView.filters['filterDate']) {
+				plot.setSelection({'xaxis': that.currentView.filters['filterDate'][filterIndex]}, true);
 			}
 		};
 
@@ -580,7 +580,7 @@ pz2_client.prototype.updateFacetLists = function () {
 		jQuery(container).addClass('pz2-termList pz2-termList-' + type);
 
 		var terms = facetInformationForType(type);
-		if (terms.length >= parseInt(that.config.termLists[type].minDisplay, 10) || that.filterArray[type]) {
+		if (terms.length >= parseInt(that.config.termLists[type].minDisplay, 10) || that.currentView.filters[type]) {
 			// Always display facet list if it is filtered. Otherwise require
 			// at least .minDisplay facet elements.
 			var heading = document.createElement('h5');

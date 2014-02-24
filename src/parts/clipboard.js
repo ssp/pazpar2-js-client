@@ -196,7 +196,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	exports.setAttribute('class', 'pz2-extraLinks');
 	this.updateExportLinks();
 
-	this.curSource = 'clipboard';
+	this.currentView = this.viewSettings.clipboard;
 	this.updateAndDisplay();
 
 	this.trackPiwik('clipboard/show');
@@ -256,7 +256,7 @@ pz2_client.prototype.hideClipboard = function (event) {
 
 	jQuery('.pz2-searchForm').animate({'opacity': 1}, 'fast');
 
-	this.curSource = 'query';
+	this.currentView = this.viewSettings.query;
 	this.updateAndDisplay();
 
 	this.trackPiwik('clipboard/hide');
@@ -288,7 +288,7 @@ pz2_client.prototype.setClipboard = function (newClipboard) {
 	this.updateClipboardCount();
 	this.updateExportLinks();
 	this.updateAddRemoveLinks();
-	if (this.curSource === 'clipboard') {
+	if (this.currentView.type === 'clipboard') {
 		this.updateAndDisplay();
 	}
 };
@@ -335,7 +335,7 @@ pz2_client.prototype.updateAddRemoveLinks = function () {
 		}
 	}
 
-	if (this.curSource === 'clipboard') {
+	if (this.currentView.type === 'clipboard') {
 		this.updateAndDisplay();
 	}
 };

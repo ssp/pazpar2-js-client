@@ -26,22 +26,38 @@ function pz2_client () {
 	this.institutionName = undefined;
 	this.allTargetsActive = true;
 
-	this.recPerPage = 100;
-	this.curPage = 1;
-	this.curSort = [];
-	this.curFilter = null;
-	this.curQuery = null;
-	this.curQueryTerms = [];
-	this.curAdditionalQueryTerms = [];
-	this.curSource = 'query'; // 'query' for results, 'clipboard' for the clipboard
+	this.viewSettings = {
+		'query': {
+			'type': 'query',
+			'recPerPage': 100,
+			'page': 1,
+			'sort': [],
+			'filter': null,
+			'filters': {},
+			'query': null,
+			'queryTerms': [],
+			'additionalQueryTerms': []
+		},
+		'clipboard': {
+			'type': 'clipboard',
+			'recPerPage': 100,
+			'page': 1,
+			'sort': [],
+			'filter': null,
+			'filters': {},
+			'query': null,
+			'queryTerms': [],
+			'additionalQueryTerms': []
+		}
+	};
+	this.currentView = this.viewSettings.query;
 
 	this.facetData = {}; // stores faceting information as sent by pazpar2
-	this.filterArray = {};
+	this.hitList = {}; // locally store the records sent from pazpar2
+	this.targetStatus = {};
 
-	this.hitList = {}; // local storage for the records sent from pazpar2
 	this.displayHitList = []; // filtered and sorted list used for display
 	this.displayHitListUpToDate = []; // list filtered for all conditions but the date used for drawing the date histogram
-	this.targetStatus = {};
 	
 }
 
