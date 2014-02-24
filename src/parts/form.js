@@ -65,7 +65,12 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 			queryParts.push(CCLQuery(indexName, searchString));
 
-			jQuery.merge(queryTerms, searchString.toLowerCase().replace(/[\s.-;,/:"']+/g, ' ').split(' '));
+			var terms =  searchString
+							.toLowerCase()
+							.replace(/([\w-]*=|and|or|not)/g, ' ')
+							.replace(/[\s.-;,/:"'?*]+/g, ' ')
+							.split(' ');
+			jQuery.merge(queryTerms, terms);
 		}
 	};
 
