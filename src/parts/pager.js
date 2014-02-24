@@ -71,10 +71,9 @@ pz2_client.prototype.updatePagers = function () {
 		jPageNumbersContainer.empty();
 		var pageNumbersContainer = jPageNumbersContainer[0];
 
-		var previousLink = document.createElement('span');
+		var previousLink = document.createElement('a');
 		var jPreviousLink = jQuery(previousLink);
 		if (that.curPage > 1) {
-			previousLink = document.createElement('a');
 			previousLink.setAttribute('href', '#');
 			jPreviousLink.click(pagerPrev);
 			previousLink.title = that.localise('Vorige Trefferseite anzeigen', 'pager');
@@ -119,10 +118,9 @@ pz2_client.prototype.updatePagers = function () {
 			}
 		}
 
-		var nextLink = document.createElement('span');
+		var nextLink = document.createElement('a');
 		var jNextLink = jQuery(nextLink);
 		if (pages - that.curPage > 0) {
-			nextLink = document.createElement('a');
 			nextLink.setAttribute('href', '#');
 			jNextLink.click(pagerNext);
 			nextLink.title = that.localise('Nächste Trefferseite anzeigen', 'pager');
