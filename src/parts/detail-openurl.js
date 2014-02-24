@@ -52,6 +52,9 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 	var author = record['md-author'];
 	if (author && author.length > 0) { parameters['au'] = record['md-author']; }
 
+	var title = record['md-title'];
+
+
 	if (record['md-medium'] === 'article') {
 		parameters['genre'] = 'article';
 
@@ -65,7 +68,6 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 		var pages = record['md-pages-number'];
 		if (pages && pages.length > 0) { parameters['pages'] = pages[0]; }
 
-		var title = record['md-title'];
 		if (title && title.length > 0) { parameters['atitle'] = title[0]; }
 	}
 	else if (parameters['issn']) {
@@ -76,17 +78,20 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 		if (journalTitle && journalTitle.length > 0) { parameters['title'] = journalTitle[0]; }
 	}
 	else {
-		parameters['genre'] = 'book';
-
-		var bookTitle = record['md-title'];
-		if (bookTitle && bookTitle.length > 0) { parameters['btitle'] = bookTitle[0]; }
+		if (record['md-medium'] === 'book') {
+			parameters['genre'] = 'book';
+			if (title && title.length > 0) { parameters['btitle'] = title[0]; }
+		}
+		else {
+			parameters['genre'] = 'other';
+			if (title && title.length > 0) { parameters['title'] = title[0]; }
+		}
 
 		var ISBNs = this.ISBNsForRecord(record);
 		if (ISBNs.length > 0) { parameters['isbn'] = ISBNs[0]; }
 
 		var publisher = record['md-publisher'];
 		if (publisher && publisher.length > 0) { parameters['pub'] = publisher[0]; }
-
 	}
 
 	return parameters;
