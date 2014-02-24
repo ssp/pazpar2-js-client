@@ -334,6 +334,10 @@ pz2_client.prototype.exportLinks = function (data) {
 	var that = this;
 	var extraLinkList = document.createElement('ul');
 
+	if (that.config.useClipboard) {
+		that.appendInfoToContainer(that.addToClipboardItem(data), extraLinkList);
+	}
+
 	if (that.config.showKVKLink) {
 		that.appendInfoToContainer(KVKItem(data), extraLinkList);
 	}

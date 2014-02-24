@@ -19,34 +19,43 @@ pz2_client.prototype.appendClipboardLinkToContainer = function (container) {
 
 
 /**
- * Given a container, get the associated record and add a link for
- * adding or removing the record to the clipboard to the container.
+ * Given a record, create a list item with a link to add/remove the record
+ * to/from the clipboard.
  *
- * @param {DOMElement} container - li.pz-record with the record as .data('record')
- * @returns {undefined}
+ * @param {object} record - record to create the add to clipboard link for
+ * @returns {DOMElement} - li element with add to clipboard link
  */
-pz2_client.prototype.appendClipboardLinkForRecordToContainer = function (container) {
-	jQuery('.pz2-addToClipboardLink', container).remove();
-
+pz2_client.prototype.addToClipboardItem = function (record) {
+	var li = document.createElement('li');
+	li.setAttribute('class', 'pz2-addToClipboard');
 	var a = document.createElement('a');
-	container.appendChild(a);
+	li.appendChild(a);
 	a.setAttribute('href', '#');
 
-	var record = jQuery(container).data('record');
 	var clipboard = this.getClipboard();
 
 	// Add to clipboard link for query results which are not on the clipboard yet.
-	if (!clipboard[record.recid[0]] && this.curSource === 'query') {
+	if (!clipboard[record.recid[0]]) {
 		a.setAttribute('class', 'pz2-addToClipboardLink pz2-add');
-		a.setAttribute('title', this.localise('Zur Merkliste hinzufügen', 'clipboard'));
 		jQuery(a).click(jQuery.proxy(this.addToClipboard, this));
-		a.appendChild(document.createTextNode('+'));
+		a.appendChild(document.createTextNode(this.localise('Zur Merkliste hinzufügen', 'clipboard')));
 	}
 	else {
 		a.setAttribute('class', 'pz2-addToClipboardLink pz2-delete');
-		a.setAttribute('title', this.localise('Aus der Merkliste entfernen', 'clipboard'));
 		jQuery(a).click(jQuery.proxy(this.deleteFromClipboard, this));
-		a.appendChild(document.createTextNode('-'));		
+		a.appendChild(document.createTextNode(this.localise('Aus der Merkliste entfernen', 'clipboard')));
+	}
+
+	return li;
+};
+
+
+
+pz2_client.prototype.updateClipboardItemForRecordItem = function (recordItem) {
+	var record = jQuery(recordItem).data('record');
+	if (jQuery('.pz2-details', recordItem).length > 0) {
+		var clipboardItem = this.addToClipboardItem(record);
+		jQuery('li.pz2-addToClipboard', recordItem).replaceWith(clipboardItem);
 	}
 };
 
@@ -87,7 +96,7 @@ pz2_client.prototype.addToClipboard = function (event) {
 	addRecordToClipboard(record);
 	
 	if (jLI.length > 0) {
-		this.appendClipboardLinkForRecordToContainer(jLI[0]);
+		this.updateClipboardItemForRecordItem(jLI[0]);
 	}
 
 	that.trackPiwik('clipboard/add');
@@ -322,7 +331,7 @@ pz2_client.prototype.updateAddRemoveLinks = function () {
 	for (var hitIndex in this.hitList) {
 		var hit = this.hitList[hitIndex];
 		if (hit.li) {
-			this.appendClipboardLinkForRecordToContainer(hit.li);
+			this.updateClipboardItemForRecordItem(hit.li);
 		}
 	}
 

@@ -797,6 +797,24 @@ pz2-client.js removes this once it it loaded.
 
 
 
+/* HISTORY & CLIPBOARD ACCESS */
+
+.pz2-featureLinks {
+	position: absolute;
+	right: 0;
+	top: -1.5em;
+}
+
+.pz2-clipboardLink {
+	margin-left: 1em;
+}
+
+.pz2-clipboardLink[items]:after {
+	content: ' (' attr(items) ')';
+}
+
+
+
 /* HISTORY DISPLAY */
 
 #pz2-history {
@@ -845,34 +863,6 @@ pz2-client.js removes this once it it loaded.
 
 
 /* CLIPBOARD DISPLAY */
-
-.pz2-featureLinks {
-	position: absolute;
-	right: 0;
-	top: -1.5em;
-}
-
-.pz2-clipboardLink {
-	margin-left: 1em;
-}
-
-.pz2-clipboardLink[items]:after {
-	content: ' (' attr(items) ')';
-}
-
-.pz2-addToClipboardLink {
-	display: none;
-	position: absolute;
-	top: 0px;
-	bottom: 0px;
-	left: -15px;
-	width: 15px;
-	text-align: center;
-}
-
-.pz2-resultList li:hover .pz2-addToClipboardLink {
-	display: block;
-}
 
 #pz2-clipboardHeading {
 	position: absolute;

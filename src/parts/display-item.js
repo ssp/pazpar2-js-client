@@ -235,10 +235,6 @@ pz2_client.prototype.createResultItem = function (hit) {
 		that.appendInfoToContainer(that.COinSInfo(hit), LI);
 	}
 
-	if (that.config.useClipboard) {
-		that.appendClipboardLinkForRecordToContainer(LI);
-	}
-
 	hit.li = LI;
 	that.runMathJax(LI);
 	that.highlightSearchTerms(LI);
