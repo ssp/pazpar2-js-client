@@ -24,7 +24,8 @@ pz2_client.prototype.localisations['link-description'] = {
 		'Table of contents': 'Inhaltsverzeichnis',
 		'Table of contents only': 'Inhaltsverzeichnis',
 		'TOC': 'Inhaltsverzeichnis',
-		'Volltext': 'Volltext'
+		'Volltext': 'Volltext',
+		'Website': 'Website'
 	},
 
 	'en': {
@@ -45,7 +46,8 @@ pz2_client.prototype.localisations['link-description'] = {
 		'Table of contents': 'Table of Contents',
 		'Table of contents only': 'Table of Contents',
 		'TOC': 'Table of Contents',
-		'Volltext': 'Full text'
+		'Volltext': 'Full text',
+		'Website': 'Website'
 	}
 	
 };
