@@ -25,7 +25,7 @@ pz2_client.prototype.highlightSearchTerms = function (element) {
 			var matchIndex;
 			var textElement = element;
 			while ((matchIndex = nodeContent.indexOf(term, startIndex)) !== -1) {
-				var matchedText = textElement.splitText(matchIndex);
+				var matchedText = textElement.splitText(matchIndex - startIndex);
 				var remainderText = matchedText.splitText(term.length);
 				var highlight = document.createElement('span');
 				highlight.setAttribute('class', 'pz2-termHighlight');
