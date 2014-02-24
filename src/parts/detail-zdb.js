@@ -10,74 +10,6 @@
 pz2_client.prototype.addZDBInfoIntoElement = function (data, element) {
 
 	/**
-	 * @param {object} data - pz2 object
-	 * @returns {object} - parameters for query URL
-	 */
-	var ZDBJOPQueryParameters = function (data) {
-		var ISSN;
-		if (data['md-issn'] && data['md-issn'].length > 0) {
-			ISSN = data['md-issn'][0];
-		}
-		else if (data['md-pissn'] && data['md-pissn'].length > 0) {
-			ISSN = data['md-pissn'][0];
-		}
-		var eISSN;
-		if (data['md-eissn'] && data['md-eissn'].length > 0) {
-			eISSN = data['md-eissn'][0];
-		}
-		var ZDBID;
-		if (data['md-zdb-number'] && data['md-zdb-number'].length > 0) {
-			ZDBID = data['md-zdb-number'][0];
-			// ZDB-JOP expects the ZDB-ID to be of the form XXXXXXX-Y: Insert the »-« if it is not there.
-			if (ZDBID[ZDBID.length - 2] !== '-') {
-				ZDBID = ZDBID.slice(0, ZDBID.length - 1) + '-' + ZDBID[ZDBID.length - 1];
-			}
-		}
-
-		// Do nothing if there are no ISSNs or we do not want to use ZDB-JOP.
-		if ( !(ISSN || eISSN || ZDBID) || !that.config.useZDB ) {
-			return;
-		}
-
-		var parameters = {};
-
-		if (ISSN) {	parameters['issn'] = ISSN; }
-		if (eISSN) { parameters['eissn'] = eISSN; }
-		if (!(ISSN || eISSN) && ZDBID) { parameters['pid'] = 'zdbid=' + ZDBID; }
-
-		if (data['md-medium'] === 'article') {
-			parameters['genre'] = 'article';
-
-			// Add additional information to request to get more precise result and better display.
-			var year = parseInt(data['md-date'], 10);
-			if (year && year.length) {	parameters['date'] = year[0]; }
-
-			var volume = parseInt(data['md-volume-number'], 10);
-			if (volume && volume.length) { parameters['volume'] = volume[0]; }
-
-			var issue = parseInt(data['md-issue-number'], 10);
-			if (issue && issue.length > 0) { parameters['issue'] = issue[0]; }
-
-			var pages = data['md-pages-number'];
-			if (pages && pages.length > 0) { parameters['pages'] = pages[0]; }
-
-			var title = data['md-title'];
-			if (title && title.length > 0) { parameters['atitle'] = title[0]; }
-		}
-		else {
-			// it’s a journal
-			parameters['genre'] = 'journal';
-
-			var journalTitle = data['md-title'];
-			if (journalTitle && journalTitle.length > 0) { parameters['title'] = journalTitle[0]; }
-		}
-
-		return parameters;
-	};
-
-
-
-	/**
 	 * jQuery.get() callback.
 	 *
 	 * @param {object} resultData - XML from ZDB server
@@ -314,8 +246,9 @@ pz2_client.prototype.addZDBInfoIntoElement = function (data, element) {
 	var ZDBPath = (that.config.ZDBUseClientIP ? '/zdb' : '/zdb-local');
 	ZDBPath += '/full.xml';
 
-	var parameters = ZDBJOPQueryParameters(data);
-	if (parameters) {
-		jQuery.get(ZDBPath, parameters, processZDBResult);
+	var parameters = that.OpenURLParametersForRecord(data);
+	if (parameters && (parameters.genre === 'article' || parameters.genre === 'journal')) {
+		var parameterString = jQuery.param(parameters, true);
+		jQuery.get(ZDBPath, parameterString, processZDBResult);
 	}
 };
