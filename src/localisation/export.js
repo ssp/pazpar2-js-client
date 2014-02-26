@@ -2,7 +2,8 @@
  * Labels for metadata export and additional search links
  * at the bottom of the detail view.
  */
-pz2_client.prototype.localisations.export = {
+pz2_client.prototype.localisations['export'] = {
+// Need to use »export« in bracket notation as IE will fail otherwise.
 
 	'de': {
 		'mehr Links': 'mehr Links',
