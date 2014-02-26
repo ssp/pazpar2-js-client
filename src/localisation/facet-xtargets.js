@@ -5,17 +5,17 @@
 pz2_client.prototype.localisations['facet-xtargets'] = {
 
 	'de': {
-		'OLC Mathematik': 'Artikel'
+		'sru.gbv.de/olcssg-mat': 'Artikel'
 	},
 
 	'en': {
-		'Geschichte Aufsätze': 'Essays: History',
-		'Anglistik Aufsätze': 'Essays: Literature',
-		'Alte Karten': 'Old Maps',
-		'OLC Mathematik': 'Articles',
-		'Dissertationen': 'Dissertations',
-		'Jahrbuch-Datenbank': 'Jahrbuch-Database',
-		'SUB Onlineressourcen': 'SUB Online Resources'
+		'sru.gbv.de/olcssg-his': 'Essays: History',
+		'sru.gbv.de/olcssg-ang': 'Essays: Literature',
+		'sru.gbv.de/ikar': 'Old Maps',
+		'sru.gbv.de/olcssg-mat': 'Articles',
+		'ssgfi1.sub.uni-goettingen.de:8081/solr/mathdiss': 'Dissertations',
+		'ssgfi1.sub.uni-goettingen.de:8081/solr/jfm': 'Jahrbuch-Database',
+		'sru.gbv.de/proj-subgoeolr': 'SUB Online Resources'
 	}
 	
 };
