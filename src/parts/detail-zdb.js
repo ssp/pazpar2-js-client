@@ -247,6 +247,11 @@ pz2_client.prototype.addZDBInfoIntoElement = function (data, element) {
 	ZDBPath += '/full.xml';
 
 	var parameters = that.OpenURLParametersForRecord(data);
+	var authors = parameters.au;
+	if (authors && authors.length > 0) {
+		parameters.aulast = parameters.au[0].split(',')[0];
+		delete parameters.au;
+	}
 	if (parameters && (parameters.genre === 'article' || parameters.genre === 'journal')) {
 		var parameterString = jQuery.param(parameters, true);
 		jQuery.get(ZDBPath, parameterString, processZDBResult);
