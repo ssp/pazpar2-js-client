@@ -254,7 +254,8 @@ pz2_client.prototype.updateFacetLists = function () {
 				var item = document.createElement('li');
 				list.appendChild(item);
 				var jItem = jQuery(item);
-				jItem.attr('facetTerm', facet.name);
+				var facetTerm = (facet.id ? facet.id : facet.name);
+				jItem.attr('facetTerm', facetTerm);
 
 				// Make items beyond the display limit invisible unless otherwise
 				// requested. Be a bit wiggly about this to avoid hiding less than 3

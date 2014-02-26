@@ -143,7 +143,7 @@ pz2_client.prototype.localisations['facet-language'] = {
 		'ful': 'Ful',
 		'gaa': 'Ga',
 		'qgd': 'Gade',
-		'gae': 'Gälisch (= Schottisch, alter Sprachcode)', // deprecated
+		'gae': 'Gälisch (=Schottisch, alter Sprachcode)', // deprecated
 		'gla': 'Gälisch (=Schottisch)',
 		'gag': 'Galizisch (alter Sprachcode)', // deprecated
 		'glg': 'Galizisch',

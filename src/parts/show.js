@@ -149,7 +149,7 @@ pz2_client.prototype.updateAndDisplay = function () {
 						var filterValue = that.currentView.filters[facetType][filterIndex];
 						if (facetType === 'xtargets') {
 							for (var locationIndex in record.location) {
-								matches = (record.location[locationIndex]['@name'] === filterValue);
+								matches = (record.location[locationIndex]['@id'] === filterValue);
 								if (matches) {break;}
 							}
 						}
