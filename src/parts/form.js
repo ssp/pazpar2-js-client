@@ -122,6 +122,37 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 	}
 };
 
+
+
+/**
+ * Empties result lists, userSettings (filters, term list visibility),
+ * resets status and switches to first page and redisplays.
+ *
+ * @returns {undefined}
+ */
+pz2_client.prototype.resetPage = function () {
+	this.currentView.page = 1;
+	this.currentView.resultCount = 0;
+	this.hitList = {};
+	this.currentHits = [];
+	this.displayHitList = [];
+	this.currentView.filters = {};
+	for (var facetIndex in this.config.termLists) {
+		this.config.termLists[facetIndex].showAll = undefined;
+	}
+	jQuery('#pazpar2').removeClass();
+	jQuery('.pz2-pager .pz2-progressIndicator').css({'width': 0});
+	this.updateAndDisplay();
+};
+
+
+
+/**
+ * Function to call when the form is submitted.
+ * Allows other scripts to hook into form submission.
+ *
+ * @type {function}
+ */
 pz2_client.prototype.config.triggerSearchFunction = pz2_client.prototype.triggerSearchForForm;
 
 

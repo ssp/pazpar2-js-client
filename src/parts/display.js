@@ -15,11 +15,13 @@ pz2_client.prototype.display = function () {
 		var OL = document.createElement('ol');
 		OL.setAttribute('class', 'pz2-resultList');
 		var firstIndex = that.currentView.recPerPage * (that.currentView.page - 1);
-		var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.currentView.recPerPage);
 		OL.setAttribute('start', firstIndex + 1);
 
+		var offsetIndex = (that.config.usePazpar2Facets ? 0 : firstIndex);
+		var numberOfRecordsOnPage = Math.min(that.displayHitList.length - offsetIndex, that.currentView.recPerPage);
+
 		for (var i = 0; i < numberOfRecordsOnPage; i++) {
-			var hit = that.displayHitList[firstIndex + i];
+			var hit = that.displayHitList[offsetIndex + i];
 			var LI = hit.li;
 
 			if (!LI) {

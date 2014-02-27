@@ -1,19 +1,15 @@
 /**
- * Empties result lists, userSettings (filters, term list visibility),
- * resets status and switches to first page and redisplays.
+ * Return the number of search results.
  *
- * @returns {undefined}
+ * @returns {number}
  */
-pz2_client.prototype.resetPage = function () {
-	this.currentView.page = 1;
-	this.hitList = {};
-	this.displayHitList = [];
-	this.currentView.filters = {};
-	for (var facetIndex in this.config.termLists) {
-		this.config.termLists[facetIndex].showAll = undefined;
+pz2_client.prototype.resultCount = function () {
+	if (this.config.usePazpar2Facets && this.currentView.type === 'query') {
+		return this.currentView.resultCount;
 	}
-	jQuery('.pz2-pager .pz2-progressIndicator').css({'width': 0});
-	this.updateAndDisplay();
+	else {
+		return this.displayHitList.length;
+	}
 };
 
 
@@ -167,7 +163,7 @@ pz2_client.prototype.fieldContentsInRecord = function (fieldName, record) {
 	if ( fieldName === 'xtargets' ) {
 		// special case xtargets: gather server names from location info for this
 		for (var xtargetsLocationNumber in record.location) {
-			result.push(record.location[xtargetsLocationNumber]['@name']);
+			result.push(record.location[xtargetsLocationNumber]['@id']);
 		}
 	}
 	else if ( fieldName === 'date' ) {
@@ -304,3 +300,22 @@ pz2_client.prototype.OCLCNumbersForRecord = function (record) {
 
 	return OCLCNumbers;
 };
+
+
+
+/**
+ * Add the keys() function to Object if necessary.
+ * http://stackoverflow.com/questions/126100/
+ */
+if (!Object.keys) {
+	Object.keys = function (obj) {
+		var keys = [],
+			k;
+		for (k in obj) {
+			if (Object.prototype.hasOwnProperty.call(obj, k)) {
+				keys.push(k);
+			}
+		}
+		return keys;
+	};
+}

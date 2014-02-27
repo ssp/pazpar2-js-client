@@ -86,7 +86,7 @@ pz2_client.prototype.onbytarget = function (data) {
 		tbody.appendChild(tr);
 		td = document.createElement('th');
 		tr.appendChild(td);
-		td.appendChild(document.createTextNode(this.localise(data[i].name, 'facet-xtargets')));
+		td.appendChild(document.createTextNode(this.localise(data[i].id, 'facet-xtargets')));
 		td.title = data[i].id;
 		td.setAttribute('headers', 'pz2-target-name');
 		td = document.createElement('td');
@@ -113,9 +113,11 @@ pz2_client.prototype.onbytarget = function (data) {
 	}
 
 	if (this.my_paz.activeClients === 0) {
-		// Update the facet when no more clients are active, to ensure result
-		// counts and overflow indicators are up to date.
-		this.updateFacetLists();
+		// When building our own facets, update when no more clients are active,
+		// to ensure result counts and overflow indicators are up to date.
+		if (!this.config.usePazpar2Facets) {
+			this.updateFacetLists();
+		}
 		// Update result count
 		this.updatePagers();
 	}

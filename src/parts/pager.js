@@ -5,24 +5,37 @@
  */
 pz2_client.prototype.updatePagers = function () {
 
-	/*	showPage
-		Shows result page pageNumber.
-		input:	pageNum - number of the page to be shown
-		return:	false
-	*/
-	var showPage = function (pageNumber, link) {
-		that.currentView.page = Math.min( Math.max(0, pageNumber), Math.ceil(that.displayHitList.length / that.currentView.recPerPage) );
-		that.display();
+	/**
+	 * Display results page pageNumber.
+	 *
+	 * @param {number} pageNumber - the page to show
+	 * @returns {undefined}
+	 */
+	var showPage = function (pageNumber) {
+		that.currentView.page = Math.min(
+			Math.max(0, pageNumber),
+			Math.ceil(that.resultCount() / that.currentView.recPerPage)
+		);
+
+		if (that.config.usePazpar2Facets) {
+			var start = (that.currentView.page - 1) * that.currentView.recPerPage;
+			that.my_paz.show(start, that.currentView.recPerPage, that.currentView.sort);
+		}
+		else {
+			that.display();
+		}
+
 		that.trackPiwik('page', pageNumber);
 	};
 
 
 
-	/*	pagerGoto
-		Get the number in the calling element’s »pageNumber« attribute and go
-		to the page with that number.
-		return:	false
-	*/
+	/**
+	 * Get the number in the calling element’s »pageNumber« attribute and
+	 * display the page with that number.
+	 *
+	 * @returns {undefined}
+	 */
 	var pagerGoto = function () {
 		var jThis = jQuery(this);
 		var pageNumber = jThis.parent().attr('pageNumber');
@@ -34,10 +47,12 @@ pz2_client.prototype.updatePagers = function () {
 	};
 
 
-	/*	pagerNext
-		Display the next page (if available).
-		return:	false
-	*/
+
+	/**
+	 * Display the following results page.
+	 *
+	 * @returns {false}
+	 */
 	var pagerNext = function () {
 		showPage(that.currentView.page + 1);
 		return false;
@@ -45,10 +60,11 @@ pz2_client.prototype.updatePagers = function () {
 
 
 
-	/*	pagerPrev
-		Display the previous page (if available).
-		return:	false
-	*/
+	/**
+	 * Display the preceding results page.
+	 *
+	 * @returns {false}
+	 */
 	var pagerPrev = function () {
 		showPage(that.currentView.page - 1);
 		return false;
@@ -63,7 +79,7 @@ pz2_client.prototype.updatePagers = function () {
 	 * @param {DOMElement} element - element to place the pager into
 	 */
 	var createPager = function(element) {
-		var pages = Math.ceil(that.displayHitList.length / that.currentView.recPerPage);
+		var pages = Math.ceil(that.resultCount() / that.currentView.recPerPage);
 
 		// Update pager
 		var jPageNumbersContainer = jQuery('.pz2-pageNumbers', element);
@@ -134,13 +150,13 @@ pz2_client.prototype.updatePagers = function () {
 
 		// Add record count information
 		var infoString;
-		if (that.displayHitList.length > 0) {
+		if (that.resultCount() > 0) {
 			var firstIndex = that.currentView.recPerPage * (that.currentView.page - 1);
-			var numberOfRecordsOnPage = Math.min(that.displayHitList.length - firstIndex, that.currentView.recPerPage);
+			var numberOfRecordsOnPage = Math.min(that.resultCount() - firstIndex, that.currentView.recPerPage);
 			infoString = String(firstIndex + 1) + '-' +
 				String(firstIndex + numberOfRecordsOnPage) +
 				' ' + that.localise('von', 'pager') + ' ' +
-				String(that.displayHitList.length);
+				String(that.resultCount());
 
 			// Determine transfer status and append indicators about it to
 			// the result count: + for overflow, … while we are busy and

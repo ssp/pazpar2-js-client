@@ -31,29 +31,32 @@ function pz2_client () {
 			'type': 'query',
 			'recPerPage': 100,
 			'page': 1,
-			'sort': [],
+			'sort': '',
 			'filter': null,
 			'filters': {},
 			'query': null,
 			'queryTerms': [],
-			'additionalQueryTerms': []
+			'additionalQueryTerms': [],
+			'resultCount': 0
 		},
 		'clipboard': {
 			'type': 'clipboard',
 			'recPerPage': 100,
 			'page': 1,
-			'sort': [],
+			'sort': 'timeAddedToClipboard:0',
 			'filter': null,
 			'filters': {},
 			'query': null,
 			'queryTerms': [],
-			'additionalQueryTerms': []
+			'additionalQueryTerms': [],
+			'resultCount': 0
 		}
 	};
 	this.currentView = this.viewSettings.query;
 
 	this.facetData = {}; // stores faceting information as sent by pazpar2
 	this.hitList = {}; // locally store the records sent from pazpar2
+	this.currentHits = []; // IDs of the current pazpar2 reply
 	this.targetStatus = {};
 
 	this.displayHitList = []; // filtered and sorted list used for display

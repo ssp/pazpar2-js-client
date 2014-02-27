@@ -1,17 +1,4 @@
 /**
- * pazpar2 callback for receiving facet data.
- * Stores facet data and recreates facets on page.
- *
- * @param {array} data - pazpar2 termlist information
- * @returns {undefined}
- */
-pz2_client.prototype.onterm = function (data) {
-	this.facetData = data;
-};
-
-
-
-/**
  * Updates all facet lists for the facet types stored in termLists.
  *
  * @returns {undefined}
@@ -23,151 +10,77 @@ pz2_client.prototype.updateFacetLists = function () {
 	 * Uses facet information stored in facetData.
 	 *
 	 * @param {string} type - facet ID
-	 * @param {boolean} preferOriginalFacets - use pazpar2’s facets or build our own?
 	 * @returns {DOMElement} - elements for displaying the facets
 	 */
-	var facetListForType = function (type, preferOriginalFacets) {
+	var facetListForType = function (type) {
 
-		var classNameRegEx = /[ ,.\/]/g;
-
-		/*	limitResults
-			Adds a filter for term for the data of type kind. Then redisplays.
-			input:	* kind - string with name of facet type
-					* term - string that needs to match the facet
-		*/
-		var limitResults = function (kind, term) {
-			if (that.currentView.filters[kind]) {
-				// add additional condition to an existing filter
-				that.currentView.filters[kind].push(term);
-			}
-			else {
-				// the first filter of its kind: create array
-				that.currentView.filters[kind] = [term];
-			}
-
-			// Mark with class for selected facet. Remove spaces from strings.
-			var baseName = 'pz2-term-selected-' + kind.replace(' ', '-');
-			var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(classNameRegEx, '-');
-			jQuery('#pazpar2')
-				.addClass(baseName)
-				.addClass(baseName + '-' + termString);
-
-			that.currentView.page = 1;
-			that.updateAndDisplay();
-
-			that.trackPiwik('facet/limit', kind);
-		};
-
-
-
-		/*	delimitResults
-			Removes a filter for term from the data of type kind. Then redisplays.
-			input:	* kind - string with name of facet type
-					* term (optional) - string that shouldn't be filtered for
-							all terms are removed if term is omitted.
-		*/
-		var delimitResults = function (kind, term) {
-			if (that.currentView.filters[kind]) {
-				var jPazpar2 = jQuery('#pazpar2');
-				var baseName = 'pz2-term-selected-' + kind.replace(classNameRegEx, '-');
-				if (term) {
-					// if a term is given only delete occurrences of 'term' from the filter
-					var termString = (jQuery.type(term) === 'string' ? term : term.from + '-' + term.to).replace(classNameRegEx, '-');
-					for (var index = that.currentView.filters[kind].length -1; index >= 0; index--) {
-						if (that.currentView.filters[kind][index] === term) {
-							that.currentView.filters[kind].splice(index,1);
-						}
-					}
-					jPazpar2.removeClass(baseName + '-' + termString);
-
-					if (that.currentView.filters[kind].length === 0) {
-						// all terms of this kind have been removed: remove kind from filterArray
-						that.currentView.filters[kind] = undefined;
-						jPazpar2.removeClass(baseName);
-					}
-				}
-				else {
-					// if no term is given, delete the complete filter
-					that.currentView.filters[kind] = undefined;
-					var classes = jPazpar2.attr('class').split(' ');
-					for (var classIndex in classes) {
-						var className = classes[classIndex];
-						if (className.substr(0, baseName.length) === baseName) {
-							jPazpar2.removeClass(className);
-						}
-					}
-				}
-
-				that.updateAndDisplay();
-
-				that.trackPiwik('facet/delimit', kind);
-			}
-		};
-
-
-		var facetItemSelect = function () {
-			var jThis = jQuery(this);
-			var facetName = jThis.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
-			var facetTerm = jThis.parents('li').attr('facetTerm');
-			limitResults(facetName, facetTerm);
-			return false;
-		};
-
-
-		var facetItemDeselect = function () {
-			var jThis = jQuery(this);
-			var facetName = jThis.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
-			var facetTerm = jThis.parents('li').attr('facetTerm');
-			delimitResults(facetName, facetTerm);
+		/**
+		 * Click event handler for selecting a facet item.
+		 *
+		 * @param {Event} event - click event selecting a facet item
+		 * @returns {boolean} false
+		 */
+		var facetItemSelect = function (event) {
+			var jTarget = jQuery(event.target);
+			var facetName = jTarget.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
+			var facetTerm = jTarget.parents('li').attr('facetTerm');
+			jQuery.proxy(that.limitResults, that, facetName, facetTerm)();
 			return false;
 		};
 
 
 
-		/*	isFilteredForType
-			Returns whether there is a filter for the given type.
-			input:	type - string with the type's name
-			output:	boolean indicating whether there is a filter or not
-		*/
+		/**
+		 * Click event handler for removing a facet item selection.
+		 *
+		 * @param {Event} event - click event deselecting the facet item
+		 * @returns {boolean} false
+		 */
+		var facetItemDeselect = function (event) {
+			var jTarget = jQuery(event.target);
+			var facetName = jTarget.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
+			var facetTerm = jTarget.parents('li').attr('facetTerm');
+			jQuery.proxy(that.delimitResults, that, facetName, facetTerm)();
+			return false;
+		};
+
+
+
+		/**
+		 * Return whether there is a filter for the facets of type type.
+		 *
+		 * @param {string} type - ID of the facet to get information for
+		 * @returns {boolean}
+		 */
 		var isFilteredForType = function (type) {
 			var result = false;
 			if (that.currentView.filters[type]) {
-				result = (that.currentView.filters[type].length > 0);
+				result = (Object.keys(that.currentView.filters[type]).length > 0);
 			}
 			return result;
 		};
 
 
-		/*	facetInformationForType
-			Creates list with facet information.
-				* information is collected from the filtered hit list.
-				* list is sorted by term frequency.
-			output:	list of Objects with properties 'name' and 'freq'(uency)
-						(these are analogous to the Objects passed to the callback by pz2.js)
-		*/
+
+		/**
+		 * Return list with facet information.
+		 *
+		 * @param {string} type - ID of the facet to get information for
+		 * @returns {array} - of objects with properties 'name' and 'freq'(uency)
+		 */
 		var facetInformationForType = function (type) {
-			/*	isFiltered
-				Returns whether there is any filter active.
-					(One may want to use pazpar2's original term lists if not.)
-				output:	boolean indicating whether a filter is active
-			*/
-			var isFiltered = function () {
-				var isFiltered = false;
-				for (var filterType in that.currentView.filters) {
-					isFiltered = isFilteredForType(filterType);
-					if (isFiltered) {break;}
-				}
-				return isFiltered;
-			};
 
+			/**
+			 * Return list with facet information for the given type.
+			 * Generate the list from the records that are availble/displayed.
+			 *
+			 * @param {string} type - ID of the facet to return facet information for
+			 * @returns {array} - of objects with properties 'name' and 'freq'(uency)
+			 */
+			var facetInformationFromRecordsForType = function (type) {
+				var terms = [];
 
-			var termList = [];
-			if (!isFiltered() && preferOriginalFacets) {
-				termList = that.facetData[type];
-			}
-			else {
-				// Loop through data ourselves to gather facet information.
-				var termArray = {};
+				var termDict = {};
 				var recordList = that.displayHitList;
 				if (type === 'filterDate') {
 					recordList = that.displayHitListUpToDate;
@@ -182,20 +95,20 @@ pz2_client.prototype.updateFacetLists = function () {
 					}
 
 					for (var countTerm in countsToIncrement) {
-						if (!termArray[countTerm]) {
-							termArray[countTerm] = 0;
+						if (!termDict[countTerm]) {
+							termDict[countTerm] = 0;
 						}
-						termArray[countTerm]++;
+						termDict[countTerm]++;
 					}
 				}
 
 				// Sort by term frequency.
-				for (var term in termArray) {
-					termList.push({'name': term, 'freq': termArray[term]});
+				for (var term in termDict) {
+					terms.push({'name': term, 'freq': termDict[term]});
 				}
 
-				if (termList.length > 0) {
-					termList.sort( function(term1, term2) {
+				if (terms.length > 0) {
+					terms.sort( function(term1, term2) {
 							if (term1.freq < term2.freq) {return 1;}
 							else if (term1.freq === term2.freq) {
 								if (term1.name < term2.name) {return -1;}
@@ -206,38 +119,58 @@ pz2_client.prototype.updateFacetLists = function () {
 					);
 
 					// Note the maximum number
-					termList['maximumNumber'] = termList[0].freq;
+					terms['maximumNumber'] = terms[0].freq;
 
 					if (type === 'filterDate' && !that.config.useHistogramForYearFacets) {
 						// Special treatment for dates when displaying them as a list:
 						// take the most frequent items and sort by date if we are not using the histogram.
 						var maximumDateFacetCount = parseInt(that.config.termLists['filterDate'].maxFetch, 10);
-						if (termList.length > maximumDateFacetCount) {
-							termList.splice(maximumDateFacetCount, termList.length - maximumDateFacetCount);
+						if (terms.length > maximumDateFacetCount) {
+							terms.splice(maximumDateFacetCount, terms.length - maximumDateFacetCount);
 						}
-						termList.sort( function(term1, term2) {
+						terms.sort( function(term1, term2) {
 								return (term1.name < term2.name) ? 1 : -1;
 							}
 						);
 					}
 					else if (type === 'language') {
 						// Special case for languages: put 'unknown' at the end of the list.
-						for (var termIndex in termList) {
-							var termItem = termList[termIndex];
+						for (var termIndex in terms) {
+							var termItem = terms[termIndex];
 							if (termItem.name === 'zzz') {
-								termList.splice(termIndex, 1);
-								termList.push(termItem);
+								terms.splice(termIndex, 1);
+								terms.push(termItem);
 							}
 						}
 					}
 				}
+
+				return terms;
+			};
+
+
+
+			var termList = [];
+
+			if (that.config.usePazpar2Facets) {
+				termList = that.facetData[type];
+			}
+			else {
+				termList = facetInformationFromRecordsForType(type);
 			}
 
 			return termList;
-		};
+		}; // end of facetInformationForType
 
 
 
+		/**
+		 * Return OL with facet items for the passed terms.
+		 * 
+		 * @param {array} terms - facet terms to display
+		 * @param {string} type - ID of the facet to return facet information for
+		 * @returns {DOMElement} - ol with facet list
+		 */
 		var facetDisplayTermsForType = function (terms, type) {
 			var list = document.createElement('ol');
 
@@ -262,7 +195,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				// items
 				if (needToHideFacets &&
 					facetIndex >= parseInt(that.config.termLists[type].maxFetch, 10) &&
-					!(type === 'language' && facet.name === 'zzz')) {
+					!(type === 'language' && facetTerm === 'zzz')) {
 					jItem.addClass('pz2-facet-hidden');
 					invisibleCount++;
 				}
@@ -273,7 +206,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				link.setAttribute('href', '#');
 				jQuery(link).click(facetItemSelect);
 
-				// 'Progress bar'
+				// »Progress bar« to visualise the number of results
 				var progressBar = document.createElement('div');
 				link.appendChild(progressBar);
 				var progress = facet.freq / terms['maximumNumber'] * 100;
@@ -281,7 +214,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				jQuery(progressBar).addClass('pz2-progressIndicator');
 
 				// Facet display name
-				var facetDisplayName = that.localise(facet.name, 'facet-' + type);
+				var facetDisplayName = that.localise(facetTerm, 'facet-' + type);
 				var textSpan = document.createElement('span');
 				link.appendChild(textSpan);
 				jQuery(textSpan).addClass('pz2-facetName');
@@ -292,7 +225,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				link.appendChild(count);
 				jQuery(count).addClass('pz2-facetCount');
 				count.appendChild(document.createTextNode(facet.freq));
-				var target = that.targetStatus[facet.name];
+				var target = that.targetStatus[facetTerm];
 				if (type === 'xtargets' && target) {
 					if (target.state === 'Client_Idle') {
 						// When the client is finished with data transfers, check whether
@@ -320,13 +253,13 @@ pz2_client.prototype.updateFacetLists = function () {
 				if (type === 'medium') {
 					var mediaIcon = document.createElement('span');
 					link.appendChild(mediaIcon);
-					jQuery(mediaIcon).addClass('pz2-mediaIcon ' + facet.name);
+					jQuery(mediaIcon).addClass('pz2-mediaIcon ' + facetTerm);
 				}
 
 				// Mark facets which are currently active and add button to remove faceting.
 				if (isFilteredForType(type)) {
-					for (var filterIndex in that.currentView.filters[type]) {
-						if (facet.name === that.currentView.filters[type][filterIndex]) {
+					for (var filterTerm in that.currentView.filters[type]) {
+						if (facetTerm === filterTerm) {
 							jItem.addClass('pz2-activeFacet');
 							var cancelLink = document.createElement('a');
 							var jCancelLink = jQuery(cancelLink);
@@ -369,210 +302,8 @@ pz2_client.prototype.updateFacetLists = function () {
 			}
 
 			return list;
-		};
+		}; // end of facetDisplayTermsForType
 
-		/*	appendFacetHistogramForDatesTo
-			Appends a histogram facet for the passed terms (years).
-			inputs:	terms - array of objects with keys »name« and »freq«
-					histogramContainer - DOMElement to append the histogram to
-		*/
-		var appendFacetHistogramForDatesTo = function (terms, histogramContainer) {
-			var histogramConfig = {'barWidth': 1};
-
-			if (isFilteredForType('filterDate')) {
-				var cancelLink = document.createElement('a');
-				var jCancelLink = jQuery(cancelLink);
-				histogramContainer.appendChild(cancelLink);
-				cancelLink.setAttribute('href', '#');
-				jCancelLink.addClass('pz2-facetCancel pz2-activeFacet');
-				jCancelLink.click(facetItemDeselect);
-				var yearString = that.currentView.filters['filterDate'][0].from;
-				if (that.currentView.filters['filterDate'][0].from !== that.currentView.filters['filterDate'][0].to - 1) {
-					yearString += '-' + (that.currentView.filters['filterDate'][0].to - 1);
-				}
-				var cancelLinkText = that.localise('Filter # aufheben', 'facets').replace('#', yearString);
-				cancelLink.appendChild(document.createTextNode(cancelLinkText));
-			}
-
-			var graphDiv = document.createElement('div');
-			histogramContainer.appendChild(graphDiv);
-			var jGraphDiv = jQuery(graphDiv);
-			jGraphDiv.addClass('pz2-histogramContainer');
-
-			var graphWidth = jQuery('#pz2-termLists').width();
-			var canvasHeight = 150;
-			jGraphDiv.css({'width': graphWidth + 'px', 'height': canvasHeight + 'px', 'position': 'relative'});
-
-			var graphData = [];
-			for (var termIndex in terms) {
-				var year = parseInt(terms[termIndex].name, 10);
-				if (year) {
-					graphData.push([year, terms[termIndex].freq]);
-				}
-			}
-
-			/*	Set up xaxis with two labelled ticks, one at each end.
-				Dodgy: Use whitespace to approximately position the labels in a way that they don’t
-				extend beyond the end of the graph (by default they are centered at the point of
-				their axis, thus extending beyond the width of the graph on one site.
-			*/
-			var xaxisTicks = function (axis) {
-				return [[axis.datamin, '      ' + axis.datamin], [axis.datamax, axis.datamax + '      ']];
-			};
-
-			// Use the colour of term list titles for the histogram.
-			var graphColour = jQuery('.pz2-termList-xtargets a').css('color');
-			var selectionColour = jQuery('.pz2-termList-xtargets h5').css('color');
-
-			var graphOptions = {
-				'series': {
-					'bars': {
-						'show': true,
-						'fill': true,
-						'lineWidth': 0,
-						'fillColor': graphColour
-					}
-				},
-				'xaxis':  {
-					'tickDecimals': 0,
-					'ticks': xaxisTicks,
-					'autoscaleMargin': null
-				},
-				'yaxis': {
-					'position': 'right',
-					'tickDecimals': 0,
-					'tickFormatter': function(val, axis) {return (val !== 0) ? (val) : ('');},
-					'labelWidth': 30
-				},
-				'grid': {
-					'borderWidth': 0,
-					'clickable': true,
-					'hoverable': true
-				},
-				'selection': {
-					'mode': 'x',
-					'color': selectionColour,
-					'minSize': 0.1
-				}
-			};
-
-			// Create plot.
-			var plot;
-			try {
-				plot = jQuery.plot(jGraphDiv , [{'data': graphData, 'color': graphColour}], graphOptions);
-			}
-			catch (exception){
-				// console.log(exception);
-			}
-
-			// Create tooltip.
-			var jTooltip = jQuery('#pz2-histogram-tooltip');
-			if (jTooltip.length === 0) {
-				tooltipDiv = document.createElement('div');
-				tooltipDiv.setAttribute('id', 'pz2-histogram-tooltip');
-				jTooltip = jQuery(tooltipDiv).appendTo(document.body);
-			}
-
-			var roundedRange = function (range) {
-				var outputRange = {};
-
-				var from = Math.floor(range.from);
-				outputRange.from = from - (from % histogramConfig.barWidth);
-
-				var to = Math.ceil(range.to);
-				outputRange.to = to - (to % histogramConfig.barWidth) + histogramConfig.barWidth;
-				return outputRange;
-			};
-
-			var selectRanges = function (ranges) {
-				var newRange = roundedRange(ranges.xaxis);
-				plot.setSelection({'xaxis': newRange}, true);
-				hideTooltip();
-				that.currentView.filters['filterDate'] = undefined;
-				limitResults('filterDate', newRange);
-			};
-
-			jGraphDiv.on('plotclick', function (event, pos, item) {
-				if (item && item.datapoint) {
-					var year = item.datapoint[0];
-					var ranges = {'xaxis': {'from': year, 'to': year + 1} };
-					selectRanges(ranges);
-				}
-			});
-
-			jGraphDiv.on('plotselected', function(event, ranges) {
-				selectRanges(ranges);
-			});
-
-			jGraphDiv.on('plotunselected', function(event) {
-				delimitResults('filterDate');
-			});
-
-			var hideTooltip = function () {
-				jTooltip.hide();
-			};
-
-			/*	update Tooltip
-				Updates the tooltip visiblity, position and text.
-				input:	event - the event we are called for
-						ranges - object with property »xaxis«
-						pageX - current x coordinate of the mouse
-			*/
-			var updateTooltip = function (event, ranges, pageX) {
-				var showTooltip = function(x, y, contents) {
-					jTooltip.text(contents);
-					if (x) {
-						jTooltip.css({
-							'top': y + 5,
-							'left': x + 5
-						});
-					}
-					jTooltip.show();
-				};
-
-				var tooltipY = jGraphDiv.offset().top + canvasHeight - 20;
-				var displayString;
-				if (ranges) {
-					var range = roundedRange(ranges.xaxis);
-
-					if (histogramContainer.currentSelection && histogramContainer.currentSelection.xaxis) {
-						displayString = range.from.toString() + '-' + range.to.toString();
-					}
-					else {
-						for (var termIndex in terms) {
-							var term = parseInt(terms[termIndex].name, 10);
-							if (term === range.from) {
-								var hitCount = terms[termIndex].freq;
-								displayString = term.toString() + ': ' + hitCount + ' ' + that.localise('Treffer', 'facets');
-								break;
-							}
-						}
-					}
-				}
-
-				if (displayString) {
-					showTooltip(pageX, tooltipY, displayString);
-				}
-				else {
-					hideTooltip();
-				}
-			};
-
-			jGraphDiv.on('plothover', function(event, ranges, item) {
-				updateTooltip(event, {'xaxis': {'from': ranges.x, 'to': ranges.x}}, ranges.pageX);
-			});
-
-			jGraphDiv.on('plotselecting', function (event, info) {
-				histogramContainer.currentSelection = info;
-				updateTooltip(event, info);
-			});
-
-			jGraphDiv.mouseout(hideTooltip);
-
-			for (var filterIndex in that.currentView.filters['filterDate']) {
-				plot.setSelection({'xaxis': that.currentView.filters['filterDate'][filterIndex]}, true);
-			}
-		};
 
 
 		// Create container and heading.
@@ -581,9 +312,12 @@ pz2_client.prototype.updateFacetLists = function () {
 		jQuery(container).addClass('pz2-termList pz2-termList-' + type);
 
 		var terms = facetInformationForType(type);
-		if (terms.length >= parseInt(that.config.termLists[type].minDisplay, 10) || that.currentView.filters[type]) {
-			// Always display facet list if it is filtered. Otherwise require
-			// at least .minDisplay facet elements.
+
+		// Always display facet list if it is filtered. Otherwise require
+		// at least .minDisplay facet elements.
+		if (terms &&
+			(terms.length >= parseInt(that.config.termLists[type].minDisplay, 10) ||
+			that.currentView.filters[type])) {
 			var heading = document.createElement('h5');
 			container.appendChild(heading);
 			var headingText = that.localise(type, 'facet');
@@ -593,9 +327,10 @@ pz2_client.prototype.updateFacetLists = function () {
 			heading.appendChild(document.createTextNode(headingText));
 
 			// Display histogram if set up and able to do so.
-			if (that.config.useHistogramForYearFacets && type === 'filterDate' &&
+			if (that.config.useHistogramForYearFacets &&
+				(type === 'filterDate' || type === 'date') &&
 				(!that.MSIEVersion() || that.MSIEVersion() >= 9)) {
-				appendFacetHistogramForDatesTo(terms, container);
+				that.appendFacetHistogramForDatesTo(terms, type, container);
 			}
 			else {
 				container.appendChild(facetDisplayTermsForType(terms, type));

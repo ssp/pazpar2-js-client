@@ -51,11 +51,13 @@ pz2_client.prototype.onshow = function (data) {
 	};
 
 
-
+	this.currentHits = [];
 	for (var hitNumber in data.hits) {
 		var hit = data.hits[hitNumber];
 		var hitID = hit.recid[0];
 		if (hitID) {
+			this.currentHits.push(hitID);
+
 			var oldHit = this.hitList[hitID];
 			if (oldHit) {
 				hit.detailsDivVisible = oldHit.detailsDivVisible;
@@ -79,10 +81,10 @@ pz2_client.prototype.onshow = function (data) {
 				if (!hit['md-language']) {
 					hit['md-language'] = ['zzz'];
 				}
-			}
 
-			// Create the integer 'filterDate' field for faceting.
-			hit['md-filterDate'] = extractNewestDates(hit);
+				// Create the integer 'filterDate' field for faceting.
+				hit['md-filterDate'] = extractNewestDates(hit);
+			}
 
 			// If there is no title information but series information, use the
 			// first series field for the title.
@@ -98,7 +100,8 @@ pz2_client.prototype.onshow = function (data) {
 	}
 
 	if (this.currentView.type === 'query') {
-		this.updateAndDisplay(this.hitList);
+		this.currentView.resultCount = data.merged;
+		this.updateAndDisplay();
 	}
 };
 
@@ -302,19 +305,33 @@ pz2_client.prototype.updateAndDisplay = function () {
 
 
 	var that = this;
-	var hitList;
-	if (that.currentView.type === 'query') {
-		// Use the query results.
-		hitList = that.hitList;
+	var hitList = {};
+
+	// Set up displayHitList.
+	if (that.config.usePazpar2Facets) {
+		// Use the last hit list from pazpar2 with remote filtering.
+		that.displayHitList = [];
+		jQuery.each(that.currentHits, function (index, key) {
+			if (that.hitList[key]) {
+				that.displayHitList.push(that.hitList[key]);
+			}
+		});
 	}
 	else {
-		// Use a copy of the clipboard.
-		hitList = jQuery.extend(true, {}, that.getClipboard());
+		if (that.currentView.type === 'query') {
+			// Use the full stored hit list for local filtering.
+			hitList = that.hitList;
+		}
+		else if (that.currentView.type === 'clipboard') {
+			// Use a copy of the clipboard.
+			hitList = jQuery.extend(true, {}, that.getClipboard());
+		}
+
+		var filterResults = displayLists(hitList);
+		that.displayHitList = filterResults[0];
+		that.displayHitListUpToDate = filterResults[1];
 	}
 
-	var filterResults = displayLists(hitList);
-	that.displayHitList = filterResults[0];
-	that.displayHitListUpToDate = filterResults[1];
 	that.display();
 	if (!that.config.usePazpar2Facets || that.currentView.type === 'history') {
 		that.updateFacetLists();

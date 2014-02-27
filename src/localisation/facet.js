@@ -11,6 +11,7 @@ pz2_client.prototype.localisations.facet = {
 		'country': 'Land',
 		'source-type': 'Quellenart',
 		'subject': 'Themengebiete',
+		'date': 'Jahre',
 		'filterDate': 'Jahre'
 	},
 
@@ -22,6 +23,7 @@ pz2_client.prototype.localisations.facet = {
 		'country': 'Countries',
 		'source-type': 'Source Type',
 		'subject': 'Subjects',
+		'date': 'Years',
 		'filterDate': 'Years'
 	}
 

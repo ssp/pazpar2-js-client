@@ -79,7 +79,7 @@ pz2_client.prototype.initialiseService = function () {
 	this.errorCount = 0;
 
 	if (!this.my_paz) {
-		this.my_paz = new pz2( {
+		var clientConfiguration = {
 			pazpar2path: this.config.pazpar2Path,
 			serviceId: this.config.serviceID,
 			usesessions: this.usesessions(),
@@ -90,12 +90,20 @@ pz2_client.prototype.initialiseService = function () {
 			onbytarget: jQuery.proxy(this.onbytarget, this),
 			onstat: jQuery.proxy(this.onstat, this),
 			errorhandler: jQuery.proxy(this.onerror, null, this),
-			/* We are not using pazpar2’s termlists but create our own.
-				onterm: callbacks.onterm,
-				termlist: termListNames.join(","),
-			*/
 			showResponseType: this.config.showResponseType
-		});
+		};
+
+		if (this.config.usePazpar2Facets) {
+			clientConfiguration.onterm = jQuery.proxy(this.onterm, this);
+
+			var termListNames = [];
+			jQuery.each(this.config.termLists, function (key, value) { termListNames.push(key); });
+			clientConfiguration.termlist = termListNames.join(",");
+
+			clientConfiguration.termCount = 2000;
+		}
+
+		this.my_paz = new pz2(clientConfiguration);
 
 
 		// Remove error handler when the user leaves the page. (Prevents error messages
