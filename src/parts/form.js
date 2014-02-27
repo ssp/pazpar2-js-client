@@ -67,7 +67,7 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 
 			var terms =  searchString
 							.toLowerCase()
-							.replace(/([\w-]*=|and|or|not)/g, ' ')
+							.replace(/([\w-]*=| and | or | not )/g, ' ')
 							.replace(/[\s.-;,/:"'?*]+/g, ' ')
 							.split(' ');
 			jQuery.merge(queryTerms, terms);
