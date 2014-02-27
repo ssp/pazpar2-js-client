@@ -539,6 +539,7 @@ pz2_client.prototype.renderDetails = function (data) {
 			var URLsContainer;
 			if (electronicURLs && electronicURLs.length !== 0) {
 				URLsContainer = document.createElement('span');
+				URLsContainer.setAttribute('class', 'pz2-info');
 
 				for (var URLNumber in electronicURLs) {
 					var URLInfo = electronicURLs[URLNumber];
