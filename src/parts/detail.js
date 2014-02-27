@@ -177,7 +177,7 @@ pz2_client.prototype.renderDetails = function (data) {
 				if (jQuery('.pz2-field-subject').length > 0) {
 					// The subject field is available: switch to extended search and use it.
 					if (!jForm.hasClass('pz2-extended')) {
-						addExtendedSearch(null, true);
+						that.addExtendedSearch(null, true);
 					}
 					jQuery('.pz2-searchField', jForm).val('');
 					jQuery('input#pz2-field-subject', jForm).val('"' + this.textContent + '"');
@@ -186,7 +186,7 @@ pz2_client.prototype.renderDetails = function (data) {
 					// The subject field is not available: use "subject=XXX" in the general search field.
 					jQuery('.pz2-searchField', jForm).val('subject="' + this.textContent + '"');
 				}
-				triggerSearchForForm();
+				that.triggerSearchForForm();
 
 				return false;
 			};
