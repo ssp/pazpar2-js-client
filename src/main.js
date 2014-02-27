@@ -1,13 +1,13 @@
 /**
  * pz2-client.js
- * 
- * Inspired by Index Data’s js-client.js.
- * 2010-2014: Sven-S. Porst <ssp-web@earthlingsoft.net>
  *
  * JavaScript for running pazpar2 queries and displaying their results.
+ * Inspired by Index Data’s js-client.js.
  *
  * Please refer to the Readme in the repository at:
  * https://github.com/ssp/pazpar2-js-client
+ *
+ * 2010-2014: Sven-S. Porst <ssp-web@earthlingsoft.net>
  */
 function pz2_client () {
 
