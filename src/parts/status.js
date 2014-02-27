@@ -81,7 +81,7 @@ pz2_client.prototype.onbytarget = function (data) {
 	var tbody = document.createElement('tbody');
 	table.appendChild(tbody);
 
-	for (var i = 0; i < data.length; i++ ) {
+	for (var i = data.length - 1; 0 <= i; i--) {
 		tr = document.createElement('tr');
 		tbody.appendChild(tr);
 		td = document.createElement('th');
