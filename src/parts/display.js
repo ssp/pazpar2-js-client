@@ -11,7 +11,7 @@ pz2_client.prototype.display = function () {
 	 *
 	 * @returns {DOMElement} - OL element
 	 */
-	var createResultsList = function () {
+	var createResultsListOL = function () {
 		var OL = document.createElement('ol');
 		OL.setAttribute('class', 'pz2-resultList');
 		var firstIndex = that.currentView.recPerPage * (that.currentView.page - 1);
@@ -47,7 +47,8 @@ pz2_client.prototype.display = function () {
 	var that = this;
 
 	// Replace old results list
-	var OL = createResultsList();
+	var OL = createResultsListOL();
+	
 	var jResults = jQuery('#pz2-results');
 	jQuery('.pz2-resultList', jResults).detach();
 	jResults.append(OL);
