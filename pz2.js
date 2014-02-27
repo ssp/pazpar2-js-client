@@ -85,6 +85,9 @@ var pz2 = function ( paramArray )
     // currentNum can be overwritten in show
     this.currentNum = 20;
 
+	// number of terms termlist returns per facet
+	this.termCount = paramArray.termCount || null;
+
     // last full record retrieved
     this.currRecID = null;
     
@@ -576,14 +579,19 @@ pz2.prototype =
         
         var context = this;
         var request = new pzHttpRequest(this.pz2String, this.errorHandler);
+		var parameters = {
+			"command": "termlist",
+			"session": this.sessionID,
+			"name": this.termKeys,
+			"windowid" : this.windowid,
+			"version" : this.version
+		};
+		if (this.termCount) {
+			parameters.num = this.termCount;
+		}
+
         request.safeGet(
-            { 
-                "command": "termlist", 
-                "session": this.sessionID, 
-                "name": this.termKeys,
-                "windowid" : this.windowid,
-                "version" : this.version
-            },
+            parameters,
             function(data) {
                 if ( data.getElementsByTagName("termlist") ) {
                     var activeClients = 
