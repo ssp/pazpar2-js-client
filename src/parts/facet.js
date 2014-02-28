@@ -15,38 +15,6 @@ pz2_client.prototype.updateFacetLists = function () {
 	var facetListForType = function (type) {
 
 		/**
-		 * Click event handler for selecting a facet item.
-		 *
-		 * @param {Event} event - click event selecting a facet item
-		 * @returns {boolean} false
-		 */
-		var facetItemSelect = function (event) {
-			var jTarget = jQuery(event.target);
-			var facetName = jTarget.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
-			var facetTerm = jTarget.parents('li').attr('facetTerm');
-			jQuery.proxy(that.limitResults, that, facetName, facetTerm)();
-			return false;
-		};
-
-
-
-		/**
-		 * Click event handler for removing a facet item selection.
-		 *
-		 * @param {Event} event - click event deselecting the facet item
-		 * @returns {boolean} false
-		 */
-		var facetItemDeselect = function (event) {
-			var jTarget = jQuery(event.target);
-			var facetName = jTarget.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
-			var facetTerm = jTarget.parents('li').attr('facetTerm');
-			jQuery.proxy(that.delimitResults, that, facetName, facetTerm)();
-			return false;
-		};
-
-
-
-		/**
 		 * Return whether there is a filter for the facets of type type.
 		 *
 		 * @param {string} type - ID of the facet to get information for
@@ -102,11 +70,11 @@ pz2_client.prototype.updateFacetLists = function () {
 					}
 				}
 
-				// Sort by term frequency.
 				for (var term in termDict) {
 					terms.push({'name': term, 'freq': termDict[term]});
 				}
 
+				// Sort by term frequency.
 				if (terms.length > 0) {
 					terms.sort( function(term1, term2) {
 							if (term1.freq < term2.freq) {return 1;}
@@ -149,7 +117,9 @@ pz2_client.prototype.updateFacetLists = function () {
 		 */
 		var massageTerms = function (terms, type) {
 			// Note the maximum number
-			terms.maximumNumber = terms[0].freq;
+			if (terms.length > 0) {
+				terms.maximumNumber = terms[0].freq;
+			}
 
 			if (type === 'filterDate' && !that.config.useHistogramForYearFacets) {
 				// Special treatment for dates when displaying them as a list:
@@ -226,7 +196,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				var link = document.createElement('a');
 				item.appendChild(link);
 				link.setAttribute('href', '#');
-				jQuery(link).click(facetItemSelect);
+				link.setAttribute('class', 'pz2-facetSelect');
 
 				// »Progress bar« to visualise the number of results
 				var progressBar = document.createElement('div');
@@ -288,7 +258,6 @@ pz2_client.prototype.updateFacetLists = function () {
 							item.appendChild(cancelLink);
 							cancelLink.setAttribute('href', '#');
 							jCancelLink.addClass('pz2-facetCancel');
-							jCancelLink.click(facetItemDeselect);
 							cancelLink.appendChild(document.createTextNode(that.localise('Filter aufheben', 'facets')));
 							break;
 						}
@@ -301,24 +270,11 @@ pz2_client.prototype.updateFacetLists = function () {
 				var showAllItem = document.createElement('li');
 				list.appendChild(showAllItem);
 				jQuery(showAllItem).addClass('pz2-facet-showAll');
+				
 				var showLink = document.createElement('a');
 				showAllItem.appendChild(showLink);
 				showLink.setAttribute('href', '#');
 
-				var showAllFacetsOfType = function () {
-					var containingList = jQuery(this).parents('[facettype]');
-
-					// Fade in the hidden elemens and hide the Show All link.
-					jQuery('.pz2-facet-hidden', containingList).slideDown(300);
-					jQuery('.pz2-facet-showAll', containingList).fadeOut(200);
-
-					// Store the current state in the termLists object for the current facet type.
-					var facetType = containingList.attr('facetType');
-					that.config.termLists[facetType].showAll = true;
-					return false;
-				};
-
-				jQuery(showLink).click(showAllFacetsOfType);
 				var showLinkText = that.localise('# weitere anzeigen', 'facets').replace('#', invisibleCount);
 				showLink.appendChild(document.createTextNode(showLinkText));
 			}
@@ -366,17 +322,16 @@ pz2_client.prototype.updateFacetLists = function () {
 
 	var that = this;
 
-	var container = document.getElementById('pz2-termLists');
-
-	if (container) {
-		jQuery(container).empty();
+	var jContainer = jQuery('#pz2-termLists');
+	if (jContainer.length > 0) {
+		jContainer.empty();
 
 		var mainHeading = document.createElement('h4');
-		container.appendChild(mainHeading);
+		jContainer.append(mainHeading);
 		mainHeading.appendChild(document.createTextNode(that.localise('Facetten', 'facets')));
 
 		for (var facetType in that.config.termLists ) {
-			container.appendChild(facetListForType(facetType));
+			jContainer.append(facetListForType(facetType));
 		}
 	}
 };

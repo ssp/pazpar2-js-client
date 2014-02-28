@@ -66,6 +66,13 @@ pz2_client.prototype.init = function (setup) {
 
 	// Start search for provided term if required.
 	jQuery.proxy(this.config.triggerSearchFunction, this)();
+
+	// Set up event handlers with jQuery delegation.
+	jQuery('#pz2-termLists')
+		.on('click', 'a.pz2-facetSelect', jQuery.proxy(this.facetItemSelect, this))
+		.on('click', 'a.pz2-facetCancel', jQuery.proxy(this.facetItemDeselect, this))
+		.on('click', '.pz2-facet-showAll a', jQuery.proxy(this.showAllFacetsOfType, this));
+
 };
 
 
