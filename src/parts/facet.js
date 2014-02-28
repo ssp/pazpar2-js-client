@@ -117,32 +117,6 @@ pz2_client.prototype.updateFacetLists = function () {
 							else {return -1;}
 						}
 					);
-
-					// Note the maximum number
-					terms['maximumNumber'] = terms[0].freq;
-
-					if (type === 'filterDate' && !that.config.useHistogramForYearFacets) {
-						// Special treatment for dates when displaying them as a list:
-						// take the most frequent items and sort by date if we are not using the histogram.
-						var maximumDateFacetCount = parseInt(that.config.termLists['filterDate'].maxFetch, 10);
-						if (terms.length > maximumDateFacetCount) {
-							terms.splice(maximumDateFacetCount, terms.length - maximumDateFacetCount);
-						}
-						terms.sort( function(term1, term2) {
-								return (term1.name < term2.name) ? 1 : -1;
-							}
-						);
-					}
-					else if (type === 'language') {
-						// Special case for languages: put 'unknown' at the end of the list.
-						for (var termIndex in terms) {
-							var termItem = terms[termIndex];
-							if (termItem.name === 'zzz') {
-								terms.splice(termIndex, 1);
-								terms.push(termItem);
-							}
-						}
-					}
 				}
 
 				return terms;
@@ -154,6 +128,9 @@ pz2_client.prototype.updateFacetLists = function () {
 
 			if (that.config.usePazpar2Facets && that.currentView.type === 'query') {
 				termList = that.facetData[type];
+				if (termList && termList.length > 0) {
+					termList.maximumNumber = termList[0].freq;
+				}
 			}
 			else {
 				termList = facetInformationFromRecordsForType(type);
@@ -165,6 +142,49 @@ pz2_client.prototype.updateFacetLists = function () {
 
 
 		/**
+		 * Do a bit of facet cleanup and analysis.
+		 *
+		 * @param {array} terms - facet terms to display
+		 * @param {string} type - ID of the facet to return facet information for
+		 */
+		var massageTerms = function (terms, type) {
+			// Note the maximum number
+			terms.maximumNumber = terms[0].freq;
+
+			if (type === 'filterDate' && !that.config.useHistogramForYearFacets) {
+				// Special treatment for dates when displaying them as a list:
+				// take the most frequent items and sort by date if we are not using the histogram.
+				var maximumDateFacetCount = parseInt(that.config.termLists['filterDate'].maxFetch, 10);
+				if (terms.length > maximumDateFacetCount) {
+					terms.splice(maximumDateFacetCount, terms.length - maximumDateFacetCount);
+				}
+				terms.sort( function(term1, term2) {
+						return (term1.name < term2.name) ? 1 : -1;
+					}
+				);
+			}
+			else if (type === 'language' || type === 'medium') {
+				// Special handling for languages and media types:
+				// put 'unknown' item at the end of the list.
+				var unknownString = (type === 'language' ? 'zzz' : 'other');
+
+				var unknownItemIndex;
+				for (var termIndex in terms) {
+					if (terms[termIndex].name === unknownString) {
+						unknownItemIndex = termIndex;
+						break;
+					}
+				}
+				if (unknownItemIndex !== undefined) {
+					var unknownItem = terms.splice(unknownItemIndex, 1);
+					terms.push(unknownItem[0]);
+				}
+			}
+		};
+
+
+
+		/**
 		 * Return OL with facet items for the passed terms.
 		 * 
 		 * @param {array} terms - facet terms to display
@@ -172,6 +192,8 @@ pz2_client.prototype.updateFacetLists = function () {
 		 * @returns {DOMElement} - ol with facet list
 		 */
 		var facetDisplayTermsForType = function (terms, type) {
+			massageTerms(terms, type);
+
 			var list = document.createElement('ol');
 
 			// Determine whether facets need to be hidden.
