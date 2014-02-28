@@ -102,11 +102,19 @@ pz2_client.prototype.updatePagers = function () {
 		jQuery(pageList).addClass('pz2-pages');
 		pageNumbersContainer.appendChild(pageList);
 
-		var blockSize = 4;
+		// For long page lists, split the list up into blocks of size at least
+		// blockSize at the beginning at end and potentially a block with
+		// [blockSize/2] elements to the right and left of the current page
+		// in the middle.
+		var blockSize = 3;
+		// Note whether we are currently in a gap between blocks. Used to create
+		// only a single ellipsis.
 		var inBlockGap = false;
 
 		for(var pageNumber = 1; pageNumber <= pages; pageNumber++) {
-			if (pageNumber < 5 || Math.abs(pageNumber - that.currentView.page) < 3 || pages < pageNumber + 4) {
+			if (pageNumber <= blockSize ||
+					Math.abs(pageNumber - that.currentView.page) < Math.floor(blockSize / 2) ||
+					pages < pageNumber + blockSize) {
 				var pageItem = document.createElement('li');
 				pageList.appendChild(pageItem);
 				pageItem.setAttribute('pageNumber', pageNumber);
