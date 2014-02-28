@@ -197,6 +197,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	this.updateExportLinks();
 
 	this.currentView = this.viewSettings.clipboard;
+	this.updateFacetingClasses();
 	this.updateAndDisplay();
 
 	this.trackPiwik('clipboard/show');
@@ -257,6 +258,7 @@ pz2_client.prototype.hideClipboard = function (event) {
 	jQuery('.pz2-searchForm').animate({'opacity': 1}, 'fast');
 
 	this.currentView = this.viewSettings.query;
+	this.updateFacetingClasses();
 	this.updateAndDisplay(true);
 
 	this.trackPiwik('clipboard/hide');

@@ -15,16 +15,6 @@ pz2_client.prototype.onterm = function (data) {
 
 
 /**
- * Regular expression for removing characters from facet strings that
- * are not suitable for use in class names.
- * 
- * @type {RegExp}
- */
-pz2_client.prototype.classNameRegEx = /[- ,.\/]/g;
-
-
-
-/**
  * Add a filter for term on the field kind and redisplay.
  *
  * @param {string} kind - ID of the facet to filter on
@@ -63,33 +53,20 @@ pz2_client.prototype.limitResults = function (kind, term) {
  */
 pz2_client.prototype.delimitResults = function (kind, term) {
 	if (this.currentView.filters[kind]) {
-		var jPazpar2 = jQuery('#pazpar2');
-		var baseName = ('pz2-term-selected-' + kind).replace(this.classNameRegEx, '-');
-
 		if (term) {
 			// If a term is given remove it from the filter.
 			delete this.currentView.filters[kind][term];
 
 			var termString = term.replace(this.classNameRegEx, '-');
-			jPazpar2.removeClass(baseName + '-' + termString);
 
 			if (Object.keys(this.currentView.filters[kind]).length === 0) {
 				// All terms of this kind have been removed: remove kind from filterArray.
 				delete this.currentView.filters[kind];
-				jPazpar2.removeClass(baseName);
 			}
 		}
 		else {
 			// If no term is given, remove the complete filter for this facet.
 			delete this.currentView.filters[kind];
-
-			var classes = jPazpar2.attr('class').split(' ');
-			for (var classIndex in classes) {
-				var className = classes[classIndex];
-				if (className.substr(0, baseName.length) === baseName) {
-					jPazpar2.removeClass(className);
-				}
-			}
 		}
 
 		this.updateLimits();
@@ -101,64 +78,53 @@ pz2_client.prototype.delimitResults = function (kind, term) {
 
 
 /**
- * Depending on configuration start a new query or trigger a redisplay
- * to with the current limits. Invoked by [de]limitResults.
+ * Start a new query or trigger a redisplay with the current query and filters.
+ * Invoked by [de]limitResults.
  *
  * @returns {undefined}
  */
 pz2_client.prototype.updateLimits = function () {
+	this.updateFacetingClasses();
 
-	/**
-	 * Return the filterArray as a filter string suitable for use in
-	 * the limit parameter for a pazpar2 search query.
-	 *
-	 * @returns {string} - limit string for pazar2 queries
-	 */
-	function filtersToString () {
-		var filterComponents = [];
-
-		for (var filterType in that.currentView.filters) {
-			var filtersForType = that.currentView.filters[filterType];
-
-			if (filterType === 'xtargets') {
-				// Targets need to be filtered with »pz:id«
-				filterType = 'pz:id';
-			}
-
-			var filterListEscaped = [];
-			for (var filterString in filtersForType) {
-				// Escape \,| characters.
-				filterListEscaped.push(
-					filterString
-						.replace('\\', '\\\\')
-						.replace(',', '\\,')
-						.replace('|', '\\|')
-				);
-			}
-
-			if (filterListEscaped.length > 0) {
-				filterComponents.push(filterType + '=' + filterListEscaped.join('|'));
-			}
-		}
-
-		return filterComponents.join(',');
-	}
-
-
-
-	var that = this;
-
-	if (this.config.usePazpar2Facets) {
-		this.my_paz.search(
-			this.currentView.query,
-			this.config.fetchRecords,
-			this.currentView.sort,
-			this.currentView.filter,
-			undefined,
-			{'limit': filtersToString()}
-		);
+	// Search / display with the new configuration.
+	if (this.config.usePazpar2Facets && this.currentView.type === 'query') {
+		this.search();
 	}
 	else {
 		this.updateAndDisplay();
+	}
+};
+
+
+
+/**
+ * Set up the CSS classes indicating faceting state on #pazpar2.
+ *
+ * @returns {undefined}
+ */
+pz2_client.prototype.updateFacetingClasses = function () {
+	var baseName = 'pz2-term-selected-';
+	var classNameRegEx = /[- ,.\/]/g;
+
+	var jPazpar2 = jQuery('#pazpar2');
+	var classes = jPazpar2.attr('class').split(' ');
+
+	// Remove all faceting classes.
+	for (var classIndex in classes) {
+		var className = classes[classIndex];
+		if (className.substr(0, baseName.length) === baseName) {
+			jPazpar2.removeClass(className);
+		}
+	}
+
+	// Add the classes for the current facet state.
+	for (var filterName in this.currentView.filters) {
+		var filterClass = baseName + filterName;
+		jPazpar2.addClass(filterClass);
+
+		for (var term in this.currentView.filters[filterName]) {
+			var termString = term.replace(classNameRegEx, '-');
+			jPazpar2.addClass(filterClass + '-' + termString);
+		}
 	}
 };

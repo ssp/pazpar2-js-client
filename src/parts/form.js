@@ -1,4 +1,71 @@
 /**
+ * Run pz2’s search method with the current query, facet, paging setup.
+ *
+ * @returns {undefined}
+ */
+pz2_client.prototype.search = function () {
+
+	/**
+	 * Go through currentView’s filters and update the filter/limit
+	 * strings required for the pazpar2 search query.
+	 *
+	 * @returns {undefined}
+	 */
+	var updateFilterConfiguration = function () {
+		var filters = {'limit': [], 'filter': []};
+
+		for (var filterID in that.currentView.filters) {
+			var filtersForType = that.currentView.filters[filterID];
+			var filterMethod = 'limit';
+
+			if (filterID === 'xtargets') {
+				filterMethod = 'filter';
+				// Targets need to be filtered with »pz:id«
+				filterID = 'pz:id';
+			}
+
+			var filterListEscaped = [];
+			for (var filterString in filtersForType) {
+				// Escape \,| characters.
+				filterListEscaped.push(
+					filterString
+						.replace('\\', '\\\\')
+						.replace(',', '\\,')
+						.replace('|', '\\|')
+				);
+			}
+
+			if (filterListEscaped.length > 0) {
+				filters[filterMethod].push(filterID + '=' + filterListEscaped.join('|'));
+			}
+		}
+
+		that.currentView.limit = filters.limit.join(',');
+		that.currentView.filter = filters.filter.join(',');
+	};
+
+
+	var that = this;
+	updateFilterConfiguration();
+
+	try {
+		that.my_paz.search(
+			that.currentView.query,
+			that.config.fetchRecords,
+			that.currentView.sort,
+			that.currentView.filter,
+			undefined,
+			{'limit': that.currentView.limit}
+		);
+	}
+	catch (exception) {
+		console.log(exception);
+	}
+};
+
+
+
+/**
  * Trigger pazpar2 search.
  * Called when my_paz is initialised and when the search button is clicked.
  *
@@ -110,10 +177,10 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 			that.resetPage();
 			that.hideHistory();
 			that.loadSelectsInForm(myForm);
-			that.my_paz.search(query, that.config.fetchRecords, that.currentView.sort, that.currentView.filter);
 			that.addToHistory(query);
 			that.currentView.query = query;
 			that.currentView.queryTerms = queryTerms;
+			that.search();
 			that.trackPiwik('search', query);
 		}
 	}
@@ -140,8 +207,13 @@ pz2_client.prototype.resetPage = function () {
 	this.currentHits = [];
 	this.displayHitList = [];
 	this.facetData = {};
-	
+
 	this.currentView.filters = {};
+	this.currentView.limit = null;
+	this.currentView.filter = null;
+	this.currentView.query = null;
+	this.currentView.queryTerms = [];
+
 	for (var facetIndex in this.config.termLists) {
 		this.config.termLists[facetIndex].showAll = undefined;
 	}
