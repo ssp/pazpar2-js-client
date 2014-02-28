@@ -74,6 +74,10 @@ pz2_client.prototype.init = function (setup) {
 		.on('click', '.pz2-facet-showAll a', jQuery.proxy(this.showAllFacetsOfType, this));
 	jQuery('#pz2-results')
 		.on('click', 'a.pz2-recordLink', jQuery.proxy(this.toggleDetails, this));
+	jQuery('.pz2-pager')
+		.on('click', '.pz2-pageNumber a', jQuery.proxy(this.pagerGoto , this))
+		.on('click', 'a.pz2-prev', jQuery.proxy(this.pagerPrev, this))
+		.on('click', 'a.pz2-next', jQuery.proxy(this.pagerNext, this));
 };
 
 

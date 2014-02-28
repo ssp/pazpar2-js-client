@@ -6,73 +6,6 @@
 pz2_client.prototype.updatePagers = function () {
 
 	/**
-	 * Display results page pageNumber.
-	 *
-	 * @param {number} pageNumber - the page to show
-	 * @returns {undefined}
-	 */
-	var showPage = function (pageNumber) {
-		that.currentView.page = Math.min(
-			Math.max(0, pageNumber),
-			Math.ceil(that.resultCount() / that.currentView.recPerPage)
-		);
-
-		if (that.config.usePazpar2Facets) {
-			var start = (that.currentView.page - 1) * that.currentView.recPerPage;
-			that.my_paz.show(start, that.currentView.recPerPage, that.currentView.sort);
-		}
-		else {
-			that.display();
-		}
-
-		that.trackPiwik('page', pageNumber);
-	};
-
-
-
-	/**
-	 * Get the number in the calling element’s »pageNumber« attribute and
-	 * display the page with that number.
-	 *
-	 * @returns {undefined}
-	 */
-	var pagerGoto = function () {
-		var jThis = jQuery(this);
-		var pageNumber = jThis.parent().attr('pageNumber');
-		if (jThis.parents('.pz2-pager').hasClass('pz2-bottom')) {
-			jQuery('body,html').animate({'scrollTop': jQuery('.pz2-pager.pz2-top').offset().top}, 'fast');
-		}
-		showPage(pageNumber);
-		return false;
-	};
-
-
-
-	/**
-	 * Display the following results page.
-	 *
-	 * @returns {false}
-	 */
-	var pagerNext = function () {
-		showPage(that.currentView.page + 1);
-		return false;
-	};
-
-
-
-	/**
-	 * Display the preceding results page.
-	 *
-	 * @returns {false}
-	 */
-	var pagerPrev = function () {
-		showPage(that.currentView.page - 1);
-		return false;
-	};
-
-
-
-	/**
 	 * Create a pager as the content of element.
 	 * To be used in jQuery.each()
 	 *
@@ -89,13 +22,11 @@ pz2_client.prototype.updatePagers = function () {
 		var pageNumbersContainer = jPageNumbersContainer[0];
 
 		var previousLink = document.createElement('a');
-		var jPreviousLink = jQuery(previousLink);
 		if (that.currentView.page > 1) {
 			previousLink.setAttribute('href', '#');
-			jPreviousLink.click(pagerPrev);
 			previousLink.title = that.localise('Vorige Trefferseite anzeigen', 'pager');
 		}
-		jPreviousLink.addClass('pz2-prev');
+		jQuery(previousLink).addClass('pz2-prev');
 		previousLink.appendChild(document.createTextNode('«'));
 		pageNumbersContainer.appendChild(previousLink);
 
@@ -118,11 +49,11 @@ pz2_client.prototype.updatePagers = function () {
 					pages < pageNumber + blockSize) {
 				var pageItem = document.createElement('li');
 				pageList.appendChild(pageItem);
+				pageItem.setAttribute('class', 'pz2-pageNumber');
 				pageItem.setAttribute('pageNumber', pageNumber);
 				if(pageNumber !== that.currentView.page) {
 					var linkElement = document.createElement('a');
 					linkElement.setAttribute('href', '#');
-					jQuery(linkElement).click(pagerGoto);
 					linkElement.appendChild(document.createTextNode(pageNumber));
 					pageItem.appendChild(linkElement);
 				}
@@ -144,13 +75,11 @@ pz2_client.prototype.updatePagers = function () {
 		}
 
 		var nextLink = document.createElement('a');
-		var jNextLink = jQuery(nextLink);
 		if (pages - that.currentView.page > 0) {
 			nextLink.setAttribute('href', '#');
-			jNextLink.click(pagerNext);
 			nextLink.title = that.localise('Nächste Trefferseite anzeigen', 'pager');
 		}
-		jNextLink.addClass('pz2-next');
+		jQuery(nextLink).addClass('pz2-next');
 		nextLink.appendChild(document.createTextNode('»'));
 		pageNumbersContainer.appendChild(nextLink);
 
@@ -244,6 +173,72 @@ pz2_client.prototype.updatePagers = function () {
 
 	var that = this;
 
-	jQuery('.pz2-pager').each( createPager );
+	jQuery('.pz2-pager').each(createPager);
 
+};
+
+
+
+/**
+ * jQuery event handler for clicking page numbers in the pager.
+ * Get the number in the calling element’s »pageNumber« attribute and
+ * display the page with that number.
+ *
+ * @param {event} event
+ * @returns {undefined}
+ */
+pz2_client.prototype.pagerGoto = function (event) {
+	var jTarget = jQuery(event.target);
+	var pageNumber = jTarget.parent().attr('pageNumber');
+	if (jTarget.parents('.pz2-pager').hasClass('pz2-bottom')) {
+		jQuery('body,html').animate({'scrollTop': jQuery('.pz2-pager.pz2-top').offset().top}, 'fast');
+	}
+	this.showPage(pageNumber);
+};
+
+
+
+/**
+ * jQuery event handler for clicking a following page link.
+ *
+ * @returns {undefined}
+ */
+pz2_client.prototype.pagerNext = function () {
+	this.showPage(this.currentView.page + 1);
+};
+
+
+
+/**
+ * jQuery event handler for clicking a preceding page link.
+ *
+ * @returns {undefined}
+ */
+pz2_client.prototype.pagerPrev = function () {
+	this.showPage(this.currentView.page - 1);
+};
+
+
+
+/**
+ * Display results page pageNumber.
+ *
+ * @param {number} pageNumber - the page to show
+ * @returns {undefined}
+ */
+pz2_client.prototype.showPage = function (pageNumber) {
+	this.currentView.page = Math.min(
+		Math.max(0, pageNumber),
+		Math.ceil(this.resultCount() / this.currentView.recPerPage)
+	);
+
+	if (this.config.usePazpar2Facets) {
+		var start = (this.currentView.page - 1) * this.currentView.recPerPage;
+		this.my_paz.show(start, this.currentView.recPerPage, this.currentView.sort);
+	}
+	else {
+		this.display();
+	}
+
+	this.trackPiwik('page', pageNumber);
 };
