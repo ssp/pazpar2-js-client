@@ -5,14 +5,13 @@
  * @returns {DOMElement} - div element containing the additional links
  */
 pz2_client.prototype.exportLinks = function (data) {
-	/*	copyObjectContentTo
-		Copies the content of a JavaScript object to an XMLElement.
-			(non-recursive!)
-		Used to create XML markup for JavaScript data we have.
-
-		input:	object - the object whose content is to be copied
-				target - XMLElement the object content is copied into
-	*/
+	/**
+	 * Non-recursively copy the data content of the JavaScript object to
+	 * the XML target.
+	 *
+	 * @param {object} object - whose content to copy
+	 * @param {XMLElement} target - XML element to copy the content to
+	 */
 	var copyObjectContentTo = function (object, target) {
 		for (var fieldName in object) {
 			if (fieldName[0] === '@') {
@@ -24,23 +23,26 @@ pz2_client.prototype.exportLinks = function (data) {
 			}
 			else {
 				// We are dealing with a sub-element.
-				var fieldArray = object[fieldName];
-				for (var index in fieldArray) {
-					var child = fieldArray[index];
-					var targetChild = target.ownerDocument.createElement(fieldName);
-					target.appendChild(targetChild);
-					if (typeof(child) === 'object') {
-						for (var childPart in child) {
-							if (childPart === '#text') {
-								targetChild.appendChild(target.ownerDocument.createTextNode(child[childPart]));
-							}
-							else if (childPart[0] === '@') {
-								targetChild.setAttribute(childPart.substr(1), child[childPart]);
+				if (object[fieldName].nodeType === undefined) {
+					// Only work on non-nodes.
+					var fieldArray = object[fieldName];
+					for (var index in fieldArray) {
+						var child = fieldArray[index];
+						var targetChild = target.ownerDocument.createElement(fieldName);
+						target.appendChild(targetChild);
+						if (typeof(child) === 'object') {
+							for (var childPart in child) {
+								if (childPart === '#text') {
+									targetChild.appendChild(target.ownerDocument.createTextNode(child[childPart]));
+								}
+								else if (childPart[0] === '@') {
+									targetChild.setAttribute(childPart.substr(1), child[childPart]);
+								}
 							}
 						}
-					}
-					else {
-						targetChild.appendChild(target.ownerDocument.createTextNode(child));
+						else {
+							targetChild.appendChild(target.ownerDocument.createTextNode(child));
+						}
 					}
 				}
 			}
