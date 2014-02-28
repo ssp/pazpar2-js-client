@@ -110,25 +110,39 @@ pz2_client.prototype.initialiseService = function () {
 		// from appearing in some browsers when the page unloads while queries
 		// are still running.)
 		var pRemoveErrorHandler = jQuery.proxy(
-			function () { this.my_paz.errorhandler = undefined; },
+			function () {
+				this.my_paz.stop();
+				this.my_paz.errorhandler = undefined;
+			},
 			this
 		);
 		jQuery(window).on('unload', pRemoveErrorHandler);
 
+	}
 
-		// Only run init if the previous init is more than 15 seconds ago.
-		var currentTime = new Date().getTime();
-		if (this.pz2InitRequestStartTime + 15000 < currentTime) {
-			this.pz2InitRequestStartTime = currentTime;
-			this.my_paz.init(undefined, this.my_paz.serviceId);
+
+
+	if (this.pz2InitRequestStartTime + 15000 < jQuery.now()) {
+		if (this.pz2InitTimeout !== undefined) {
+			clearTimeout(this.pz2InitTimeout);
+			this.pz2InitTimeout = undefined;
+		}
+
+		if (this.usesessions()) {
+			this.initialisePazpar2();
+		}
+		else {
+			this.initialiseServiceProxy();
 		}
 	}
-
-	if (this.usesessions()) {
-		this.initialisePazpar2();
-	}
 	else {
-		this.initialiseServiceProxy();
+		// Less than 15 seconds since previous initialisation. Set timeout to re-trigger it.
+		if (this.pz2InitTimeout === undefined) {
+			this.pz2InitTimeout = setTimeout(
+				jQuery.proxy(this.initialiseService, this),
+				Math.min(jQuery.now() - this.pz2InitRequestStartTime, 15000)
+			);
+		}
 	}
 };
 
@@ -140,12 +154,8 @@ pz2_client.prototype.initialiseService = function () {
  * @returns {undefined}
  */
 pz2_client.prototype.initialisePazpar2 = function () {
-	if (this.pz2InitTimeout !== undefined) {
-		clearTimeout(this.pz2InitTimeout);
-		this.pz2InitTimeout = undefined;
-	}
-
 	if (this.my_paz) {
+		this.pz2InitRequestStartTime = jQuery.now();
 		this.my_paz.init(undefined, this.my_paz.serviceId);
 	}
 	else {
