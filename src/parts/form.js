@@ -51,7 +51,7 @@ pz2_client.prototype.search = function () {
 	try {
 		that.my_paz.search(
 			that.currentView.query,
-			that.config.fetchRecords,
+			that.currentView.recPerPage,
 			that.currentView.sort,
 			that.currentView.filter,
 			undefined,
