@@ -73,12 +73,13 @@ pz2_client.prototype.updatePagers = function () {
 
 
 	/**
-	 * Create a pager.
-	 * To be used in jQuery.each() via jQuery.proxy() to preserve this.
-	 * 
+	 * Create a pager as the content of element.
+	 * To be used in jQuery.each()
+	 *
+	 * @param {number} index
 	 * @param {DOMElement} element - element to place the pager into
 	 */
-	var createPager = function(element) {
+	var createPager = function (index, element) {
 		var pages = Math.ceil(that.resultCount() / that.currentView.recPerPage);
 
 		// Update pager
@@ -243,6 +244,6 @@ pz2_client.prototype.updatePagers = function () {
 
 	var that = this;
 
-	jQuery('div.pz2-pager').each( jQuery.proxy(createPager, that, [arguments[2]]) );
+	jQuery('.pz2-pager').each( createPager );
 
 };
