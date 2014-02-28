@@ -107,13 +107,13 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 		var query = queryParts.join(' and ');
 		query = query.replace('*', '?');
 		if (query !== '' && query !== that.currentView.query) {
+			that.resetPage();
+			that.hideHistory();
 			that.loadSelectsInForm(myForm);
 			that.my_paz.search(query, that.config.fetchRecords, that.currentView.sort, that.currentView.filter);
 			that.addToHistory(query);
-			that.hideHistory();
 			that.currentView.query = query;
 			that.currentView.queryTerms = queryTerms;
-			that.resetPage();
 			that.trackPiwik('search', query);
 		}
 	}
@@ -131,18 +131,26 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
  * @returns {undefined}
  */
 pz2_client.prototype.resetPage = function () {
+	this.my_paz.stop();
+
 	this.currentView.page = 1;
 	this.currentView.resultCount = 0;
+
 	this.hitList = {};
 	this.currentHits = [];
 	this.displayHitList = [];
+	this.facetData = {};
+	
 	this.currentView.filters = {};
 	for (var facetIndex in this.config.termLists) {
 		this.config.termLists[facetIndex].showAll = undefined;
 	}
+
 	jQuery('#pazpar2').removeClass();
+	jQuery('#pz2-targetView td').text('-');
 	jQuery('.pz2-pager .pz2-progressIndicator').css({'width': 0});
-	this.updateAndDisplay();
+
+	this.updateAndDisplay(true);
 };
 
 

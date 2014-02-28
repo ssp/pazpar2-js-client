@@ -152,7 +152,7 @@ pz2_client.prototype.updateFacetLists = function () {
 
 			var termList = [];
 
-			if (that.config.usePazpar2Facets) {
+			if (that.config.usePazpar2Facets && that.currentView.type === 'query') {
 				termList = that.facetData[type];
 			}
 			else {

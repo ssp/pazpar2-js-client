@@ -110,9 +110,10 @@ pz2_client.prototype.onshow = function (data) {
 /**
  * Update displayHitList and displayHitListUpToDate, then redraw.
  *
+ * @param {boolean} forceFacetUpdate - whether to force redraw the facets
  * @returns {undefined}
  */
-pz2_client.prototype.updateAndDisplay = function () {
+pz2_client.prototype.updateAndDisplay = function (forceFacetUpdate) {
 	/**
 	 * Converts a given list of data to thes list used for display by:
 	 *  1. applying filters
@@ -308,7 +309,7 @@ pz2_client.prototype.updateAndDisplay = function () {
 	var hitList = {};
 
 	// Set up displayHitList.
-	if (that.config.usePazpar2Facets) {
+	if (that.config.usePazpar2Facets && that.currentView.type === 'query') {
 		// Use the last hit list from pazpar2 with remote filtering.
 		that.displayHitList = [];
 		jQuery.each(that.currentHits, function (index, key) {
@@ -333,7 +334,9 @@ pz2_client.prototype.updateAndDisplay = function () {
 	}
 
 	that.display();
-	if (!that.config.usePazpar2Facets || that.currentView.type === 'history') {
+	if (!that.config.usePazpar2Facets ||
+		that.currentView.type === 'clipboard' ||
+		forceFacetUpdate) {
 		that.updateFacetLists();
 	}
 };

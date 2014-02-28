@@ -7,7 +7,9 @@
  */
 pz2_client.prototype.onterm = function (data) {
 	this.facetData = data;
-	this.updateFacetLists();
+	if (this.currentView.type === 'query') {
+		this.updateFacetLists();
+	}
 };
 
 

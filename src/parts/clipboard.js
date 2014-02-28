@@ -257,7 +257,7 @@ pz2_client.prototype.hideClipboard = function (event) {
 	jQuery('.pz2-searchForm').animate({'opacity': 1}, 'fast');
 
 	this.currentView = this.viewSettings.query;
-	this.updateAndDisplay();
+	this.updateAndDisplay(true);
 
 	this.trackPiwik('clipboard/hide');
 
