@@ -133,63 +133,6 @@ pz2_client.prototype.createResultItem = function (hit) {
 
 
 
-	/**
-	 * Called when a list item is clicked.
-	 * Reveals/Hides the detail information for the record.
-	 * Detail information is created when it is first needed and then stored with the record.
-	 *
-	 * @param {event} event
-	 * @returns {undefined}
-	 */
-	var toggleDetails = function (event) {
-		var jLI = jQuery(event.target).parents('li.pz2-record');
-		var record = jLI.data('record');
-		var jDetails = jQuery('.pz2-details', jLI);
-		var jExtraLinks = jQuery('.pz2-extraLinks', record.detailsDiv);
-
-		if (record.detailsDivVisible) {
-			// Detailed record information is present: remove it
-			jExtraLinks.fadeOut('fast');
-			jDetails.slideUp('fast');
-			record.detailsDivVisible = false;
-			jLI.removeClass('pz2-detailsVisible');
-			that.trackPiwik('details/hide');
-		}
-		else {
-			// Create detail view if it doesn’t exist yet.
-			if (!record.detailsDiv) {
-				record.detailsDiv = that.renderDetails(record);
-				that.runMathJax(record.detailsDiv);
-			}
-
-			// Append the detail view if it is not in the DOM.
-			if (jDetails.length === 0) {
-				jDetails = jQuery(record.detailsDiv);
-				jDetails.hide();
-				jLI.append(jDetails);
-				jExtraLinks = jQuery('.pz2-extraLinks', jDetails);
-			}
-
-			jExtraLinks.hide();
-			if (!that.MSIEVersion() || that.MSIEVersion() >= 8) {
-				jDetails.slideDown('fast');
-				jExtraLinks.fadeIn('fast');
-			}
-			else {
-				jDetails.show();
-				jExtraLinks.show();
-			}
-
-			record.detailsDivVisible = true;
-			jLI.addClass('pz2-detailsVisible');
-			that.trackPiwik('details/show');
-		}
-
-		return false;
-	};
-
-
-
 	var that = this;
 
 	var LI = document.createElement('li');
@@ -201,7 +144,6 @@ pz2_client.prototype.createResultItem = function (hit) {
 	LI.appendChild(linkElement);
 	linkElement.setAttribute('href', '#');
 	jLinkElement.addClass('pz2-recordLink');
-	jLinkElement.click(toggleDetails);
 
 	var iconElement = document.createElement('span');
 	linkElement.appendChild(iconElement);
@@ -240,4 +182,60 @@ pz2_client.prototype.createResultItem = function (hit) {
 	that.highlightSearchTerms(LI);
 
 	return LI;
+};
+
+
+
+/**
+ * jQuery click event for clicks on the result list.
+ * Reveal/Hide the detail information for the record.
+ * Detail information is created when it is first needed and then stored
+ * with the record.
+ *
+ * @param {event} event
+ * @returns {undefined}
+ */
+pz2_client.prototype.toggleDetails = function (event) {
+	var jLI = jQuery(event.target).parents('li.pz2-record');
+	var record = jLI.data('record');
+	var jDetails = jQuery('.pz2-details', jLI);
+	var jExtraLinks = jQuery('.pz2-extraLinks', record.detailsDiv);
+
+	if (record.detailsDivVisible) {
+		// Detailed record information is present: remove it
+		jExtraLinks.fadeOut('fast');
+		jDetails.slideUp('fast');
+		record.detailsDivVisible = false;
+		jLI.removeClass('pz2-detailsVisible');
+		this.trackPiwik('details/hide');
+	}
+	else {
+		// Create detail view if it doesn’t exist yet.
+		if (!record.detailsDiv) {
+			record.detailsDiv = this.renderDetails(record);
+			this.runMathJax(record.detailsDiv);
+		}
+
+		// Append the detail view if it is not in the DOM.
+		if (jDetails.length === 0) {
+			jDetails = jQuery(record.detailsDiv);
+			jDetails.hide();
+			jLI.append(jDetails);
+			jExtraLinks = jQuery('.pz2-extraLinks', jDetails);
+		}
+
+		jExtraLinks.hide();
+		if (!this.MSIEVersion() || this.MSIEVersion() >= 8) {
+			jDetails.slideDown('fast');
+			jExtraLinks.fadeIn('fast');
+		}
+		else {
+			jDetails.show();
+			jExtraLinks.show();
+		}
+
+		record.detailsDivVisible = true;
+		jLI.addClass('pz2-detailsVisible');
+		this.trackPiwik('details/show');
+	}
 };

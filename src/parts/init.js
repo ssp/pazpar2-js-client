@@ -72,7 +72,8 @@ pz2_client.prototype.init = function (setup) {
 		.on('click', 'a.pz2-facetSelect', jQuery.proxy(this.facetItemSelect, this))
 		.on('click', 'a.pz2-facetCancel', jQuery.proxy(this.facetItemDeselect, this))
 		.on('click', '.pz2-facet-showAll a', jQuery.proxy(this.showAllFacetsOfType, this));
-
+	jQuery('#pz2-results')
+		.on('click', 'a.pz2-recordLink', jQuery.proxy(this.toggleDetails, this));
 };
 
 
