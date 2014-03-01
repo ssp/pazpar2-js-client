@@ -40,9 +40,6 @@ pz2_client.prototype.init = function (setup) {
 		}
 	);
 
-	// Add event handlers for selects.
-	jQuery('.pz2-sort, .pz2-perPage').attr('onchange', 'onSelectDidChange');
-
 	// Set up local storage if possible.
 	if (jQuery.localStorage) {
 		this.storage = jQuery.initNamespaceStorage('pazpar2');
@@ -54,9 +51,6 @@ pz2_client.prototype.init = function (setup) {
 	jQuery('#pazpar2').prepend(linkDiv);
 	this.appendHistoryLinkToContainer(linkDiv);
 	this.appendClipboardLinkToContainer(linkDiv);
-
-	// Add event handlers for autocomplete.
-	this.setupAutocomplete();
 
 	// Remove the no-JS warning.
 	jQuery('#pazpar2').removeClass('pz2-noJS');
@@ -75,7 +69,10 @@ pz2_client.prototype.init = function (setup) {
 		.on('click', 'a.pz2-prev', jQuery.proxy(this.pagerPrev, this))
 		.on('click', 'a.pz2-next', jQuery.proxy(this.pagerNext, this))
 		.on('click', '.pz2-recordCount', jQuery.proxy(this.toggleStatus, this));
+	jQuery('.pz2-sort, .pz2-perPage')
+		.on('change', jQuery.proxy(this.formSelectDidChange, this));
 
+	this.setupAutocomplete();
 
 	// Start search for provided term if required.
 	jQuery.proxy(this.config.triggerSearchFunction, this)();

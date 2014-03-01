@@ -265,7 +265,7 @@ pz2_client.prototype.onFormSubmitEventHandler = function (event) {
  *
  * @returns {Boolean} - false
  */
-pz2_client.prototype.onSelectDidChange = function () {
+pz2_client.prototype.formSelectDidChange = function () {
 	this.loadSelectsInForm(this.form);
 	this.updateAndDisplay();
 	return false;
