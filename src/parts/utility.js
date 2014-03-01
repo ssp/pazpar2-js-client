@@ -304,6 +304,18 @@ pz2_client.prototype.OCLCNumbersForRecord = function (record) {
 
 
 /**
+ * Try to sanitise the passed string for use in CSS class names.
+ *
+ * @param {string} string
+ * @returns {string}
+ */
+pz2_client.prototype.classNameForString = function (string) {
+	return string.replace(/[- ,.\/]/g , '-');
+};
+
+
+
+/**
  * Add the keys() function to Object if necessary.
  * http://stackoverflow.com/questions/126100/
  */

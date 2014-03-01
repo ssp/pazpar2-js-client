@@ -669,7 +669,7 @@ pz2_client.prototype.renderDetails = function (data) {
 			var detailsData = document.createElement('dd');
 			locationDetails.push(detailsData);
 			var jDetailsData = jQuery(detailsData);
-			jDetailsData.addClass('pz2-location');
+			jDetailsData.addClass('pz2-location pz2-location-' + that.classNameForString(localURL));
 			location.element = detailsData;
 
 			that.appendInfoToContainer( detailInfoItem('edition'), detailsData );

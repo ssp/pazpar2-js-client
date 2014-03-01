@@ -158,7 +158,6 @@ pz2_client.prototype.updateLimits = function () {
  */
 pz2_client.prototype.updateFacetingClasses = function () {
 	var baseName = 'pz2-term-selected-';
-	var classNameRegEx = /[- ,.\/]/g;
 
 	var jPazpar2 = jQuery('#pazpar2');
 	var classes = jPazpar2.attr('class').split(' ');
@@ -177,7 +176,7 @@ pz2_client.prototype.updateFacetingClasses = function () {
 		jPazpar2.addClass(filterClass);
 
 		for (var term in this.currentView.filters[filterName]) {
-			var termString = term.replace(classNameRegEx, '-');
+			var termString = this.classNameForString(term);
 			jPazpar2.addClass(filterClass + '-' + termString);
 		}
 	}
