@@ -639,12 +639,14 @@ pz2_client.prototype.renderDetails = function (data) {
 			var URL = contentOfFirstFieldWithName('catalogue-url');
 			var targetName = that.localise(location['@name'], 'facet-targets');
 
-			if (URL && targetName) {
+			if (targetName) {
 				linkElement = document.createElement('a');
-				linkElement.setAttribute('href', URL);
-				linkElement.title = that.localise('Im Katalog ansehen', 'detail');
-				that.turnIntoNewWindowLink(linkElement);
-				jQuery(linkElement).addClass('pz2-detail-catalogueLink');
+				if (URL) {
+					linkElement.setAttribute('href', URL);
+					linkElement.title = that.localise('Im Katalog ansehen', 'detail');
+					that.turnIntoNewWindowLink(linkElement);
+				}
+				jQuery(linkElement).addClass('pz2-detail-' + (URL ? '' : 'no-')  + 'catalogueLink');
 				linkElement.appendChild(document.createTextNode(targetName));
 			}
 
