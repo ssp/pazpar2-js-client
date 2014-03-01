@@ -32,10 +32,10 @@ pz2_client.prototype.init = function (setup) {
 		.submit(jQuery.proxy(this.onFormSubmitEventHandler, this))
 		.each( function(index, form) {
 			if (jQuery('form.pz2-searchForm').hasClass('pz2-extended')) {
-				jQuery('.pz2-extendedLink', form).click(pRemoveExtendedSearch);
+				jQuery('.pz2-extendedLink', form).on('click', pRemoveExtendedSearch);
 			}
 			else {
-				jQuery('.pz2-extendedLink', form).click(pAddExtendedSearch);
+				jQuery('.pz2-extendedLink', form).on('click', pAddExtendedSearch);
 			}
 		}
 	);

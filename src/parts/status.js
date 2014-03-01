@@ -53,7 +53,7 @@ pz2_client.prototype.onbytarget = function (data) {
 	var closeLink = document.createElement('a');
 	caption.appendChild(closeLink);
 	closeLink.setAttribute('href', '#');
-	jQuery(closeLink).click(jQuery.proxy(this.toggleStatus, this));
+	jQuery(closeLink).on('click', jQuery.proxy(this.toggleStatus, this));
 	closeLink.appendChild(document.createTextNode(this.localise('[ausblenden]', 'status')));
 
 	var thead = document.createElement('thead');

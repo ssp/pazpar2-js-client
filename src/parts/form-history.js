@@ -10,7 +10,7 @@ pz2_client.prototype.appendHistoryLinkToContainer = function (container) {
 		container.appendChild(historyLink);
 		historyLink.setAttribute('href', '#');
 		historyLink.setAttribute('class', 'pz2-historyLink');
-		jQuery(historyLink).click(jQuery.proxy(this.showHistory, this));
+		jQuery(historyLink).on('click', jQuery.proxy(this.showHistory, this));
 		historyLink.appendChild(document.createTextNode(this.localise('Suchgeschichte', 'form-history')));
 	}
 };
@@ -94,7 +94,7 @@ pz2_client.prototype.updateHistory = function () {
 				var a = document.createElement('a');
 				li.appendChild(a);
 				a.setAttribute('href', '#');
-				jQuery(a).click(jQuery.proxy(startHistorySearchForQueryString, this));
+				jQuery(a).on('click', jQuery.proxy(startHistorySearchForQueryString, this));
 				a.appendChild(document.createTextNode(historyItem.queryString));
 			}
 		}
@@ -136,7 +136,9 @@ pz2_client.prototype.showHistory = function () {
 
 	if (that.storage && that.storage.localStorage) {
 		jQuery('#pazpar2').addClass('pz2-historyVisible');
-		jQuery('.pz2-historyLink').off('click').click(jQuery.proxy(that.hideHistory, that));
+		jQuery('.pz2-historyLink')
+			.off('click')
+			.on('click', jQuery.proxy(that.hideHistory, that));
 		jQuery('#pz2-history').remove();
 
 		var container = document.createElement('div');
@@ -150,7 +152,7 @@ pz2_client.prototype.showHistory = function () {
 		heading.appendChild(document.createTextNode(' '));
 		heading.appendChild(closeButton);
 		closeButton.setAttribute('href', '#');
-		jQuery(closeButton).click(jQuery.proxy(that.hideHistory, that));
+		jQuery(closeButton).on('click', jQuery.proxy(that.hideHistory, that));
 		closeButton.setAttribute('class', 'pz2-closeButton');
 		closeButton.appendChild(document.createTextNode(that.localise('[ausblenden]', 'form-history')));
 
@@ -158,7 +160,7 @@ pz2_client.prototype.showHistory = function () {
 		heading.appendChild(document.createTextNode(' '));
 		heading.appendChild(deleteButton);
 		deleteButton.setAttribute('href', '#');
-		jQuery(deleteButton).click(jQuery.proxy(clearHistory, that));
+		jQuery(deleteButton).on('click', jQuery.proxy(clearHistory, that));
 		deleteButton.setAttribute('class', 'pz2-deleteButton');
 		deleteButton.appendChild(document.createTextNode(that.localise('[Einträge löschen]', 'form-history')));
 
@@ -181,7 +183,8 @@ pz2_client.prototype.showHistory = function () {
 
 
 /**
- * Event handler to close pane with recent search term.
+ * jQuery click Event handler to close and remove the panel displaying
+ * recent search terms.
  *
  * @returns {boolean} - false
  */
@@ -190,7 +193,9 @@ pz2_client.prototype.hideHistory = function () {
 
 	if (jHistory.length > 0) {
 		jQuery('#pazpar2').removeClass('pz2-historyVisible');
-		jQuery('.pz2-historyLink').off('click').click(jQuery.proxy(this.showHistory, this));
+		jQuery('.pz2-historyLink')
+			.off('click')
+			.on('click', jQuery.proxy(this.showHistory, this));
 
 		jHistory.slideUp('fast', function () {
 			jQuery(this).remove();
@@ -198,7 +203,7 @@ pz2_client.prototype.hideHistory = function () {
 
 		this.trackPiwik('history/hide');
 	}
-	
+
 	return false;
 };
 

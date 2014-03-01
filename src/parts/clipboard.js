@@ -10,7 +10,7 @@ pz2_client.prototype.appendClipboardLinkToContainer = function (container) {
 		container.appendChild(clipboardLink);
 		clipboardLink.setAttribute('href', '#');
 		clipboardLink.setAttribute('class', 'pz2-clipboardLink');
-		jQuery(clipboardLink).click(jQuery.proxy(this.showClipboard, this));
+		jQuery(clipboardLink).on('click', jQuery.proxy(this.showClipboard, this));
 		clipboardLink.appendChild(document.createTextNode(this.localise('Merkliste', 'clipboard')));
 		this.updateClipboardCount();
 	}
@@ -155,7 +155,9 @@ pz2_client.prototype.deleteAllFromClipboard = function (event) {
  */
 pz2_client.prototype.showClipboard = function (event) {
 	jQuery('#pazpar2').addClass('pz2-clipboardVisible');
-	jQuery('.pz2-clipboardLink').off('click').click(jQuery.proxy(this.hideClipboard, this));
+	jQuery('.pz2-clipboardLink')
+		.off('click')
+		.on('click', jQuery.proxy(this.hideClipboard, this));
 
 	var jForm = jQuery('.pz2-searchForm');
 	jForm.animate({'opacity': 0}, 'fast');
@@ -180,7 +182,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	heading.appendChild(document.createTextNode(' '));
 	back.setAttribute('href', '#');
 	back.setAttribute('class', 'pz2-removeClipboardLink');
-	jQuery(back).click(jQuery.proxy(this.hideClipboard, this));
+	jQuery(back).on('click', jQuery.proxy(this.hideClipboard, this));
 	back.appendChild(document.createTextNode(this.localise('Zurück zur Suche', 'clipboard')));
 
 	var deleteAll = document.createElement('a');
@@ -188,7 +190,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	heading.appendChild(document.createTextNode(' '));
 	deleteAll.setAttribute('href', '#');
 	deleteAll.setAttribute('class', 'pz2-clipboardDeleteAll');
-	jQuery(deleteAll).click(jQuery.proxy(this.deleteAllFromClipboard, this));
+	jQuery(deleteAll).on('click', jQuery.proxy(this.deleteAllFromClipboard, this));
 	deleteAll.appendChild(document.createTextNode(this.localise('Alle entfernen', 'clipboard')));
 
 	var exports= document.createElement('span');
@@ -249,7 +251,9 @@ pz2_client.prototype.updateExportLinks = function () {
  */
 pz2_client.prototype.hideClipboard = function (event) {
 	jQuery('#pazpar2').removeClass('pz2-clipboardVisible');
-	jQuery('.pz2-clipboardLink').off('click').click(jQuery.proxy(this.showClipboard, this));
+	jQuery('.pz2-clipboardLink')
+		.off('click')
+		.on('click', jQuery.proxy(this.showClipboard, this));
 
 	jQuery('#pz2-clipboardHeading').fadeOut('fast', function() {
 		jQuery(this).remove();

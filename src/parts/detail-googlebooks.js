@@ -88,7 +88,7 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 							bookLink.setAttribute('href', selectedBook.preview_url);
 							that.turnIntoNewWindowLink(bookLink);
 							if (selectedBook.embeddable === true) {
-								jQuery(bookLink).click(openPreview);
+								jQuery(bookLink).on('click', openPreview);
 							}
 							return bookLink;
 						};
@@ -170,13 +170,13 @@ pz2_client.prototype.appendGoogleBooksElementTo = function (data, container) {
 				jCloseBoxLink.addClass('googlePreview-closeBox');
 				closeBoxLink.setAttribute('href', '#');
 
-				var onClosePreview = function () {
+				var closePreview = function () {
 					jQuery('#' + previewContainerDivName).hide(200);
 					that.trackPiwik('googlebooks/close');
 					return false;
 				};
 
-				jCloseBoxLink.click(onClosePreview);
+				jCloseBoxLink.on('click', closePreview);
 				closeBoxLink.appendChild(document.createTextNode(that.localise('Vorschau schließen', 'detail-googlebooks')));
 
 				previewDiv = document.createElement('div');

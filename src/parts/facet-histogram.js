@@ -29,7 +29,7 @@ pz2_client.prototype.appendFacetHistogramForDatesTo = function (terms, type, his
 		histogramContainer.appendChild(cancelLink);
 		cancelLink.setAttribute('href', '#');
 		jCancelLink.addClass('pz2-facetCancel pz2-activeFacet');
-		jCancelLink.click(histogramDeselect);
+		jCancelLink.on('click', histogramDeselect);
 		for (var yearFilterString in that.currentView.filters[type]) {
 			var cancelLinkText = that.localise('Filter # aufheben', 'facets').replace('#', yearFilterString);
 			cancelLink.appendChild(document.createTextNode(cancelLinkText));
