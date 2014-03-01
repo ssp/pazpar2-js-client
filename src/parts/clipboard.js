@@ -37,12 +37,10 @@ pz2_client.prototype.addToClipboardItem = function (record) {
 	// Add to clipboard link for query results which are not on the clipboard yet.
 	if (!clipboard[record.recid[0]]) {
 		a.setAttribute('class', 'pz2-addToClipboardLink pz2-add');
-		jQuery(a).click(jQuery.proxy(this.addToClipboard, this));
 		a.appendChild(document.createTextNode(this.localise('Zur Merkliste hinzufügen', 'clipboard')));
 	}
 	else {
 		a.setAttribute('class', 'pz2-addToClipboardLink pz2-delete');
-		jQuery(a).click(jQuery.proxy(this.deleteFromClipboard, this));
 		a.appendChild(document.createTextNode(this.localise('Aus der Merkliste entfernen', 'clipboard')));
 	}
 

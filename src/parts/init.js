@@ -43,9 +43,6 @@ pz2_client.prototype.init = function (setup) {
 	// Add event handlers for selects.
 	jQuery('.pz2-sort, .pz2-perPage').attr('onchange', 'onSelectDidChange');
 
-	// Add event handers for the status display to record count.
-	jQuery('.pz2-recordCount').click(jQuery.proxy(this.toggleStatus, this));
-
 	// Set up local storage if possible.
 	if (jQuery.localStorage) {
 		this.storage = jQuery.initNamespaceStorage('pazpar2');
@@ -64,20 +61,24 @@ pz2_client.prototype.init = function (setup) {
 	// Remove the no-JS warning.
 	jQuery('#pazpar2').removeClass('pz2-noJS');
 
-	// Start search for provided term if required.
-	jQuery.proxy(this.config.triggerSearchFunction, this)();
-
 	// Set up event handlers with jQuery delegation.
 	jQuery('#pz2-termLists')
 		.on('click', 'a.pz2-facetSelect', jQuery.proxy(this.facetItemSelect, this))
 		.on('click', 'a.pz2-facetCancel', jQuery.proxy(this.facetItemDeselect, this))
 		.on('click', '.pz2-facet-showAll a', jQuery.proxy(this.showAllFacetsOfType, this));
 	jQuery('#pz2-results')
-		.on('click', 'a.pz2-recordLink', jQuery.proxy(this.toggleDetails, this));
+		.on('click', 'a.pz2-recordLink', jQuery.proxy(this.toggleDetails, this))
+		.on('click', 'a.pz2-addToClipboardLink.pz2-add', jQuery.proxy(this.addToClipboard, this))
+		.on('click', 'a.pz2-addToClipboardLink.pz2-delete', jQuery.proxy(this.deleteFromClipboard, this));
 	jQuery('.pz2-pager')
 		.on('click', '.pz2-pageNumber a', jQuery.proxy(this.pagerGoto , this))
 		.on('click', 'a.pz2-prev', jQuery.proxy(this.pagerPrev, this))
-		.on('click', 'a.pz2-next', jQuery.proxy(this.pagerNext, this));
+		.on('click', 'a.pz2-next', jQuery.proxy(this.pagerNext, this))
+		.on('click', '.pz2-recordCount', jQuery.proxy(this.toggleStatus, this));
+
+
+	// Start search for provided term if required.
+	jQuery.proxy(this.config.triggerSearchFunction, this)();
 };
 
 
