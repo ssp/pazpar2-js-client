@@ -18,13 +18,14 @@ pz2_client.prototype.onterm = function (data) {
  * jQuery click event handler for selecting a facet item.
  *
  * @param {Event} event - click event selecting a facet item
- * @returns {boolean} false
+ * @returns {boolean} - false
  */
 pz2_client.prototype.facetItemSelect = function (event) {
 	var jTarget = jQuery(event.target);
 	var facetName = jTarget.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
 	var facetTerm = jTarget.parents('li').attr('facetTerm');
 	this.limitResults(facetName, facetTerm);
+	return false;
 };
 
 
@@ -33,13 +34,14 @@ pz2_client.prototype.facetItemSelect = function (event) {
  * jQuery click event handler for removing a facet item selection.
  *
  * @param {Event} event - click event deselecting the facet item
- * @returns {boolean} false
+ * @returns {boolean} - false
  */
 pz2_client.prototype.facetItemDeselect = function (event) {
 	var jTarget = jQuery(event.target);
 	var facetName = jTarget.parents('[facettype]').attr('facettype');  // TODO: need to run .replace(/"/g, '\\"') ?
 	var facetTerm = jTarget.parents('li').attr('facetTerm');
 	this.delimitResults(facetName, facetTerm);
+	return false;
 };
 
 
@@ -48,7 +50,7 @@ pz2_client.prototype.facetItemDeselect = function (event) {
  * jQuery click event handler for the »show all facets« link.
  *
  * @param {Event} event - click event
- * @returns {undefined}
+ * @returns {boolean} - false
  */
 pz2_client.prototype.showAllFacetsOfType = function (event) {
 	var jContainingList = jQuery(event.target).parents('[facettype]');
@@ -60,6 +62,8 @@ pz2_client.prototype.showAllFacetsOfType = function (event) {
 	// Store the current state in the termLists object for the current facet type.
 	var facetType = jContainingList.attr('facetType');
 	this.config.termLists[facetType].showAll = true;
+
+	return false;
 };
 
 

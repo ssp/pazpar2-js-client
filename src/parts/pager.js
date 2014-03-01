@@ -185,7 +185,7 @@ pz2_client.prototype.updatePagers = function () {
  * display the page with that number.
  *
  * @param {event} event
- * @returns {undefined}
+ * @returns {boolean} - false
  */
 pz2_client.prototype.pagerGoto = function (event) {
 	var jTarget = jQuery(event.target);
@@ -194,6 +194,7 @@ pz2_client.prototype.pagerGoto = function (event) {
 		jQuery('body,html').animate({'scrollTop': jQuery('.pz2-pager.pz2-top').offset().top}, 'fast');
 	}
 	this.showPage(pageNumber);
+	return false;
 };
 
 
@@ -201,10 +202,11 @@ pz2_client.prototype.pagerGoto = function (event) {
 /**
  * jQuery event handler for clicking a following page link.
  *
- * @returns {undefined}
+ * @returns {boolean} - false
  */
 pz2_client.prototype.pagerNext = function () {
 	this.showPage(this.currentView.page + 1);
+	return false;
 };
 
 
@@ -212,10 +214,11 @@ pz2_client.prototype.pagerNext = function () {
 /**
  * jQuery event handler for clicking a preceding page link.
  *
- * @returns {undefined}
+ * @returns {boolean} - false
  */
 pz2_client.prototype.pagerPrev = function () {
 	this.showPage(this.currentView.page - 1);
+	return false;
 };
 
 

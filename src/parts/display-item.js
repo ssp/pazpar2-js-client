@@ -193,7 +193,7 @@ pz2_client.prototype.createResultItem = function (hit) {
  * with the record.
  *
  * @param {event} event
- * @returns {undefined}
+ * @returns {boolean} - false
  */
 pz2_client.prototype.toggleDetails = function (event) {
 	var jLI = jQuery(event.target).parents('li.pz2-record');
@@ -238,4 +238,6 @@ pz2_client.prototype.toggleDetails = function (event) {
 		jLI.addClass('pz2-detailsVisible');
 		this.trackPiwik('details/show');
 	}
+
+	return false;
 };

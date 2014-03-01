@@ -24,6 +24,7 @@ pz2_client.prototype.appendHistoryLinkToContainer = function (container) {
  * ensure the configured maximum history size is not exceeded.
  *
  * @param {string} queryString - the query string to add to the history
+ * @returns {undefined}
  */
 pz2_client.prototype.addToHistory = function (queryString) {
 	if (this.storage && this.config.historyItems > 0) {
@@ -45,8 +46,6 @@ pz2_client.prototype.addToHistory = function (queryString) {
 		history.splice(this.config.historyItems, history.length - this.config.historyItems);
 		this.setHistory(history);
 	}
-
-	return false;
 };
 
 
@@ -110,7 +109,8 @@ pz2_client.prototype.updateHistory = function () {
 
 
 /**
- * Show the pane with recent search terms from local storage.
+ * jQuery event handler to show the panel with recent search terms
+ * from local storage.
  * Handle clicks on history items.
  *
  * @returns {boolean} - false
@@ -118,16 +118,17 @@ pz2_client.prototype.updateHistory = function () {
 pz2_client.prototype.showHistory = function () {
 
 	/**
-	 * Event handler for the delete history link.
+	 * jQuery event handler for the delete history link.
 	 * Remove all entries and update the display.
 	 *
 	 * @param {Event} event
-	 * @returns {undefined}
+	 * @returns {boolean} - false
 	 */
 	var clearHistory = function (event) {
 		this.setHistory([]);
 		this.updateHistory();
 		this.trackPiwik('history/clear');
+		return false;
 	};
 
 
