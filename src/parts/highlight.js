@@ -14,9 +14,11 @@ pz2_client.prototype.highlightSearchTerms = function (element) {
 	 *
 	 * @param {DOMElement} element - highlight the content of this
 	 * @param {string} term - highlight this term
-	 * @returns {undefined}
+	 * @returns {integer} - number of nodes inserted into element
 	 */
 	var addHighlight = function (element, term) {
+		var nodesInserted = 0;
+
 		if (element.nodeType === 3) {
 			// Text node: Highlight the text if found.
 			var nodeContent = element.nodeValue.toLowerCase();
@@ -33,17 +35,20 @@ pz2_client.prototype.highlightSearchTerms = function (element) {
 				textElement.parentNode.replaceChild(highlight, matchedText);
 				textElement = remainderText;
 				startIndex = matchIndex + term.length;
+				nodesInserted += 2;
 			}
 		}
 		else {
 			// Other node: Recurse through child nodes.
-			for (var nodeIndex in element.childNodes) {
+			for (var nodeIndex = 0; nodeIndex < element.childNodes.length; nodeIndex++) {
 				var node = element.childNodes[nodeIndex];
 				if (node.tagName !== 'script' && node.tagName !== 'style') {
-					addHighlight(element.childNodes[nodeIndex], term);
+					nodeIndex += addHighlight(element.childNodes[nodeIndex], term);
 				}
 			}
 		}
+
+		return nodesInserted;
 	};
 
 
