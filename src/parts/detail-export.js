@@ -2,9 +2,10 @@
  * Return links for exporting result data or providing further information on it.
  *
  * @param {object} data
+ * @param {boolean} exportLinksOnly - create export links only (no clipboard, OpenURL etc.)
  * @returns {DOMElement} - div element containing the additional links
  */
-pz2_client.prototype.exportLinks = function (data) {
+pz2_client.prototype.exportLinks = function (data, exportLinksOnly) {
 	/**
 	 * Non-recursively copy the data content of the JavaScript object to
 	 * the XML target.
@@ -369,15 +370,15 @@ pz2_client.prototype.exportLinks = function (data) {
 	var that = this;
 	var extraLinkList = document.createElement('ul');
 
-	if (that.config.useClipboard) {
+	if (that.config.useClipboard && !exportLinksOnly) {
 		that.appendInfoToContainer(that.addToClipboardItem(data), extraLinkList);
 	}
 
-	if (that.config.showKVKLink) {
+	if (that.config.showKVKLink && !exportLinksOnly) {
 		that.appendInfoToContainer(KVKItem(data), extraLinkList);
 	}
 
-	if (that.config.showOpenURLLink) {
+	if (that.config.showOpenURLLink && !exportLinksOnly) {
 		that.appendInfoToContainer(openURLItem(data), extraLinkList);
 	}
 

@@ -191,7 +191,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	jQuery(deleteAll).on('click', jQuery.proxy(this.deleteAllFromClipboard, this));
 	deleteAll.appendChild(document.createTextNode(this.localise('Alle entfernen', 'clipboard')));
 
-	var exports= document.createElement('span');
+	var exports = document.createElement('span');
 	heading.appendChild(exports);
 	exports.setAttribute('class', 'pz2-extraLinks');
 	this.updateExportLinks();
@@ -220,7 +220,7 @@ pz2_client.prototype.updateExportLinks = function () {
 
 		var clipboard = this.getClipboard();
 
-		if (this.config.exportFormats.length > 0 && clipboard.length > 0) {
+		if (this.config.exportFormats.length > 0 && Object.keys(clipboard).length > 0) {
 			jContainer.append(document.createTextNode(this.localise('Alle exportieren als', 'clipboard') + ': '));
 
 			var allLocations = [];
@@ -229,7 +229,7 @@ pz2_client.prototype.updateExportLinks = function () {
 				jQuery.merge(allLocations, item.location);
 			}
 
-			var links = this.exportLinks({'location': allLocations});
+			var links = this.exportLinks({'location': allLocations}, true);
 
 			var UL = document.createElement('ul');
 			jContainer.append(UL);
