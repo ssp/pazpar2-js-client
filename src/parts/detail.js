@@ -37,7 +37,7 @@ pz2_client.prototype.renderDetails = function (data) {
 				if (that.localise(acronymKey, 'detail-label') !== acronymKey) {
 					// acronym: add acronym element
 					var acronymElement = document.createElement('abbr');
-					acronymElement.title = that.localise(acronymKey);
+					acronymElement.title = that.localise(acronymKey, 'detail-label');
 					acronymElement.appendChild(labelNode);
 					labelNode = acronymElement;
 				}
