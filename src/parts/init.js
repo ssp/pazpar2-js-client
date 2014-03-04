@@ -48,8 +48,8 @@ pz2_client.prototype.init = function (setup) {
 	// Set up local storage if possible.
 	if (window.localStorage && jQuery.localStorage) {
 		this.storage = jQuery.initNamespaceStorage('pazpar2');
-		this.appendClipboardLinkToContainer(linkDiv);
 		this.appendHistoryLinkToContainer(linkDiv);
+		this.appendClipboardLinkToContainer(linkDiv);
 	}
 
 	// Remove the no-JS warning.
