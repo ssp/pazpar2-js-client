@@ -262,6 +262,17 @@ pz2_client.prototype.appendFacetHistogramForDatesTo = function (terms, type, his
 	jGraphDiv.mouseout(hideTooltip);
 
 	for (var filterString in that.currentView.filters[type]) {
-		plot.setSelection({'xaxis': that.currentView.filters[type][filterString]}, true);
+		var selection = that.currentView.filters[type][filterString];
+		var xAxes = plot.getXAxes();
+		if (xAxes.length > 0) {
+			var selectionAxes = {
+				'xaxis': {
+					'from': Math.max(selection.from, xAxes[0].datamin),
+					'to': Math.min(selection.to, xAxes[0].datamax)
+				}
+			};
+			
+			plot.setSelection(selectionAxes, true);
+		}
 	}
 };
