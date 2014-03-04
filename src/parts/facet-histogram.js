@@ -132,7 +132,7 @@ pz2_client.prototype.appendFacetHistogramForDatesTo = function (terms, type, his
 		var from = Math.floor(range.from);
 		outputRange.from = from - (from % histogramConfig.barWidth);
 
-		var to = Math.ceil(range.to);
+		var to = Math.floor(range.to);
 		outputRange.to = to - (to % histogramConfig.barWidth) + histogramConfig.barWidth;
 		return outputRange;
 	};
@@ -156,7 +156,7 @@ pz2_client.prototype.appendFacetHistogramForDatesTo = function (terms, type, his
 	jGraphDiv.on('plotclick', function (event, pos, item) {
 		if (item && item.datapoint) {
 			var year = item.datapoint[0];
-			var ranges = {'xaxis': {'from': year, 'to': year + 1} };
+			var ranges = {'xaxis': {'from': year, 'to': year} };
 			selectRanges(ranges);
 		}
 	});
