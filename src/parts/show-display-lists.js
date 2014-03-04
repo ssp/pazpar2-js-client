@@ -1,32 +1,32 @@
 /**
- * Converts a given list of data to thes list used for display by:
- *  1. applying filters
- *  2. sorting
+ * Converts a given list of data to the list used for display by:
+ * 1. applying filters
+ * 2. sorting
  * according to the setup in the displaySort and filters configuration.
+ * This is only necessary when not using pazpar2’s facet information.
  *
  * @param {type} list
  * @returns {array}
  */
 pz2_client.prototype.displayLists = function (list) {
 
-	/*	filter
-		Returns filtered lists of pazpar2 records according to the current
-		filters. The first list are the results to display. The second list
-		are the results satisfying all filters except the date ones. It is used
-		for drawing the date histogram.
-
-		input:	list - list of pazpar2 records
-		output:	list of 2 items:
-					* list of pazpar2 records matching all filters
-					* list of pazpar2 records matching all non-date filters
-	*/
+	/**
+	 * Return filtered lists of pazpar2 records according to the current
+	 * filters. The first list are the results to display. The second list
+	 * contains the results satisfying all filters except the date ones.
+	 * It is used for drawing the date histogram.
+	 *
+	 * @param {array} listToFilter
+	 * @returns {array} - 2 items: list of pazpar2 records matching all/all non-date filters
+	 */
 	var filteredLists = function (listToFilter) {
 
-		/*	matchesFilters
-			Returns how the passed record passes the filters.
-			input:	record - pazpar2 record
-			output: integer - 0 if no match, 1 if matching, 2 if matching everything but date
-		*/
+		/**
+		 * Return how record matches the filters.
+		 *
+		 * @param {object} record - pazpar2 record
+		 * @returns {integer} - 0 if no match, 1 if matching, 2 if matching everything but date
+		 */
 		var matchesFilters = function (record) {
 			var matches = true;
 			var matchesEverythingNotTheDate = true;
@@ -41,10 +41,11 @@ pz2_client.prototype.displayLists = function (list) {
 							if (matches) {break;}
 						}
 					}
-					else if (facetType === 'filterDate' && filterValue.constructor === Object) {
+					else if (filterValue.constructor === Object) {
 						matchesEverythingNotTheDate = true;
-						for (var dateIndex in record['md-filterDate']) {
-							var recordDate = record['md-filterDate'][dateIndex];
+						var fieldContent = record['md-' + facetType];
+						for (var dateIndex in fieldContent) {
+							var recordDate = fieldContent[dateIndex];
 							// The filterValue for date contains two years, both are assumed to
 							// to designate January 1st. I.e. {from:2009, to:2010} gives
 							// all records from 2009.
@@ -90,19 +91,23 @@ pz2_client.prototype.displayLists = function (list) {
 
 
 
-	/*	sortFunction
-		Sort function for pazpar2 records.
-		Sorts by date or author according to the current setup in the displaySort configuration.
-		input:	record1, record2 - pazpar2 records
-		output: negative/0/positive number
-	*/
+	/**
+	 * Sort function for pazpar2 records.
+	 * Sorts by date or author according to the current setup in the displaySort configuration.
+	 *
+	 * @param {object} record1 - pazpar2 record
+	 * @param {object} record2 - pazpar2 record
+	 * @returns {number}
+	 */
 	var sortFunction = function(record1, record2) {
-		/*	dateForRecord
-			Returns the year / last year of a date range of the given pazpar2 record.
-			If no year is present, the year 1000 is used to make records look old.
-			input:	record - pazpar2 record
-			output: Date object with year found in the pazpar2 record
-		*/
+
+		/**
+		 * Return the year / last year of date range in record.
+		 * If no year is present, the year 1000 is used to make records look old.
+		 *
+		 * @param {object} record
+		 * @returns {number} - the year found in record
+		 */
 		function dateForRecord (record) {
 			var year;
 			var dateArray = record['md-date'];
@@ -125,14 +130,15 @@ pz2_client.prototype.displayLists = function (list) {
 
 
 
-		/*	fieldContentForSorting
-			Returns a record's md-fieldName field, suitable for sorting.
-				* Concatenated when several instances of the field are present.
-				* All lowercase.
-			input:	fieldName - name of the field to use
-					record - pazpar2 record
-			output: string with content of the field in the record
-		*/
+		/**
+		 * Returns a record's md-fieldName field, suitable for sorting.
+		 * * Concatenated when several instances of the field are present.
+		 * * All lowercase.
+		 * 
+		 * @param {string} fieldName
+		 * @param {object} record - pazpar2 record
+		 * @returns {string} - content of field fieldName in record
+		 */
 		function fieldContentForSorting (fieldName, record) {
 			var result = String(that.fieldContentsInRecord(fieldName, record));
 			result = result.replace(/^\W*/,'');
@@ -188,5 +194,4 @@ pz2_client.prototype.displayLists = function (list) {
 	var result = filteredLists(list);
 	result[0] = result[0].sort(sortFunction);
 	return result;
-	
 };
