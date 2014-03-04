@@ -637,7 +637,7 @@ pz2_client.prototype.renderDetails = function (data) {
 		var catalogueLink = function () {
 			var linkElement;
 			var URL = contentOfFirstFieldWithName('catalogue-url');
-			var targetName = that.localise(location['@name'], 'facet-targets');
+			var targetName = that.localise(location['@id'], 'facet-xtargets');
 
 			if (targetName) {
 				linkElement = document.createElement('a');
