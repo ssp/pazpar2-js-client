@@ -36,7 +36,7 @@ pz2_client.prototype.localise = function (term, dictionaryName) {
 	}
 	else {
 		// for debugging
-		if (!dictionaryName || !dictionaryName.match(/^(detail-label|facet-)/)) { console.log(term + ' - ' + dictionaryName); }
+		// if (!dictionaryName || !dictionaryName.match(/^(detail-label|facet-)/)) { console.log(term + ' - ' + dictionaryName); }
 	}
 	
 	return localised;
