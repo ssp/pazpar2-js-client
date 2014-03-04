@@ -691,7 +691,7 @@ pz2_client.prototype.renderDetails = function (data) {
 				var lastChild = jLastChild[0];
 				var lastLastChild = lastChild.lastChild;
 				if (lastLastChild.nodeType === 3) {
-					if (lastLastChild.textContent.match(/\s*;\s*/)) {
+					if (lastLastChild.textContent && lastLastChild.textContent.match(/\s*;\s*/)) {
 						lastLastChild.textContent = ' ';
 					}
 				}
