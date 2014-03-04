@@ -40,17 +40,17 @@ pz2_client.prototype.init = function (setup) {
 		}
 	);
 
-	// Set up local storage if possible.
-	if (jQuery.localStorage) {
-		this.storage = jQuery.initNamespaceStorage('pazpar2');
-	}
-
 	// Add links for optional features if so configured.
 	var linkDiv = document.createElement('div');
 	linkDiv.setAttribute('class', 'pz2-featureLinks');
 	jQuery('#pazpar2').prepend(linkDiv);
-	this.appendHistoryLinkToContainer(linkDiv);
-	this.appendClipboardLinkToContainer(linkDiv);
+
+	// Set up local storage if possible.
+	if (window.localStorage && jQuery.localStorage) {
+		this.storage = jQuery.initNamespaceStorage('pazpar2');
+		this.appendClipboardLinkToContainer(linkDiv);
+		this.appendHistoryLinkToContainer(linkDiv);
+	}
 
 	// Remove the no-JS warning.
 	jQuery('#pazpar2').removeClass('pz2-noJS');

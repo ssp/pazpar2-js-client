@@ -26,24 +26,28 @@ pz2_client.prototype.appendClipboardLinkToContainer = function (container) {
  * @returns {DOMElement} - li element with add to clipboard link
  */
 pz2_client.prototype.addToClipboardItem = function (record) {
-	var li = document.createElement('li');
-	li.setAttribute('class', 'pz2-addToClipboard');
-	var a = document.createElement('a');
-	li.appendChild(a);
-	a.setAttribute('href', '#');
+	var li;
 
-	var clipboard = this.getClipboard();
+	if (this.storage) {
+		li = document.createElement('li');
+		li.setAttribute('class', 'pz2-addToClipboard');
+		var a = document.createElement('a');
+		li.appendChild(a);
+		a.setAttribute('href', '#');
 
-	// Add to clipboard link for query results which are not on the clipboard yet.
-	if (!clipboard[record.recid[0]]) {
-		a.setAttribute('class', 'pz2-addToClipboardLink pz2-add');
-		a.appendChild(document.createTextNode(this.localise('Zur Merkliste hinzufügen', 'clipboard')));
+		var clipboard = this.getClipboard();
+
+		// Add to clipboard link for query results which are not on the clipboard yet.
+		if (!clipboard[record.recid[0]]) {
+			a.setAttribute('class', 'pz2-addToClipboardLink pz2-add');
+			a.appendChild(document.createTextNode(this.localise('Zur Merkliste hinzufügen', 'clipboard')));
+		}
+		else {
+			a.setAttribute('class', 'pz2-addToClipboardLink pz2-delete');
+			a.appendChild(document.createTextNode(this.localise('Aus der Merkliste entfernen', 'clipboard')));
+		}
 	}
-	else {
-		a.setAttribute('class', 'pz2-addToClipboardLink pz2-delete');
-		a.appendChild(document.createTextNode(this.localise('Aus der Merkliste entfernen', 'clipboard')));
-	}
-
+	
 	return li;
 };
 
