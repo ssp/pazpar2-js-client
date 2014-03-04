@@ -723,6 +723,8 @@ pz2_client.prototype.renderDetails = function (data) {
 		 * A somewhat sloppy heuristic to create cleaned up lists for the fields
 		 * * author
 		 * * other-person
+		 * * corporate
+		 * * meeting
 		 * to avoid duplicating names listed in the short title display already:
 		 * * Do not separately display persons whose apparent surname
 		 *   appears in title-reponsibility field to avoid duplication.
@@ -765,6 +767,8 @@ pz2_client.prototype.renderDetails = function (data) {
 
 			cleanFieldBasedOnString('author', allResponsibility, true);
 			cleanFieldBasedOnString('other-person', allResponsibility, true);
+			cleanFieldBasedOnString('meeting', allResponsibility, false);
+			cleanFieldBasedOnString('corporate', allResponsibility, false);
 		}
 		else if (data['md-author'] && data['md-author'].length > that.config.maxAuthors) {
 			data['md-author-clean'] = data['md-author'].slice(that.config.maxAuthors);
@@ -772,6 +776,8 @@ pz2_client.prototype.renderDetails = function (data) {
 
 		that.appendInfoToContainer( detailLineAuto('author-clean'), detailsList );
 		that.appendInfoToContainer( detailLineAuto('other-person-clean'), detailsList );
+		that.appendInfoToContainer( detailLineAuto('corporate-clean'), detailsList );
+		that.appendInfoToContainer( detailLineAuto('meeting-clean'), detailsList );
 		that.appendInfoToContainer( detailLineAuto('abstract'), detailsList );
 		that.appendInfoToContainer( detailLineAuto('description'), detailsList );
 		that.appendInfoToContainer( detailLineAuto('series-title'), detailsList );
