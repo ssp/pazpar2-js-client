@@ -719,33 +719,55 @@ pz2_client.prototype.renderDetails = function (data) {
 		detailsDiv.appendChild(clearSpan);
 		jQuery(clearSpan).addClass('pz2-clear');
 
-		/*	A somewhat sloppy heuristic to create cleaned up author and other-person
-			lists to avoid duplicating names listed in the short title display already:
-			* Do _not_ separately display authors and other-persons whose apparent
-				surname appears in the title-reponsibility field to avoid duplication.
-			* If no title-responsibility field is present, omit the first config.maxAuthors
-				authors as they are displayed in the short title.
-		*/
+		/**
+		 * A somewhat sloppy heuristic to create cleaned up lists for the fields
+		 * * author
+		 * * other-person
+		 * to avoid duplicating names listed in the short title display already:
+		 * * Do not separately display persons whose apparent surname
+		 *   appears in title-reponsibility field to avoid duplication.
+		 * * Do not separately display corporations or meetings whose name
+		 *   appears in title-reponsibility field to avoid duplication.
+		 * * If no title-responsibility field is present, omit the first
+		 *   config.maxAuthors authors as they are displayed in the short title.
+		 */
+
+		/**
+		 * Copy only the items in md-fieldName which are not contained (partially)
+		 * in stringToMatch to md-fieldName-clean.
+		 *
+		 * @param {string} fieldName
+		 * @param {string} stringToMatch - the string to try and match the content in
+		 * @param {boolean} surnameOnly - whether to match the whole string or only up to the first comma
+		 * @returns {undefined}
+		 */
+		var cleanFieldBasedOnString = function (fieldName, stringToMatch, surnameOnly) {
+			var mdFieldName = 'md-' + fieldName;
+			var mdCleanFieldName = mdFieldName + '-clean';
+			data[mdCleanFieldName] = [];
+
+			for (var fieldIndex in data[mdFieldName]) {
+				var item = data[mdFieldName][fieldIndex];
+				var itemToFind = item;
+				if (surnameOnly) {
+					itemToFind = jQuery.trim(itemToFind.split(',')[0]);
+				}
+
+				if (stringToMatch.indexOf(itemToFind) === -1) {
+					data[mdCleanFieldName].push(item);
+				}
+			}
+		};
+
 		var allResponsibility = '';
 		if (data['md-title-responsibility']) {
 			allResponsibility = data['md-title-responsibility'].join('; ');
-			data['md-author-clean'] = [];
-			for (var authorIndex in data['md-author']) {
-				var authorName = jQuery.trim(data['md-author'][authorIndex].split(',')[0]);
-				if (allResponsibility.match(authorName) === null) {
-					data['md-author-clean'].push(data['md-author'][authorIndex]);
-				}
-			}
+
+			cleanFieldBasedOnString('author', allResponsibility, true);
+			cleanFieldBasedOnString('other-person', allResponsibility, true);
 		}
 		else if (data['md-author'] && data['md-author'].length > that.config.maxAuthors) {
 			data['md-author-clean'] = data['md-author'].slice(that.config.maxAuthors);
-		}
-		data['md-other-person-clean'] = [];
-		for (var personIndex in data['md-other-person']) {
-			var personName = jQuery.trim(data['md-other-person'][personIndex].split(',')[0]);
-			if (allResponsibility.match(personName) === null) {
-				data['md-other-person-clean'].push(data['md-other-person'][personIndex]);
-			}
 		}
 
 		that.appendInfoToContainer( detailLineAuto('author-clean'), detailsList );
