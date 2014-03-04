@@ -131,7 +131,7 @@ pz2_client.prototype.displayLists = function (list) {
 
 
 		/**
-		 * Returns a record's md-fieldName field, suitable for sorting.
+		 * Return a record’s md-fieldName field, suitable for sorting.
 		 * * Concatenated when several instances of the field are present.
 		 * * All lowercase.
 		 * 
@@ -148,12 +148,41 @@ pz2_client.prototype.displayLists = function (list) {
 		}
 
 
+
+		/**
+		 * Return an array of search criteria based on the current setup and selection.
+		 *
+		 * @returns {array} - of objects with fields 'fieldName' and 'direction'
+		 */
+		function currentSortConfiguration () {
+			var sortArray = [];
+
+			if (that.currentView.sort) {
+				var sortCriteria = that.currentView.sort.split(',');
+
+				for (var criterionIndex in sortCriteria) {
+					var criterionParts = sortCriteria[criterionIndex].split(':');
+					if (criterionParts.length === 2) {
+						sortArray.push({
+							'fieldName': criterionParts[0],
+							'direction': criterionParts[1]
+						});
+					}
+				}
+			}
+
+			return sortArray;
+		}
+
+
+
 		var result = 0;
 
-		for (var sortCriterionIndex in that.config.displaySort) {
-			var sortCriterion = that.config.displaySort[sortCriterionIndex];
+		var sortConfig = currentSortConfiguration();
+		for (var sortCriterionIndex in sortConfig) {
+			var sortCriterion = sortConfig[sortCriterionIndex];
 			var fieldName = sortCriterion.fieldName;
-			var direction = (sortCriterion.direction === 'ascending') ? 1 : -1;
+			var direction = (sortCriterion.direction ? -1 : 1);
 
 			if (fieldName === 'date') {
 				var date1 = dateForRecord(record1);

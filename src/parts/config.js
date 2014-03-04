@@ -29,9 +29,6 @@ pz2_client.prototype.config = {
 	// Display year facets using a histogram graphic?
 	useHistogramForYearFacets: true,
 
-	// Default sort order.
-	displaySort: [],
-
 	// Use Google Books for cover art when an ISBN or OCLC number is known?
 	useGoogleBooks: false,
 	// Use Google Maps to display the region covered by records?

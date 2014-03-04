@@ -235,9 +235,8 @@ pz2_client.prototype.showPage = function (pageNumber) {
 		Math.ceil(this.resultCount() / this.currentView.recPerPage)
 	);
 
-	if (this.config.usePazpar2Facets) {
-		var start = (this.currentView.page - 1) * this.currentView.recPerPage;
-		this.my_paz.show(start, this.currentView.recPerPage, this.currentView.sort);
+	if (this.config.usePazpar2Facets && this.currentView.type === 'query') {
+		this.show();
 	}
 	else {
 		this.display();

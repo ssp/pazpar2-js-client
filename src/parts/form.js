@@ -267,7 +267,7 @@ pz2_client.prototype.onFormSubmitEventHandler = function (event) {
  */
 pz2_client.prototype.formSelectDidChange = function () {
 	this.loadSelectsInForm(this.form);
-	this.updateAndDisplay();
+	this.show();
 	return false;
 };
 
@@ -350,59 +350,19 @@ pz2_client.prototype.removeExtendedSearch  = function (event, dontTrack) {
 
 
 /**
- * Sets up the sort order and items per page from the form that is passed.
+ * Set up the sort order and items per page from the form that is passed.
  *
  * @param {DOMElement} form
  * @returns {undefined}
  */
 pz2_client.prototype.loadSelectsInForm = function (form) {
-	var sortOrderString = jQuery('.pz2-sort option:selected', form).val();
-	this.setSortCriteriaFromString(sortOrderString);
+	var jSortSelect = jQuery('.pz2-sort option:selected', form);
+	if (jSortSelect.length > 0) {
+		this.currentView.sort = jSortSelect.val();
+	}
 
 	var jPerPageSelect = jQuery('.pz2-perPage option:selected', form);
 	if (jPerPageSelect.length > 0) {
 		this.currentView.recPerPage = jPerPageSelect.val();
 	}
-};
-
-
-
-/**
- * Takes the passed sort value string with sort criteria separated by --
- * and labels and value inside the criteria separated by -, [this strange
- * format is owed to escaping problems when creating a Fluid template for the form]
- * parses them and sets the displaySort and currentView.sort settings accordingly.
- * If the sort form is not present, the sort order stored in displaySort is used.
- *
- * @param {string} sortString
- * @returns {undefined}
- */
-pz2_client.prototype.setSortCriteriaFromString = function (sortString) {
-	var curSortArray = [];
-
-	if (sortString) {
-		// The sort string exists: we get our settings from the menu.
-		this.config.displaySort = [];
-		var sortCriteria = sortString.split('--');
-
-		for (var criterionIndex in sortCriteria) {
-			var criterionParts = sortCriteria[criterionIndex].split('-');
-			if (criterionParts.length === 2) {
-				var fieldName = criterionParts[0];
-				var direction = criterionParts[1];
-				this.config.displaySort.push({'fieldName': fieldName,
-											'direction': ((direction === 'd') ? 'descending' : 'ascending')});
-				curSortArray.push(fieldName + ':' + ((direction === 'd') ? '0' : '1') );
-			}
-		}
-	}
-	else {
-		// Use the default sort order set in displaySort.
-		for (var displaySortIndex in this.config.displaySort) {
-			var sortCriterion = this.config.displaySort[displaySortIndex];
-			curSortArray.push(sortCriterion.fieldName + ':' + ((sortCriterion.direction === 'descending') ? '0' : '1'));
-		}
-	}
-
-	this.currentView.sort = curSortArray.join(',');
 };

@@ -107,6 +107,17 @@ pz2_client.prototype.onshow = function (data) {
 
 
 
+pz2_client.prototype.show = function () {
+	if (this.config.usePazpar2Facets && this.currentView.type === 'query') {
+		var start = (this.currentView.page - 1) * this.currentView.recPerPage;
+		this.my_paz.show(start, this.currentView.recPerPage, this.currentView.sort);
+	}
+	else {
+		this.updateAndDisplay();
+	}
+};
+
+
 /**
  * Update displayHitList and displayHitListUpToDate, then redraw.
  *
@@ -114,37 +125,38 @@ pz2_client.prototype.onshow = function (data) {
  * @returns {undefined}
  */
 pz2_client.prototype.updateAndDisplay = function (forceFacetUpdate) {
+	var that = this;
 	var hitList = {};
 
 	// Set up displayHitList.
-	if (this.config.usePazpar2Facets && this.currentView.type === 'query') {
+	if (that.config.usePazpar2Facets && that.currentView.type === 'query') {
 		// Use the last hit list from pazpar2 with remote filtering.
-		this.displayHitList = [];
-		jQuery.each(this.currentHits, function (index, key) {
-			if (this.hitList[key]) {
-				this.displayHitList.push(this.hitList[key]);
+		that.displayHitList = [];
+		jQuery.each(that.currentHits, function (index, key) {
+			if (that.hitList[key]) {
+				that.displayHitList.push(that.hitList[key]);
 			}
 		});
 	}
 	else {
-		if (this.currentView.type === 'query') {
+		if (that.currentView.type === 'query') {
 			// Use the full stored hit list for local filtering.
-			hitList = this.hitList;
+			hitList = that.hitList;
 		}
-		else if (this.currentView.type === 'clipboard') {
+		else if (that.currentView.type === 'clipboard') {
 			// Use a copy of the clipboard.
-			hitList = jQuery.extend(true, {}, this.getClipboard());
+			hitList = jQuery.extend(true, {}, that.getClipboard());
 		}
 
-		var filterResults = this.displayLists(hitList);
-		this.displayHitList = filterResults[0];
-		this.displayHitListUpToDate = filterResults[1];
+		var filterResults = that.displayLists(hitList);
+		that.displayHitList = filterResults[0];
+		that.displayHitListUpToDate = filterResults[1];
 	}
 
-	this.display();
-	if (!this.config.usePazpar2Facets ||
-		this.currentView.type === 'clipboard' ||
+	that.display();
+	if (!that.config.usePazpar2Facets ||
+		that.currentView.type === 'clipboard' ||
 		forceFacetUpdate) {
-		this.updateFacetLists();
+		that.updateFacetLists();
 	}
 };
