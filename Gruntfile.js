@@ -18,15 +18,22 @@ module.exports = function(grunt) {
 
 		concat: {
 			build: {
+				dest: 'pz2-client.js',
 				src: [
 					'pz2.js',
 					'src/main.js',
 					'src/parts/config.js',
 					'src/parts/init.js',
-					'src/parts/*.js',
+					'src/parts/*.js', 
 					'src/localisation/*'
-				],
-				dest: 'pz2-client.js'
+				]
+			},
+			flot: {
+				dest: 'jquery.flot+selection.js',
+				src: [
+					'flot/jquery.flot.js',
+					'flot/jquery.flot.selection.js'
+				]
 			}
 		},
 
@@ -35,8 +42,14 @@ module.exports = function(grunt) {
 				banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
 			},
 			build: {
-				src: 'pz2-client.js',
-				dest: 'pz2-client.min.js'
+				files: {
+					'pz2-client.min.js': ['pz2-client.js']
+				}
+			},
+			flot: {
+				files: {
+					'jquery.flot+selection.min.js': ['jquery.flot+selection.js']
+				}
 			}
 		},
 
