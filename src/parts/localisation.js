@@ -23,6 +23,21 @@ pz2_client.prototype.localise = function (term, dictionaryName) {
 		dictionary = this.localisations[dictionaryName];
 	}
 
+	if (this.pageLanguage === undefined) {
+		// Determine the page’s language as set in html/@lang for localisations ASAP.
+		// If not set, use English.
+		var HTMLLanguage = jQuery('html').attr('lang');
+		if (HTMLLanguage.length === 2) {
+			this.pageLanguage = HTMLLanguage;
+		}
+		else if (HTMLLanguage.length > 2 && HTMLLanguage[2] === '_') {
+			this.pageLanguage = HTMLLanguage.substring(0, 2);
+		}
+		else {
+			this.pageLanguage = 'en';
+		}
+	}
+
 	var languageDict = dictionary[this.pageLanguage];
 	if (languageDict === undefined) {
 		languageDict = dictionary['en'];

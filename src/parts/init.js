@@ -12,19 +12,6 @@ pz2_client.prototype.init = function (setup) {
 		this.config[key] = setup[key];
 	}
 
-	// Determine the page’s language as set in html/@lang for localisations.
-	// If not set, use English.
-	var HTMLLanguage = jQuery('html').attr('lang');
-	if (HTMLLanguage.length === 2) {
-		this.pageLanguage = HTMLLanguage;
-	}
-	else if (HTMLLanguage.length > 2 && HTMLLanguage[2] === '_') {
-		this.pageLanguage = HTMLLanguage.substring(0, 2);
-	}
-	else {
-		this.pageLanguage = 'en';
-	}
-
 	// Set up handlers for form submission and extended/simple search toggling.
 	var pRemoveExtendedSearch = jQuery.proxy(this.removeExtendedSearch, this);
 	var pAddExtendedSearch = jQuery.proxy(this.addExtendedSearch, this);
