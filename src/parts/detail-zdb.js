@@ -252,6 +252,7 @@ pz2_client.prototype.addZDBInfoIntoElement = function (data, element) {
 		parameters.aulast = parameters.au[0].split(',')[0];
 		delete parameters.au;
 	}
+	delete parameters.jtitle;
 	if (parameters && (parameters.genre === 'article' || parameters.genre === 'journal')) {
 		var parameterString = jQuery.param(parameters, true);
 		jQuery.get(ZDBPath, parameterString, processZDBResult);

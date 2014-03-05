@@ -52,6 +52,9 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 	var author = record['md-author'];
 	if (author && author.length > 0) { parameters['au'] = record['md-author']; }
 
+	var journalTitle = record['md-journal-title'];
+	if (journalTitle && journalTitle.length > 0) { parameters['jtitle'] = journalTitle[0]; }
+
 	var title = record['md-title'];
 
 
@@ -74,7 +77,7 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 		// it’s a journal
 		parameters['genre'] = 'journal';
 
-		var journalTitle = record['md-title'];
+		journalTitle = record['md-title'];
 		if (journalTitle && journalTitle.length > 0) { parameters['title'] = journalTitle[0]; }
 	}
 	else {
