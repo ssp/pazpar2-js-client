@@ -64,7 +64,7 @@ The following options are available to adjust the details of pz2-client’s oper
 
 ### Autocompletion
 * `autocompleteURLs` (object, default: `{}`): keys are search field names (e.g. all, title, person), values are URLs that can be queried for autocomplete terms
-* `autocompleteSetupFunction` (function, default: `undefined`): function (URL, fieldName) that is run when setting up the autocomplete feature. Returns an object for configuring [jQuery UI’s autocomplete widget](http://api.jqueryui.com/autocomplete/). Functions `autocompleteSetupArray` for sources that return JSON arrays and `autocompleteSolrSpellcheck` for querying a Solr spellcheck component are predefined.
+* `autocompleteSetupFunction` (function, default: `undefined`): function (URL, fieldName) that is run when setting up the autocomplete feature. Returns an object for configuring [jQuery UI’s autocomplete widget](http://api.jqueryui.com/autocomplete/). Functions `pz2client.autocompleteSetupArray` for sources that return JSON arrays, `pz2client.autocompleteSolrSpellcheck` for querying a Solr spellcheck component and `pz2client.autocompleteSetupHistory` for using recent search terms (see the next section) are predefined.
 
 ### Search History
 * `historyItems` (integer, default: `99`): Number of recent search queries to store when local storage is available; set to `0` to deactivate
