@@ -87,7 +87,7 @@ pz2_client.prototype.initialiseService = function () {
 			onbytarget: jQuery.proxy(this.onbytarget, this),
 			onstat: jQuery.proxy(this.onstat, this),
 			errorhandler: jQuery.proxy(this.onerror, null, this),
-			showResponseType: this.config.showResponseType
+			showResponseType: ''
 		};
 
 		if (this.config.usePazpar2Facets) {
