@@ -59,7 +59,7 @@ pz2_client.prototype.search = function () {
 		);
 	}
 	catch (exception) {
-		console.log(exception);
+		that.initialiseService();
 	}
 };
 
