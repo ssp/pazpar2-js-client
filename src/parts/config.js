@@ -5,10 +5,12 @@
  */
 pz2_client.prototype.config = {
 	pazpar2Path: '/pazpar2/search.pz2',
+			
+	useServiceProxy: false,
+	serviceProxyPath: '/service-proxy',
+	serviceProxyAuthPath: '/service-proxy-auth',
 
 	serviceID: null,
-
-	showResponseType: '',
 
 	/**
 	 * List of all facet types to loop over.
@@ -21,7 +23,6 @@ pz2_client.prototype.config = {
 		xtargets: {'maxFetch': 25, 'minDisplay': 1},
 		medium: {'maxFetch': 12, 'minDisplay': 1},
 		language: {'maxFetch': 5, 'minDisplay': 1}, // excluding the unknown item and with +2 'wiggle room'
-		// 'author': {'maxFetch': 10, 'minDisplay': 1},
 		filterDate: {'maxFetch': 10, 'minDisplay': 5}
 	},
 	// Use facet data as provided by pazpar2 or create our own?
@@ -39,9 +40,6 @@ pz2_client.prototype.config = {
 	// or /zdb-local/ (passing on the server’s IP) depending on ZDBUseClientIP.
 	useZDB: false,
 	ZDBUseClientIP: true,
-
-	// The maximum number of authors to display in the short result.
-	maxAuthors: 3,
 
 	// List of export formats we provide links for. An empty list suppresses the
 	// creation of export links. Supported list items are: 'ris', 'bibtex',
