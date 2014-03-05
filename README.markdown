@@ -23,7 +23,7 @@ For the scripts to operate successfully, you will need:
 * '''for pazpar2 use through Service Proxy:''' Service Proxy (or a reverse proxy forwarding to it) set up at the path `/service-proxy/` and Service Proxy Authentication set up at the path `/service-proxy-auth`. This can be overriden by setting the JavaScript variables `serviceProxyPath` and `serviceProxyAuthPath` before loading pz2-client.js.
 * your results will be best if you use the same metadata fields we do. These are based on the ones provided by `tmarc.xsl `and augmented with additional fields in a few areas. The full list of fields can be found in the Readme of the [pazpar2 TYPO3 Extension](https://github.com/ssp/typo3-pazpar2).
 * [jQuery ≥ 1.7.1](http://jquery.com/) or above included in your site
-* [flot](http://code.google.com/p/flot/) with its selection module included in your site if you set the useHistogramForYearFacets option to true; the script is included in the repository as a submodule at `flot`
+* [flot](http://www.flotcharts.org/) with its selection module included in your site if you set the useHistogramForYearFacets option to true; the script is included in the repository as a submodule at `flot`, a minified version of both is in `jquery.flot+selection.js`
 * [jQuery Storage API](https://github.com/julien-maurel/jQuery-Storage-API) included in your site if you want to use the clipboard or search history features; the script is included in the repository as a submodule at `jquery-storage`
 * for the optional usage of ZDB journal availability information (mainly useful in Germany), you are expected to proxy [ZDB’s Journals Online & Print](http://www.zeitschriftendatenbank.de/services/journals-online-print/) service to the /zdb/ and /zdb-local/ paths of your server [[example apache configuration]](https://github.com/ssp/vlibs-typo3/blob/aac/fileadmin/apache/zdb.conf).
 * your web page to initialise pz-client on domReady with your settings; e.g. using `jQuery.ready(function () { pz2_client.init(yourSettings) })`
@@ -118,8 +118,7 @@ The configuration of the [vifanord](http://vifanord.de/?id=16) site can be used 
 	  <script src="typo3conf/ext/pazpar2/Resources/Public/pz2-client/pz2-client.min.js" type="text/javascript"/>
 	  <script src="typo3conf/ext/pazpar2/Resources/Public/pz2-client/jquery-storage/jquery.storageapi.min.js" type="text/javascript"/>
 	  <script src="https://www.google.com/jsapi" type="text/javascript"/>
-	  <script src="typo3conf/ext/pazpar2/Resources/Public/pz2-client/flot/jquery.flot.js" type="text/javascript"/>
-	  <script src="typo3conf/ext/pazpar2/Resources/Public/pz2-client/flot/jquery.flot.selection.js" type="text/javascript"/>
+	  <script src="typo3conf/ext/pazpar2/Resources/Public/pz2-client/jquery.flot+selection.js" type="text/javascript"/>
 	  <script type="text/javascript">/*<![CDATA[*/
 	  <!--
 		jQuery(document).ready(function() {pz2client.init(
