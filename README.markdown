@@ -1,7 +1,7 @@
 # pazpar2-js-client
 A JavaScript client to interact with [Index Data’s pazpar2](http://www.indexdata.com/pazpar2) metasearch software and to display its search results.
 
-2010-2014 by [Sven-S. Porst](http://earthlingsoft.net/ssp/) [<ssp-web@earthlingsoft.net](mailto:ssp-web@earthlingsoft.net?subject=pz2-client)
+2010-2014 by [Sven-S. Porst](http://earthlingsoft.net/ssp/) [<ssp-web@earthlingsoft.net>](mailto:ssp-web@earthlingsoft.net?subject=pz2-client)
 
 
 
@@ -11,7 +11,9 @@ An example implementation of the markup for use in the TYPO3 content management 
 This extension and the markup it creates can be seen in use on the [Lib AAC](http://aac.sub.uni-goettingen.de/) or [vifanord](http://vifanord.de/) website.
 
 ## Build
-Source code is inside the `src` folder. [Grunt](http://gruntjs.com/) is used to assemble the files into the `pz-client.js` or `pz-client.min.js` files you should include on your site.
+Source code is inside the `src` folder.
+
+[Grunt](http://gruntjs.com/) is used to assemble the files into the `pz-client.js` or `pz-client.min.js` files you should include on your site.
 
 
 ## Setup
@@ -19,11 +21,11 @@ Include `pz2-client.min.js `and `pz2.css` in your HTML file to load the resource
 
 For the scripts to operate successfully, you will need:
 
-* '''for direct pazpar2 use:''' a pazpar2 server (or a reverse proxy forwarding to it) set up at the path `/pazpar2/search.pz2` of your web server [[example apache configuration]](https://raw.github.com/ssp/vlibs-pazpar2/blob/master/fileadmin/apache/pazpar2.conf). This can be overriden by setting the JavaScript variable `pazpar2Path` before loading pz2-client.js.
-* '''for pazpar2 use through Service Proxy:''' Service Proxy (or a reverse proxy forwarding to it) set up at the path `/service-proxy/` and Service Proxy Authentication set up at the path `/service-proxy-auth`. This can be overriden by setting the JavaScript variables `serviceProxyPath` and `serviceProxyAuthPath` before loading pz2-client.js.
+* __for direct pazpar2 use:__ a pazpar2 server (or a reverse proxy forwarding to it) set up at the path `/pazpar2/search.pz2` of your web server [[example apache configuration]](https://raw.github.com/ssp/vlibs-pazpar2/blob/master/fileadmin/apache/pazpar2.conf). This can be overriden by setting the JavaScript variable `pazpar2Path` before loading pz2-client.js.
+* __for pazpar2 use through Service Proxy:__ Service Proxy (or a reverse proxy forwarding to it) set up at the path `/service-proxy/` and Service Proxy Authentication set up at the path `/service-proxy-auth`. This can be overriden by setting the JavaScript variables `serviceProxyPath` and `serviceProxyAuthPath` before loading pz2-client.js.
 * your results will be best if you use the same metadata fields we do. These are based on the ones provided by `tmarc.xsl `and augmented with additional fields in a few areas. The full list of fields can be found in the Readme of the [pazpar2 TYPO3 Extension](https://github.com/ssp/typo3-pazpar2).
-* [jQuery ≥ 1.7.1](http://jquery.com/) or above included in your site
-* [flot](http://www.flotcharts.org/) with its selection module included in your site if you set the useHistogramForYearFacets option to true; the script is included in the repository as a submodule at `flot`, a minified version of both is in `jquery.flot+selection.js`
+* [jQuery ≥ 1.7.1](http://jquery.com/) included in your site
+* [flot](http://www.flotcharts.org/) with its selection module included in your site if you set the `useHistogramForYearFacets` option to true; the script is included in the repository as a submodule at `flot`, a minified version of both is in `jquery.flot+selection.js`
 * [jQuery Storage API](https://github.com/julien-maurel/jQuery-Storage-API) included in your site if you want to use the clipboard or search history features; the script is included in the repository as a submodule at `jquery-storage`
 * for the optional usage of ZDB journal availability information (mainly useful in Germany), you are expected to proxy [ZDB’s Journals Online & Print](http://www.zeitschriftendatenbank.de/services/journals-online-print/) service to the /zdb/ and /zdb-local/ paths of your server [[example apache configuration]](https://github.com/ssp/vlibs-typo3/blob/aac/fileadmin/apache/zdb.conf).
 * your web page to initialise pz-client on domReady with your settings; e.g. using `jQuery.ready(function () { pz2_client.init(yourSettings) })`
