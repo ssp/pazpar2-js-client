@@ -33,7 +33,7 @@ pz2_client.prototype.init = function (setup) {
 	jQuery('#pazpar2').prepend(linkDiv);
 
 	// Set up local storage if possible.
-	if (window.localStorage && jQuery.localStorage) {
+	if (window.localStorage && jQuery.localStorage && typeof(JSON) !== 'undefined') {
 		this.storage = jQuery.initNamespaceStorage('pazpar2');
 		this.appendHistoryLinkToContainer(linkDiv);
 		this.appendClipboardLinkToContainer(linkDiv);
