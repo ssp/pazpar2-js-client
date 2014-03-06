@@ -13,7 +13,7 @@ This extension and the markup it creates can be seen in use on the [Lib AAC](htt
 ## Build
 Source code is inside the `src` folder.
 
-[Grunt](http://gruntjs.com/) is used to assemble the files into the `pz-client.js` or `pz-client.min.js` files you should include on your site.
+To »build« the script you need [nodejs]() and [Grunt](http://gruntjs.com/). Inside the `pazpar2-client` folder run `npm install` and then `grunt`. If you plan to edit `pz-client.js` you can use `grunt watch`.
 
 
 ## Setup
