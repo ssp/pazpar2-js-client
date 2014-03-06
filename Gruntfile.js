@@ -47,6 +47,9 @@ module.exports = function(grunt) {
 				}
 			},
 			flot: {
+				options: {
+					banner: ''
+				},
 				files: {
 					'jquery.flot+selection.min.js': ['jquery.flot+selection.js']
 				}
