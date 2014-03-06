@@ -778,19 +778,30 @@ var pzHttpRequest = function (url, errorHandler, cookieDomain) {
         this.domainRegex = /https?:\/\/([^:/]+).*/;
 		this.cookieDomain = cookieDomain || null;
 
-        var xhr = new XMLHttpRequest();
-        var domain = this._getDomainFromUrl(url);
-        if ("withCredentials" in xhr) {
-          // XHR for Chrome/Firefox/Opera/Safari.
-        } else if (domain && this._isCrossDomain(domain) &&
-            typeof XDomainRequest != "undefined") {
-          // use XDR (IE7/8) when no other way
-          xhr = new XDomainRequest();
-          this.isXDR = true;
-        } else {
-          // CORS not supported.
-        }
-        this.request = xhr;
+		if (window.XMLHttpRequest) {
+			var xhr = new XMLHttpRequest();
+			var domain = this._getDomainFromUrl(url);
+			if ("withCredentials" in xhr) {
+				// XHR for Chrome/Firefox/Opera/Safari.
+			}
+			else if (domain && this._isCrossDomain(domain) &&
+						typeof XDomainRequest !== "undefined") {
+				// use XDR (IE7/8) when no other way
+				xhr = new XDomainRequest();
+				this.isXDR = true;
+			} else {
+				// CORS not supported.
+			}
+			this.request = xhr;
+		}
+		else if (window.ActiveXObject) {
+			try {
+				this.request = new ActiveXObject( 'Msxml2.XMLHTTP' );
+			}
+			catch (err) {
+				this.request = new ActiveXObject( 'Microsoft.XMLHTTP' );
+			}
+		}
 };
 
 
