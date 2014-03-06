@@ -1001,7 +1001,7 @@ pzHttpRequest.prototype =
 				err = new Error(errorMessage + errorInformation);
 				err.code = errorCode;
 				if (this.errorHandler) {
-					this.errorHandler(err);
+					this.errorHandler(err, this.request);
 				}
 				else {
 					throw err;

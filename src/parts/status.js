@@ -161,43 +161,43 @@ pz2_client.prototype.onstat = function (data) {
 
 
 /**
- * @param {object} that - pz2_client
  * @param {object} error
+ * @param {XMLHttpRequest} request
  * @returns {undefined}
  */
-pz2_client.prototype.onerror = function (that, error) {
-	that.errorCount++;
+pz2_client.prototype.onerror = function (error, request) {
+	this.errorCount++;
 	var errorCode = parseInt(error.code, 10);
 
-	if (errorCode !== 12 && that.errorCount < 3 && this.request.status < 500) {
-		if (errorCode === 1 && this.request.status === 417) {
+	if (errorCode !== 12 && this.errorCount < 3 && request.status < 500) {
+		if (errorCode === 1 && request.status === 417) {
 			// The pazpar2 session has expired: create a new one.
-			that.initialisePazpar2();
+			this.initialisePazpar2();
 		}
-		else if (errorCode === 100 && this.request.status === 417) {
+		else if (errorCode === 100 && request.status === 417) {
 			// The Service Proxy session has expired / cookie got lost: create a new one.
-			that.initialiseServiceProxy();
+			this.initialiseServiceProxy();
 		}
 	}
 	else  {
 		// The service is unavailable: Disable the search form.
 		var jRecordCount = jQuery('.pz2-recordCount');
 		jRecordCount.empty();
-		var message = that.localise('Suche momentan nicht verfügbar.', 'status');
+		var message = this.localise('Suche momentan nicht verfügbar.', 'status');
 		jRecordCount.text(message);
 		jRecordCount.addClass('pz2-noResults');
 
-		if (that.pz2InitTimeout !== undefined) {
-			clearTimeout(that.pz2InitTimeout);
+		if (this.pz2InitTimeout !== undefined) {
+			clearTimeout(this.pz2InitTimeout);
 		}
 
-		that.pz2InitTimeout = setTimeout(jQuery.proxy(that.initialiseService, that), 15000);
-		that.errorCount = 0;
+		this.pz2InitTimeout = setTimeout(jQuery.proxy(this.initialiseService, this), 15000);
+		this.errorCount = 0;
 	}
 
 	// If  the error happens while loading, clear the current search term,
 	// to allow restarting the search.
-	if (that.my_paz.activeClients > 0) {
-		that.currentView.query = null;
+	if (this.my_paz.activeClients > 0) {
+		this.currentView.query = null;
 	}
 };

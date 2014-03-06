@@ -86,7 +86,7 @@ pz2_client.prototype.initialiseService = function () {
 			showtime: 1000, //each timer (show, stat, term, bytarget) can be specified this way
 			onbytarget: jQuery.proxy(this.onbytarget, this),
 			onstat: jQuery.proxy(this.onstat, this),
-			errorhandler: jQuery.proxy(this.onerror, null, this),
+			errorhandler: jQuery.proxy(this.onerror, this),
 			showResponseType: ''
 		};
 
