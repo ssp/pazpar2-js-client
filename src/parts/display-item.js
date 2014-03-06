@@ -76,7 +76,7 @@ pz2_client.prototype.createResultItem = function (hit) {
 	 */
 	var authorInfo = function() {
 		var output;
-		var outputText;
+		var outputText = '';
 
 		if (hit['md-title-responsibility'] !== undefined) {
 			// use responsibility field if available
@@ -87,11 +87,13 @@ pz2_client.prototype.createResultItem = function (hit) {
 			var authors = [];
 			for (var index = 0; index < hit['md-author'].length; index++) {
 				if (index < that.config.maxAuthors) {
-					var authorname = hit['md-author'][index];
-					authors.push(authorname);
+					var authorName = hit['md-author'][index];
+					authors.push(authorName);
 				}
 				else {
-					authors.push(that.localise('et al.'));
+					if (that.config.maxAuthors > 0) {
+						authors.push(that.localise('et al.'));
+					}
 					break;
 				}
 			}
@@ -99,7 +101,7 @@ pz2_client.prototype.createResultItem = function (hit) {
 			outputText = authors.join('; ');
 		}
 
-		if (outputText) {
+		if (outputText !== '') {
 			output = document.createElement('span');
 			jQuery(output).addClass('pz2-item-responsibility');
 			output.appendChild(document.createTextNode(outputText));

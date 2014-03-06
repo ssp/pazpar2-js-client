@@ -33,7 +33,6 @@ For the scripts to operate successfully, you will need:
 A number of parameters can be configured in the `yourSettings` object passed to `pz2_client.init()`. Essential service specific ones are:
 
 ### Service
-
 * when querying pazpar2 directly:
 	* `serviceID` (string): the pazpar2 service to use
 	* `pazpar2Path` (string, default: `/pazpar2/search.pz2): the path of the pazpar2 service on the web server
@@ -44,6 +43,9 @@ A number of parameters can be configured in the `yourSettings` object passed to 
 
 The following options are available to adjust the details of pz2-client’s operation and display:
 
+
+### Short Display
+* `maxAuthors` (integer, default: `3`): the maximum number of authord to be displayed for the result in the result list (the remaining authors will be added to the detail view).
 
 ### Facets
 * `termLists` (object, default: `{xtargets: {maxFetch: 25, minDisplay: 1}, medium: {maxFetch: 12, minDisplay: 1}, language: {maxFetch: 5, minDisplay: 1}, filterDate: {maxFetch: 10, minDisplay: 5}}`): facet configuration; `maxFetch` is the maximum number of facet items displayed by default (the rest is hidden), `minDisplay` is the minimum number of facet items required for the facet to be displayed at all

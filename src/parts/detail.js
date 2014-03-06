@@ -761,6 +761,11 @@ pz2_client.prototype.renderDetails = function (data) {
 			}
 		};
 
+		data['md-author-clean'] = data['md-author'];
+		data['md-other-person-clean'] = data['md-other-person'];
+		data['md-corporate-clean'] = data['md-corporate'];
+		data['md-meeting-clean'] = data['md-meeting'];
+
 		var allResponsibility = '';
 		if (data['md-title-responsibility']) {
 			allResponsibility = data['md-title-responsibility'].join('; ');
@@ -770,7 +775,7 @@ pz2_client.prototype.renderDetails = function (data) {
 			cleanFieldBasedOnString('meeting', allResponsibility, false);
 			cleanFieldBasedOnString('corporate', allResponsibility, false);
 		}
-		else if (data['md-author'] && data['md-author'].length > that.config.maxAuthors) {
+		else if (data['md-author']) {
 			data['md-author-clean'] = data['md-author'].slice(that.config.maxAuthors);
 		}
 
