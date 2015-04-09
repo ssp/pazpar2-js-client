@@ -767,7 +767,7 @@ pz2.prototype =
 ** AJAX HELPER CLASS ***********************************************************
 ********************************************************************************
 */
-var pzHttpRequest = function (url, errorHandler, cookieDomain) {
+var pzHttpRequest = function (url, errorHandler, cookieDomain, windowId) {
         this.maxUrlLength = 512;
         this.request = null;
         this.url = url;
@@ -777,6 +777,7 @@ var pzHttpRequest = function (url, errorHandler, cookieDomain) {
         this.isXDR = false;
         this.domainRegex = /https?:\/\/([^:/]+).*/;
 		this.cookieDomain = cookieDomain || null;
+		this.windowId = windowId || window.name;
 
 		if (window.XMLHttpRequest) {
 			var xhr = new XMLHttpRequest();
@@ -915,9 +916,9 @@ pzHttpRequest.prototype =
         //session cookie, resend it
         var domain = this._getDomainFromUrl(url);
         if (domain && this._isCrossDomain(domain) &&
-            this.getCookie(domain+":SESSID")) {
+        		this.getCookie(domain+":"+this.windowId+":SESSID")) {
           //rewrite the URL
-          var sessparam = ';jsessionid=' + this.getCookie(domain+":SESSID");
+          var sessparam = ';jsessionid=' + this.getCookie(domain+":"+this.windowId+":SESSID");
           var q = url.indexOf('?');
           if (q == -1) {
             url += sessparam;
@@ -1044,7 +1045,7 @@ pzHttpRequest.prototype =
                   var jsessionId = this.request.responseXML
                     .documentElement.getAttribute('jsessionId');
                   if (jsessionId)
-                    this.setCookie(domain+":SESSID", jsessionId);
+                	this.setCookie(domain+":"+this.windowId+":SESSID", jsessionId);
                 }
 				this.callback(this.request.responseXML);
 			}
