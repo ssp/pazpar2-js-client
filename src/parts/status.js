@@ -82,34 +82,44 @@ pz2_client.prototype.onbytarget = function (data) {
 	table.appendChild(tbody);
 
 	for (var i = data.length - 1; 0 <= i; i--) {
+		var dataItem = data[i];
+
 		tr = document.createElement('tr');
 		tbody.appendChild(tr);
+		
 		td = document.createElement('th');
 		tr.appendChild(td);
-		td.appendChild(document.createTextNode(this.localise(data[i].id, 'facet-xtargets')));
-		td.title = data[i].id;
+		td.appendChild(document.createTextNode(this.localise(dataItem.id, 'facet-xtargets')));
+		td.title = dataItem.id;
 		td.setAttribute('headers', 'pz2-target-name');
+		
 		td = document.createElement('td');
 		tr.appendChild(td);
-		td.appendChild(document.createTextNode(data[i].records));
+		var recordCount = dataItem.records.toString();
+		if (dataItem.filtered !== undefined && dataItem.filtered > 0) {
+			recordCount += ' (+' + dataItem.filtered.toString() + ')';
+		} 
+		td.appendChild(document.createTextNode(recordCount));
 		td.setAttribute('headers', 'pz2-target-loaded');
+		
 		td = document.createElement('td');
 		tr.appendChild(td);
-		var hitCount = data[i].hits;
+		var hitCount = dataItem.hits;
 		if (hitCount === -1) {
 			hitCount = '?';
 		}
 		td.appendChild(document.createTextNode(hitCount));
 		td.setAttribute('headers', 'pz2-target-hits');
+		
 		td = document.createElement('td');
 		tr.appendChild(td);
-		td.appendChild(document.createTextNode(this.localise(data[i].state, 'status')));
-		if (parseInt(data[i].diagnostic, 10) !== 0) {
-			td.setAttribute('title', this.localise('Code', 'status') + ': ' + data[i].diagnostic);
+		td.appendChild(document.createTextNode(this.localise(dataItem.state, 'status')));
+		if (parseInt(dataItem.diagnostic, 10) !== 0) {
+			td.setAttribute('title', this.localise('Code', 'status') + ': ' + dataItem.diagnostic);
 		}
 		td.setAttribute('headers', 'pz2-target-status');
 
-		this.targetStatus[data[i].name] = data[i];
+		this.targetStatus[dataItem.name] = dataItem;
 	}
 
 	if (this.my_paz.activeClients === 0) {
