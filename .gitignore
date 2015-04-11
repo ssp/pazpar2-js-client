@@ -1,3 +1,5 @@
 pz2-client.js
 pz2-client.min.js
 node_modules
+.project
+.settings
