@@ -155,6 +155,21 @@ pz2_client.prototype.updateFacetLists = function () {
 
 
 		/**
+		 * Create the link for removing a (text) facet selection.
+		 * 
+		 * @return {DOMElement} - link
+		 */
+		var createFacetCancelLink = function () {
+			var cancelLink = document.createElement('a');
+			cancelLink.setAttribute('href', '#');
+			jQuery(cancelLink).addClass('pz2-facetCancel');
+			cancelLink.appendChild(document.createTextNode(that.localise('Filter aufheben', 'facets')));
+			return cancelLink;
+		};
+
+
+
+		/**
 		 * Return OL with facet items for the passed terms.
 		 * 
 		 * @param {array} terms - facet terms to display
@@ -253,12 +268,7 @@ pz2_client.prototype.updateFacetLists = function () {
 					for (var filterTerm in that.currentView.filters[type]) {
 						if (facetTerm === filterTerm) {
 							jItem.addClass('pz2-activeFacet');
-							var cancelLink = document.createElement('a');
-							var jCancelLink = jQuery(cancelLink);
-							item.appendChild(cancelLink);
-							cancelLink.setAttribute('href', '#');
-							jCancelLink.addClass('pz2-facetCancel');
-							cancelLink.appendChild(document.createTextNode(that.localise('Filter aufheben', 'facets')));
+							item.appendChild(createFacetCancelLink());
 							break;
 						}
 					}
@@ -304,14 +314,26 @@ pz2_client.prototype.updateFacetLists = function () {
 			}
 			heading.appendChild(document.createTextNode(headingText));
 
-			// Display histogram if set up and able to do so.
-			if (that.config.useHistogramForYearFacets &&
-				(type === 'filterDate' || type === 'date') &&
-				(!that.MSIEVersion() || that.MSIEVersion() >= 9)) {
-				that.appendFacetHistogramForDatesTo(terms, type, container);
+			if (terms.length > 0) {
+				// We have facet terms: display them.
+				if (that.config.useHistogramForYearFacets &&
+					(type === 'filterDate' || type === 'date') &&
+					(!that.MSIEVersion() || that.MSIEVersion() >= 9)) {
+					// Display histogram if set up and able to do so.
+					that.appendFacetHistogramForDatesTo(terms, type, container);
+				}
+				else {
+					// Display standard facet terms.
+					container.appendChild(facetDisplayTermsForType(terms, type));
+				}
 			}
 			else {
-				container.appendChild(facetDisplayTermsForType(terms, type));
+				// There are no facet terms, but a facet has been selected.
+				// This would not happen if filtering always worked perfectly,
+				// but as it does, give the user a chance to undo the facet selection.
+				var facetCancelLink = createFacetCancelLink();
+				jQuery(facetCancelLink).addClass('pz2-activeFacet');
+				container.appendChild(facetCancelLink);
 			}
 		}
 
