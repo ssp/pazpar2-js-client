@@ -169,6 +169,10 @@
 	padding-top: 20px;
 }
 
+.searchStartedNoResultsYet #pz2-recordView {
+	opacity: 0.5;
+}
+
 .pz2-recordLink {
 	display: block;
 }

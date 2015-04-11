@@ -57,6 +57,7 @@ pz2_client.prototype.search = function () {
 			undefined,
 			{'limit': that.currentView.limit}
 		);
+		jQuery('#pazpar2').addClass('searchStartedNoResultsYet');
 	}
 	catch (exception) {
 		that.initialiseService();
