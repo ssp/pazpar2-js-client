@@ -53,8 +53,8 @@ pz2_client.prototype.init = function (setup) {
 		.on('click', 'a.pz2-addToClipboardLink.pz2-delete', jQuery.proxy(this.deleteFromClipboard, this));
 	jQuery('.pz2-pager')
 		.on('click', '.pz2-pageNumber a', jQuery.proxy(this.pagerGoto , this))
-		.on('click', 'a.pz2-prev', jQuery.proxy(this.pagerPrev, this))
-		.on('click', 'a.pz2-next', jQuery.proxy(this.pagerNext, this))
+		.on('click', 'a.pz2-prev[href]', jQuery.proxy(this.pagerPrev, this))
+		.on('click', 'a.pz2-next[href]', jQuery.proxy(this.pagerNext, this))
 		.on('click', '.pz2-recordCount', jQuery.proxy(this.toggleStatus, this));
 	jQuery('.pz2-sort, .pz2-perPage')
 		.on('change', jQuery.proxy(this.formSelectDidChange, this));
