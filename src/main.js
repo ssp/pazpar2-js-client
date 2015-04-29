@@ -7,7 +7,7 @@
  * Please refer to the Readme in the repository at:
  * https://github.com/ssp/pazpar2-js-client
  *
- * 2010-2014: Sven-S. Porst <ssp-web@earthlingsoft.net>
+ * 2010-2015: Sven-S. Porst <ssp-web@earthlingsoft.net>
  */
 function pz2_client () {
 
@@ -63,7 +63,6 @@ function pz2_client () {
 
 	this.displayHitList = []; // filtered and sorted list used for display
 	this.displayHitListUpToDate = []; // list filtered for all conditions but the date used for drawing the date histogram
-	
 }
 
 
