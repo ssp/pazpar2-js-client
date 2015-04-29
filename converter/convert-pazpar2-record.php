@@ -2,8 +2,7 @@
 /*************************************************************************
  *  Copyright notice
  *
- *  © 2011 Sven-S. Porst, SUB Göttingen <porst@sub.uni-goettingen.de>
- *  All rights reserved
+ *  © 2011 Sven-S. Porst <ssp-web@earthlingsoft.net>
  *
  *  This script is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
