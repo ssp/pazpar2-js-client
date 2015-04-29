@@ -50,14 +50,14 @@ pz2_client.prototype.deduplicate = function (information) {
  * @returns {undefined}
  */
 pz2_client.prototype.trackPiwik = function (action, info) {
-	if (typeof(piwikTracker) !== 'undefined') {
+	if (typeof _paq !== 'undefined') {
 		var pageURL = document.URL.replace(/\/$/,'') + '/pazpar2/' + action;
 		if (info) {
 			pageURL += '/' + info;
 		}
-		piwikTracker.setCustomUrl(pageURL);
-		piwikTracker.trackPageView('pazpar2: ' + action);
-		piwikTracker.setCustomUrl(document.URL);
+		_paq.push(['setCustomUrl', pageURL]);
+		_paq.push(['trackPageView', 'pazpar2: ' + action]);
+		_paq.push(['setCustomUrl', document.URL]);
 	}
 };
 
