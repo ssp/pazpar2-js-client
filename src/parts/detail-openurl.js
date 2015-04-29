@@ -58,7 +58,7 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 	var title = record['md-title'];
 
 
-	if (record['md-medium'][0] === 'article') {
+	if (record['md-medium'] && record['md-medium'][0] === 'article') {
 		parameters['genre'] = 'article';
 
 		// Add additional information to request to get more precise result and better display.
@@ -81,7 +81,7 @@ pz2_client.prototype.OpenURLParametersForRecord = function (record) {
 		if (journalTitle && journalTitle.length > 0) { parameters['title'] = journalTitle[0]; }
 	}
 	else {
-		if (record['md-medium'][0] === 'book') {
+		if (record['md-medium'] && record['md-medium'][0] === 'book') {
 			parameters['genre'] = 'book';
 			if (title && title.length > 0) { parameters['btitle'] = title[0]; }
 		}
