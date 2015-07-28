@@ -1,7 +1,7 @@
 /*
  * pz2-neuerwerbungen.js
  *
- * 2010-2012 by Sven-S. Porst, SUB Göttingen <porst@sub.uni-goettingen.de>
+ * 2010-2015 by Sven-S. Porst, earthlingsoft <ssp-web@earthlingsoft.net>
  *
  * JavaScript for interactive loading and display of new acquisitions by
  * the library.
@@ -67,9 +67,9 @@ function getPz2NeuerwerbungenCookie () {
 	for (var cookieIndex in cookies) {
 		var cookie = cookies[cookieIndex];
 		var equalsLocation = cookie.search('=');
-		if (equalsLocation != -1) {
+		if (equalsLocation !== -1) {
 			var cookieName = cookie.substring(0, equalsLocation);
-			if (cookieName == 'pz2neuerwerbungen-previousQuery') {
+			if (cookieName === 'pz2neuerwerbungen-previousQuery') {
 				var cookieValue = cookie.substring(equalsLocation +1);
 				var fieldNames = cookieValue.split(':');
 				for (var fieldNameIndex in fieldNames) {
@@ -114,10 +114,10 @@ function saveFormStateInCookie (form) {
 	for (var cookieItem in cookieInfo) {
 		cookieTerms.push(cookieItem);
 	}
-	var termsString = 'pz2neuerwerbungen-previousQuery=' + cookieTerms.join(':') + '; '
+	var termsString = 'pz2neuerwerbungen-previousQuery=' + cookieTerms.join(':') + '; ';
 	var expires = new Date((new Date).getTime() + 1000*60*60*24*365);
 	var expiresString = 'expires=' + expires.toGMTString() + '; ';
-	var pathString = 'path=/;'
+	var pathString = 'path=/;';
 	document.cookie = termsString + expiresString + pathString;
 }
 
@@ -258,7 +258,7 @@ function toggleParentCheckboxOf (checkbox) {
 	var fieldset = jQuery(checkbox).parents('fieldset')[0];
 	parentCheckbox = jQuery('legend :checkbox', fieldset);
 	
-	parentCheckbox.attr({'checked': (jQuery('li :checkbox', fieldset).length == jQuery('li :checked', fieldset).length)});
+	parentCheckbox.attr({'checked': (jQuery('li :checkbox', fieldset).length === jQuery('li :checked', fieldset).length)});
 }
 
 
