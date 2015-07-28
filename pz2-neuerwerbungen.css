@@ -24,11 +24,10 @@
 	font-weight: bold;
 }
 
-.pz2-fieldsets label {
+.pz2-neuerwerbungen .pz2-fieldsets label {
 	margin-right: 0.5em;
 	display: inline;
 }
-
 
 .pz2-months {
 	font-size: 133%;

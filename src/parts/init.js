@@ -30,7 +30,7 @@ pz2_client.prototype.init = function (setup) {
 	// Add links for optional features if so configured.
 	var linkDiv = document.createElement('div');
 	linkDiv.setAttribute('class', 'pz2-featureLinks');
-	jQuery('#pazpar2').prepend(linkDiv);
+	jQuery('.pazpar2').prepend(linkDiv);
 
 	// Set up local storage if possible.
 	if (window.localStorage && jQuery.localStorage && typeof(JSON) !== 'undefined') {
@@ -40,7 +40,7 @@ pz2_client.prototype.init = function (setup) {
 	}
 
 	// Remove the no-JS warning.
-	jQuery('#pazpar2').removeClass('pz2-noJS');
+	jQuery('.pazpar2').removeClass('pz2-noJS');
 
 	// Set up event handlers with jQuery delegation.
 	jQuery('#pz2-termLists')

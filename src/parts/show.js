@@ -50,7 +50,7 @@ pz2_client.prototype.onshow = function (data) {
 		}
 	};
 
-	jQuery('#pazpar2').removeClass('searchStartedNoResultsYet');
+	jQuery('.pazpar2').removeClass('searchStartedNoResultsYet');
 
 	this.currentHits = [];
 	for (var hitNumber in data.hits) {

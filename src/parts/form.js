@@ -57,7 +57,7 @@ pz2_client.prototype.search = function () {
 			undefined,
 			{'limit': that.currentView.limit}
 		);
-		jQuery('#pazpar2').addClass('searchStartedNoResultsYet');
+		jQuery('.pazpar2').addClass('searchStartedNoResultsYet');
 	}
 	catch (exception) {
 		that.initialiseService();
@@ -219,7 +219,7 @@ pz2_client.prototype.resetPage = function () {
 		this.config.termLists[facetIndex].showAll = undefined;
 	}
 
-	jQuery('#pazpar2').removeClass();
+	jQuery('.pazpar2').removeClass().addClass('pazpar2');
 	jQuery('#pz2-targetView td').text('-');
 	jQuery('.pz2-pager .pz2-progressIndicator').css({'width': 0});
 

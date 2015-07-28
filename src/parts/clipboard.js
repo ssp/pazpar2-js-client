@@ -156,7 +156,7 @@ pz2_client.prototype.deleteAllFromClipboard = function (event) {
  * @returns {boolean} - false
  */
 pz2_client.prototype.showClipboard = function (event) {
-	jQuery('#pazpar2').addClass('pz2-clipboardVisible');
+	jQuery('.pazpar2').addClass('pz2-clipboardVisible');
 	jQuery('.pz2-clipboardLink')
 		.off('click')
 		.on('click', jQuery.proxy(this.hideClipboard, this));
@@ -168,7 +168,7 @@ pz2_client.prototype.showClipboard = function (event) {
 	heading.setAttribute('id', 'pz2-clipboardHeading');
 	var jHeading = jQuery(heading);
 	jHeading.hide();
-	jQuery('#pazpar2').prepend(jHeading);
+	jQuery('.pazpar2').prepend(jHeading);
 	jHeading.position(jForm.position());
 	jHeading.height(jForm.height());
 	jHeading.width(jForm.width());
@@ -252,7 +252,7 @@ pz2_client.prototype.updateExportLinks = function () {
  * @returns {undefined} - false
  */
 pz2_client.prototype.hideClipboard = function (event) {
-	jQuery('#pazpar2').removeClass('pz2-clipboardVisible');
+	jQuery('.pazpar2').removeClass('pz2-clipboardVisible');
 	jQuery('.pz2-clipboardLink')
 		.off('click')
 		.on('click', jQuery.proxy(this.showClipboard, this));

@@ -72,11 +72,11 @@ The following options are available to adjust the details of pz2-client’s oper
 
 ### Search History
 * `historyItems` (integer, default: `99`): Number of recent search queries to store when local storage is available; set to `0` to deactivate
-* `addHistoryLink` (boolean, default: `false`): whether to add a link for showing the recent search terms inside `div.pz2-featureLinks` at the beginning of `#pazpar2` (alternatively you can use `pz2client.autocompleteSetupHistory` as `autocompleteSetupFunction` to expose recent search terms via autocompletion)
+* `addHistoryLink` (boolean, default: `false`): whether to add a link for showing the recent search terms inside `div.pz2-featureLinks` at the beginning of `.pazpar2` (alternatively you can use `pz2client.autocompleteSetupHistory` as `autocompleteSetupFunction` to expose recent search terms via autocompletion)
 
 ### Clipboard
 * `useClipboard` (boolean, default: `false`): whether to offer storing results in the clipboard when local storage is available
-* `addClipboardLink` (boolean, default: `false`): whether to add a link for showing the clipboard inside `div.pz2-featureLinks` at the beginning of `#pazpar2`
+* `addClipboardLink` (boolean, default: `false`): whether to add a link for showing the clipboard inside `div.pz2-featureLinks` at the beginning of `.pazpar2`
 
 ### Highlighting
 * `highlightSearchTerms` (boolean, default: `false`): whether to try and highlight the search terms found in the results’ fields
@@ -183,7 +183,7 @@ The configuration of the [vifanord](http://vifanord.de/?id=16) site can be used 
 ## DOM Elements
 The script expects specific DOM Elements containing its search form and serving as a container for search results. These should have the following structure:
 
-	<div id="pazpar2">
+	<div class="pazpar2">
 		<div class="pz2-JSNote">No JavaScript Notice</div>
 		<div class="pz2-accessNote"></div>
 		<form method="get" class="pz2-searchForm pz2-basic">
@@ -252,7 +252,7 @@ The script expects specific DOM Elements containing its search form and serving 
 	</div>
 
 
-The markup consists of the following blocks inside the div#pazpar2:
+The markup consists of the following blocks inside the `div.pazpar2`:
 
 * `.pz2-JSNote`: contains a note that is hidden by JavaScript on DOM Ready (giving a chance to inform users about JavaScript not being available)
 * `.pz2-accessNote`: information about the access privilegs as supplied by the [pazpar2-access](https://github.com/ssp/pazpar2-access) script is displayed here

@@ -5,8 +5,8 @@
  * @returns {Boolean} - false
  */
 pz2_client.prototype.toggleStatus = function () {
-	var jTargetView = jQuery('#pz2-targetView');
-	jQuery('#pazpar2 .pz2-recordCount').after(jTargetView);
+	var jTargetView = jQuery('.pz2-targetView');
+	jQuery('.pazpar2 .pz2-recordCount').after(jTargetView);
 	jTargetView.slideToggle('fast');
 	this.trackPiwik('status/toggle');
 	return false;
@@ -41,11 +41,11 @@ pz2_client.prototype.updateProgressBar = function (percentage) {
  * @returns {undefined}
  */
 pz2_client.prototype.onbytarget = function (data) {
-	var targetDiv = document.getElementById('pz2-targetView');
-	jQuery(targetDiv).empty();
+	var jTargetDiv = jQuery('.pz2-targetView');
+	jTargetDiv.empty();
 
 	var table = document.createElement('table');
-	targetDiv.appendChild(table);
+	jTargetDiv.append(table);
 
 	var caption = document.createElement('caption');
 	table.appendChild(caption);

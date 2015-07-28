@@ -136,7 +136,7 @@ pz2_client.prototype.showHistory = function () {
 	var that = this;
 
 	if (that.storage && that.storage.localStorage) {
-		jQuery('#pazpar2').addClass('pz2-historyVisible');
+		jQuery('.pazpar2').addClass('pz2-historyVisible');
 		jQuery('.pz2-historyLink')
 			.off('click')
 			.on('click', jQuery.proxy(that.hideHistory, that));
@@ -171,7 +171,7 @@ pz2_client.prototype.showHistory = function () {
 
 		var jContainer = jQuery(container);
 		jContainer.hide();
-		jQuery('#pazpar2').append(container);
+		jQuery('.pazpar2').append(container);
 		that.updateHistory();
 		jContainer.slideDown('fast');
 	}
@@ -193,7 +193,7 @@ pz2_client.prototype.hideHistory = function () {
 	var jHistory = jQuery('#pz2-history');
 
 	if (jHistory.length > 0) {
-		jQuery('#pazpar2').removeClass('pz2-historyVisible');
+		jQuery('.pazpar2').removeClass('pz2-historyVisible');
 		jQuery('.pz2-historyLink')
 			.off('click')
 			.on('click', jQuery.proxy(this.showHistory, this));

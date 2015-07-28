@@ -86,7 +86,7 @@ pz2_client.prototype.limitResults = function (kind, term) {
 	// Mark with class for selected facet. Remove spaces from strings.
 	var baseName = ('pz2-term-selected-' + kind).replace(this.classNameRegEx, '-');
 
-	jQuery('#pazpar2')
+	jQuery('.pazpar2')
 		.addClass(baseName)
 		.addClass(baseName + '-' + termString.replace(this.classNameRegEx, '-'));
 
@@ -152,14 +152,14 @@ pz2_client.prototype.updateLimits = function () {
 
 
 /**
- * Set up the CSS classes indicating faceting state on #pazpar2.
+ * Set up the CSS classes indicating faceting state on .pazpar2.
  *
  * @returns {undefined}
  */
 pz2_client.prototype.updateFacetingClasses = function () {
 	var baseName = 'pz2-term-selected-';
 
-	var jPazpar2 = jQuery('#pazpar2');
+	var jPazpar2 = jQuery('.pazpar2');
 	var classes = jPazpar2.attr('class').split(' ');
 
 	// Remove all faceting classes.
