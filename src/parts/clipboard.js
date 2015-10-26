@@ -47,7 +47,7 @@ pz2_client.prototype.addToClipboardItem = function (record) {
 			a.appendChild(document.createTextNode(this.localise('Aus der Merkliste entfernen', 'clipboard')));
 		}
 	}
-	
+
 	return li;
 };
 
@@ -94,9 +94,9 @@ pz2_client.prototype.addToClipboard = function (event) {
 	}
 
 	record['md-timeAddedToClipboard'] = jQuery.now();
-	
+
 	addRecordToClipboard(record);
-	
+
 	if (jLI.length > 0) {
 		this.updateClipboardItemForRecordItem(jLI[0]);
 	}
@@ -156,19 +156,20 @@ pz2_client.prototype.deleteAllFromClipboard = function (event) {
  * @returns {boolean} - false
  */
 pz2_client.prototype.showClipboard = function (event) {
-	jQuery('.pazpar2').addClass('pz2-clipboardVisible');
-	jQuery('.pz2-clipboardLink')
+	var jPazpar2 = jQuery(event.target).closest('.pazpar2');
+	jPazpar2.addClass('pz2-clipboardVisible');
+	jQuery('.pz2-clipboardLink', jPazpar2)
 		.off('click')
 		.on('click', jQuery.proxy(this.hideClipboard, this));
 
-	var jForm = jQuery('.pz2-searchForm');
+	var jForm = jQuery('.pz2-searchForm', jPazpar2);
 	jForm.animate({'opacity': 0}, 'fast');
-	
+
 	var heading = document.createElement('div');
 	heading.setAttribute('id', 'pz2-clipboardHeading');
 	var jHeading = jQuery(heading);
 	jHeading.hide();
-	jQuery('.pazpar2').prepend(jHeading);
+	jPazpar2.prepend(jHeading);
 	jHeading.position(jForm.position());
 	jHeading.height(jForm.height());
 	jHeading.width(jForm.width());

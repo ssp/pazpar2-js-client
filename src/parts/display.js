@@ -40,7 +40,7 @@ pz2_client.prototype.display = function () {
 				jQuery(LI).addClass('pz2-detailsVisible');
 			}
 		}
-		
+
 		return OL;
 	};
 
@@ -50,8 +50,8 @@ pz2_client.prototype.display = function () {
 
 	// Replace old results list
 	var OL = createResultsListOL();
-	
-	var jResults = jQuery('#pz2-results');
+
+	var jResults = jQuery('.pz2-results');
 	jQuery('.pz2-resultList', jResults).detach();
 	jResults.append(OL);
 
@@ -63,5 +63,5 @@ pz2_client.prototype.display = function () {
 		zoteroNotification.initEvent('ZoteroItemUpdated', true, true);
 		document.dispatchEvent(zoteroNotification);
 	}
-	
+
 };

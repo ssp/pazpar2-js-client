@@ -91,7 +91,7 @@ pz2_client.prototype.triggerSearchForForm = function (form, additionalQueryTerms
 		 * If operating on the »all« index, use the default CCL index without a name.
 		 * On other indexes »and«, »not« and »or« in the search string will be
 		 * replaced by the boolean operator with a following index name and '='.
-		 * 
+		 *
 		 * @param {string} indexName - name of the CCL index, e.g. »subject«
 		 * @param {string} searchString - e.g. »rocket not science«
 		 * @returns {string} - the CCL query, e.g. »(subject=rocket not subject=science)«
@@ -220,7 +220,7 @@ pz2_client.prototype.resetPage = function () {
 	}
 
 	jQuery('.pazpar2').removeClass().addClass('pazpar2');
-	jQuery('#pz2-targetView td').text('-');
+	jQuery('.pz2-targetView td').text('-');
 	jQuery('.pz2-pager .pz2-progressIndicator').css({'width': 0});
 
 	this.updateAndDisplay(true);

@@ -43,11 +43,11 @@ pz2_client.prototype.init = function (setup) {
 	jQuery('.pazpar2').removeClass('pz2-noJS');
 
 	// Set up event handlers with jQuery delegation.
-	jQuery('#pz2-termLists')
+	jQuery('.pz2-termLists')
 		.on('click', ':not(.pz2-activeFacet) a.pz2-facetSelect', jQuery.proxy(this.facetItemSelect, this))
 		.on('click', '.pz2-activeFacet a.pz2-facetSelect, a.pz2-facetCancel', jQuery.proxy(this.facetItemDeselect, this))
 		.on('click', '.pz2-facet-showAll a', jQuery.proxy(this.showAllFacetsOfType, this));
-	jQuery('#pz2-results')
+	jQuery('.pz2-results')
 		.on('click', 'a.pz2-recordLink', jQuery.proxy(this.toggleDetails, this))
 		.on('click', 'a.pz2-addToClipboardLink.pz2-add', jQuery.proxy(this.addToClipboard, this))
 		.on('click', 'a.pz2-addToClipboardLink.pz2-delete', jQuery.proxy(this.deleteFromClipboard, this));
@@ -260,7 +260,7 @@ pz2_client.prototype.usesessions = function () {
 
 /**
  * Return whether the page is ready for starting a query.
- * 
+ *
  * @returns {boolean}
  */
 pz2_client.prototype.isReady = function () {

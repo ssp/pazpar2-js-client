@@ -1,6 +1,6 @@
 /**
  * Updates pager and record counts shown in .pz2-pager elements.
- * 
+ *
  * @returns {undefined}
  */
 pz2_client.prototype.updatePagers = function () {

@@ -24,8 +24,9 @@ module.exports = function(grunt) {
 					'src/main.js',
 					'src/parts/config.js',
 					'src/parts/init.js',
-					'src/parts/*.js', 
-					'src/localisation/*'
+					'src/parts/*.js',
+					'src/localisation/*',
+					'src/neuerwerbungen.js'
 				]
 			},
 			flot: {

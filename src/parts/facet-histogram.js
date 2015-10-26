@@ -41,7 +41,7 @@ pz2_client.prototype.appendFacetHistogramForDatesTo = function (terms, type, his
 	var jGraphDiv = jQuery(graphDiv);
 	jGraphDiv.addClass('pz2-histogramContainer');
 
-	var graphWidth = jQuery('#pz2-termLists').width();
+	var graphWidth = jQuery('.pz2-termLists').width();
 	var canvasHeight = 150;
 	jGraphDiv.css({'width': graphWidth + 'px', 'height': canvasHeight + 'px', 'position': 'relative'});
 
@@ -271,7 +271,7 @@ pz2_client.prototype.appendFacetHistogramForDatesTo = function (terms, type, his
 					'to': Math.min(selection.to, xAxes[0].datamax)
 				}
 			};
-			
+
 			plot.setSelection(selectionAxes, true);
 		}
 	}

@@ -161,7 +161,7 @@
 	display: none;
 }
 
-#pz2-navi {
+.pz2-navi {
 	margin-bottom: 1em;
 }
 
@@ -194,16 +194,16 @@
 	display: none;
 }
 
-#pz2-results {
+.pz2-results {
 	margin-right: 220px;
 }
 
-#pz2-results ol.pz2-resultList {
+.pz2-results ol.pz2-resultList {
 	padding-left: 35px;
 	float: left; /* required so we don't clear the sidebar/faceting when clearing our <li>s */
 }
 
-#pz2-results ol.pz2-resultList li {
+.pz2-results ol.pz2-resultList li {
 	margin-bottom: 0.5em;
 	padding-left: 5px;
 	position: relative;
@@ -212,7 +212,7 @@
 	border-left: 1px solid transparent;
 }
 
-#pz2-results ol.pz2-resultList li.pz2-detailsVisible {
+.pz2-results ol.pz2-resultList li.pz2-detailsVisible {
 	border-left: 1px solid #eee;
 }
 
@@ -236,12 +236,12 @@
 
 /* FACETS */
 
-#pz2-termLists {
+.pz2-termLists {
 	float:right;
 	width: 200px;
 }
 
-#pz2-termLists h4 {
+.pz2-termLists h4 {
 	display: none;
 }
 
@@ -617,27 +617,27 @@
 	list-style: circle;
 }
 
-#pz2-results ol.pz2-resultList .pz2-details li {
+.pz2-results ol.pz2-resultList .pz2-details li {
 	clear: none; /* Cancel the clear done for list items in the main list on lists in .pz2-details. */
 	border-left: 0px none;
 }
 
-#pz2-results .pz2-details ul li {
+.pz2-results .pz2-details ul li {
 	margin: 0;
 }
 
-#pz2-results .pz2-extraLinks {
+.pz2-results .pz2-extraLinks {
 	position: absolute;
 	right: 10px;
 	bottom: -3px;
 }
 
-* html #pz2-results .pz2-extraLinks {
+* html .pz2-results .pz2-extraLinks {
 	position: static;
 	text-align: right;
 }
 
-* html #pz2-results .pz2-extraLinks * {
+* html .pz2-results .pz2-extraLinks * {
 	display: inline;
 	position: relative;
 }
@@ -646,7 +646,7 @@
 	display: none;
 }
 
-#pz2-results .pz2-extraLinks ul {
+.pz2-results .pz2-extraLinks ul {
 	text-align: right;
 }
 
@@ -667,20 +667,20 @@
 	cursor: pointer;
 }
 
-#pz2-results .pz2-extraLinks ul li input,
-#pz2-results .pz2-extraLinks ul li a {
+.pz2-results .pz2-extraLinks ul li input,
+.pz2-results .pz2-extraLinks ul li a {
 	color: #666;
 	text-decoration: none;
 	font-weight: normal;
 	font-size: 1em;
 }
 
-#pz2-results .pz2-extraLinks:hover ul li input,
+.pz2-results .pz2-extraLinks:hover ul li input,
 .pz2-extraLinks:hover ul li a {
 	color: #000;
 }
 
-#pz2-results .pz2-extraLinks ul li input:hover,
+.pz2-results .pz2-extraLinks ul li input:hover,
 .pz2-extraLinks ul li a:hover {
 	text-decoration: underline;
 }
@@ -793,7 +793,7 @@ pz2-client.js removes this once it it loaded.
 }
 
 .pz2-targetView .pz2-target-status {
-	min-width: 120px; 
+	min-width: 120px;
 }
 
 .pz2-accessNote {
@@ -919,4 +919,42 @@ pz2-client.js removes this once it it loaded.
 .pz2-clipboardVisible .pz2-clipboardLink {
 	background: #f00;
 	color: #fff;
+}
+
+/*
+ * For the pazpar2-neuerwerbungen plug-in.
+ */
+.pz2-fieldsets {
+	margin-top: 1em;
+}
+
+.pz2-fieldsets fieldset {
+	position: relative;
+}
+
+.pz2-fieldsets ul {
+	list-style-type: none;
+	margin: 0 0 0 0.5em;
+	padding: 0;
+}
+
+.pz2-fieldsets li.inline {
+	display: inline;
+}
+
+.pz2-fieldsets li.indent input {
+	margin-left: 1em;
+}
+
+.pz2-fieldsets legend {
+	font-weight: bold;
+}
+
+.pz2-neuerwerbungen .pz2-fieldsets label {
+	margin-right: 0.5em;
+	display: inline;
+}
+
+.pz2-months {
+	font-size: 133%;
 }

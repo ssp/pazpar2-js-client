@@ -156,7 +156,7 @@ pz2_client.prototype.updateFacetLists = function () {
 
 		/**
 		 * Create the link for removing a (text) facet selection.
-		 * 
+		 *
 		 * @return {DOMElement} - link
 		 */
 		var createFacetCancelLink = function () {
@@ -171,7 +171,7 @@ pz2_client.prototype.updateFacetLists = function () {
 
 		/**
 		 * Return OL with facet items for the passed terms.
-		 * 
+		 *
 		 * @param {array} terms - facet terms to display
 		 * @param {string} type - ID of the facet to return facet information for
 		 * @returns {DOMElement} - ol with facet list
@@ -280,7 +280,7 @@ pz2_client.prototype.updateFacetLists = function () {
 				var showAllItem = document.createElement('li');
 				list.appendChild(showAllItem);
 				jQuery(showAllItem).addClass('pz2-facet-showAll');
-				
+
 				var showLink = document.createElement('a');
 				showAllItem.appendChild(showLink);
 				showLink.setAttribute('href', '#');
@@ -344,7 +344,7 @@ pz2_client.prototype.updateFacetLists = function () {
 
 	var that = this;
 
-	var jContainer = jQuery('#pz2-termLists');
+	var jContainer = jQuery('.pz2-termLists');
 	if (jContainer.length > 0) {
 		jContainer.empty();
 

@@ -1,4 +1,4 @@
-/*
+/**
  * pz2-neuerwerbungen.js
  *
  * 2010-2015 by Sven-S. Porst, earthlingsoft <ssp-web@earthlingsoft.net>
@@ -13,7 +13,7 @@
 
 
 
-/*
+/**
  * pz2neuerwerbungenDOMReady
  *
  * To be called when the Document is ready (usually by jQuery).
@@ -22,15 +22,16 @@
  */
 function pz2neuerwerbungenDOMReady () {
 	jQuery('.pz2-neuerwerbungenForm input[type="submit"]').hide();
-	restoreCookieState ();
+	restoreCookieState();
 	// Overwrite pz-client.js search trigger function with our own.
 	pz2client.config.triggerSearchFunction = neuerwerbungenRunSearchForForm;
+	jQuery('.pz2-neuerwerbungenForm').trigger('pz2neuerwerbungen:ready');
 	pz2client.config.triggerSearchFunction();
 }
 
 
 
-/*
+/**
  * restoreCookieState
  *
  * Restore previously checked checkboxes from the state stored in the
@@ -43,7 +44,7 @@ function pz2neuerwerbungenDOMReady () {
 function restoreCookieState () {
 	var cookieInfo = getPz2NeuerwerbungenCookie();
 	for (var fieldName in cookieInfo) {
-		jQuery('.pz2-neuerwerbungenForm :checkbox[value="' + fieldName + '"]').attr({'checked': true});
+		jQuery('.pz2-neuerwerbungenForm :checkbox[value="' + fieldName + '"]').prop('checked', true);
 	}
 }
 
@@ -51,18 +52,18 @@ function restoreCookieState () {
 
 /**
  * getPz2NeuerwerbungenCookie
- * 
+ *
  * Returns the content of our cookie as an object with a property for each
  * checkbox that should be active.
- * 
+ *
  * As the same cookie is used across all pages, it may contain information about
  * checkboxes that are not currently present.
- * 
+ *
  * output:	object with a property for each active search query
  */
 function getPz2NeuerwerbungenCookie () {
 	var cookieInfo = {};
-	
+
 	var cookies = document.cookie.split('; ');
 	for (var cookieIndex in cookies) {
 		var cookie = cookies[cookieIndex];
@@ -80,7 +81,7 @@ function getPz2NeuerwerbungenCookie () {
 			}
 		}
 	}
-	
+
 	return cookieInfo;
 }
 
@@ -98,7 +99,7 @@ function getPz2NeuerwerbungenCookie () {
 function saveFormStateInCookie (form) {
 	var cookieInfo = getPz2NeuerwerbungenCookie();
 	var formStatus = searchFormStatus();
-	
+
 	for (var statusItem in formStatus) {
 		if (formStatus[statusItem]) {
 			// This search query is active, add it to the cookie.
@@ -109,13 +110,13 @@ function saveFormStateInCookie (form) {
 			delete cookieInfo[statusItem];
 		}
 	}
-	
+
 	var cookieTerms = [];
 	for (var cookieItem in cookieInfo) {
 		cookieTerms.push(cookieItem);
 	}
 	var termsString = 'pz2neuerwerbungen-previousQuery=' + cookieTerms.join(':') + '; ';
-	var expires = new Date((new Date).getTime() + 1000*60*60*24*365);
+	var expires = new Date((new Date()).getTime() + 1000*60*60*24*365);
 	var expiresString = 'expires=' + expires.toGMTString() + '; ';
 	var pathString = 'path=/;';
 	document.cookie = termsString + expiresString + pathString;
@@ -123,7 +124,7 @@ function saveFormStateInCookie (form) {
 
 
 
-/*
+/**
  * neuerwerbungenRunSearchForForm
  *
  * Build search query from the selected checkboxes. If it is non-empty, use it
@@ -146,14 +147,16 @@ function neuerwerbungenRunSearchForForm (form) {
 			}
 		}
 
-		pz2client.setSortCriteriaFromString('date-d--author-a--title-a');
+		pz2client.currentView.sort = 'date:0,author:1,title:1';
 		var jAtomLink = jQuery('.pz2-atomLink', form);
 		var linkElement = document.getElementById('pz2neuerwerbungen-atom-linkElement');
 
 		var query = searchQueryWithEqualsAndWildcard(form, '=', undefined);
 		if (query) {
 			query = query.replace('*', '?');
-			pz2client.my_pz2.search(query, 2000, null, null);
+			pz2client.currentView.query = query;
+			pz2client.currentView.recPerPage = 2000;
+			pz2client.search();
 
 			// Only manipulate Atom link if it is present already.
 			if (jAtomLink.length > 0) {
@@ -197,26 +200,46 @@ function neuerwerbungenRunSearchForForm (form) {
 
 
 
-/*
- * checkboxChanged
+/**
+ * checkboxClicked
  *
- * Called by lowest-level checkboxes’ onclick handler.
- * Toggles parent checkbox if necessary, then starts the query.
+ * Called by checkboxes’ click events.
+ * Handles the event based on the checkbox’ type (parent/leaf).
  *
- * input:	checkbox - DOM element of the clicked checkbox
+ * input:	event - the select’s change event
  */
-function checkboxChanged (checkbox) {
-	toggleParentCheckboxOf(checkbox);
-	saveFormStateInCookie(checkbox.form);
-	neuerwerbungenRunSearchForForm(checkbox.form);
+function checkboxClicked (event) {
+	var jTarget = jQuery(event.target);
+	if (jTarget.parent().is('legend')) {
+		groupCheckboxChanged(event.target);
+	}
+	else {
+		leafCheckboxChanged(event.target);
+	}
 }
 
 
 
-/*
+/**
+ * leafCheckboxChanged
+ *
+ * Called by lowest-level checkboxes’ click event handler.
+ * Toggles parent checkbox if necessary, then starts the query.
+ *
+ * input:	checkbox - DOM element of the clicked checkbox
+ */
+function leafCheckboxChanged (checkbox) {
+	toggleParentCheckboxOf(checkbox);
+	saveFormStateInCookie(checkbox.form);
+	pz2client.config.triggerSearchFunction(checkbox.form);
+}
+
+
+
+/**
  * groupCheckboxChanged
  *
- * Called by top-level checkboxes’ onclick handler.
+ * Called by top-level checkboxes’ click event handler.
  * Toggles the child checboxes, then starts the query.
  *
  * input:	checkbox - DOM element of the clicked checkbox
@@ -224,27 +247,26 @@ function checkboxChanged (checkbox) {
 function groupCheckboxChanged (checkbox) {
 	toggleChildCheckboxesOf(checkbox);
 	saveFormStateInCookie(checkbox.form);
-	neuerwerbungenRunSearchForForm(checkbox.form);
+	pz2client.config.triggerSearchFunction(checkbox.form);
 }
 
 
 
-/*
+/**
  * monthChanged
  *
- * Called by the month select’s onchange handler.
+ * Called by the month select’s change event.
  * Starts a new search with the selected month.
  *
- * input:	select - DOM Element of the month select
- *
+ * input:	event - the select’s change event
  */
-function monthChanged (select) {
-	neuerwerbungenRunSearchForForm(select.form);
+function monthChanged (event) {
+	pz2client.config.triggerSearchFunction(event.target.form);
 }
 
 
 
-/*
+/**
  * toggleParentCheckboxOf
  *
  * Helper function to update the parent checkbox’ state when one of its child
@@ -257,13 +279,13 @@ function monthChanged (select) {
 function toggleParentCheckboxOf (checkbox) {
 	var fieldset = jQuery(checkbox).parents('fieldset')[0];
 	parentCheckbox = jQuery('legend :checkbox', fieldset);
-	
-	parentCheckbox.attr({'checked': (jQuery('li :checkbox', fieldset).length === jQuery('li :checked', fieldset).length)});
+
+	parentCheckbox.prop('checked', (jQuery('li :checkbox', fieldset).length === jQuery('li :checked', fieldset).length));
 }
 
 
 
-/*
+/**
  * toggleChildCheckboxesOf
  *
  * Helper function to update the child checkboxes’ state when their parent
@@ -275,7 +297,7 @@ function toggleParentCheckboxOf (checkbox) {
  */
 function toggleChildCheckboxesOf (checkbox) {
 	var fieldset = jQuery(checkbox).parents('fieldset')[0];
-	jQuery(':checkbox', fieldset).attr({'checked': checkbox.checked});
+	jQuery(':checkbox', fieldset).prop('checked', checkbox.checked);
 }
 
 
@@ -308,14 +330,14 @@ function selectedQueriesInFormWithWildcard (form, wildcard) {
 
 /**
  * searchFormStatus
- * 
+ *
  * Returns an object with a boolean property for each search term in the given
  * form. The property’s value reflects whether the search term should be used.
  * This value is not necessarily the checked status of the checkbox as
  * the search term of checkboxes inside a fieldset may be unused in case the
  * fieldset’s super-checkbox is active and provides a more general search term
  * covering those of all its sub-checkboxes.
- * 
+ *
  * input:	form - DOM element of the form to get the data from
  * output:	object - a boolean property for each search term indicating whether it is used
  */
@@ -325,10 +347,10 @@ function searchFormStatus (form) {
 	// Loop over fieldsets and quasi-fieldsets.
 	jQuery('fieldset, .pz2-fieldset-replacement', form).each( function (index) {
 			var legendCheckbox = jQuery('legend :checkbox', this);
-			
-			if (legendCheckbox.length > 0
-					&& legendCheckbox[0].checked
-					&& legendCheckbox[0].value !== 'CHILDREN') {
+
+			if (legendCheckbox.length > 0 &&
+						legendCheckbox[0].checked &&
+						legendCheckbox[0].value !== 'CHILDREN') {
 				// This is a checked super-checkbox in a fieldset which has a custom search term:
 				// 1. Mark its search term as active.
 				status[legendCheckbox[0].value] = true;
@@ -341,9 +363,9 @@ function searchFormStatus (form) {
 			else {
 				// This is an unchecked fieldset:
 				// 1. Mark the fieldset’s search term as inactive.
-				if (legendCheckbox.length > 0
-						&& !legendCheckbox[0].checked
-						&& legendCheckbox[0].value !== 'CHILDREN') {
+				if (legendCheckbox.length > 0 &&
+						!legendCheckbox[0].checked &&
+						legendCheckbox[0].value !== 'CHILDREN') {
 					status[legendCheckbox[0].value] = false;
 				}
 				// 2. Mark the search terms of child-checkboxes according to their status.
@@ -354,13 +376,13 @@ function searchFormStatus (form) {
 			}
 		}
 	);
-	
+
 	return status;
 }
 
 
 
-/*
+/**
  * searchQueryWithEqualsAndWildcard
  *
  * Builds a query string using the queries for the selected checkboxes as well
@@ -378,17 +400,18 @@ function searchFormStatus (form) {
  * output:	string containing the complete query / undefined if no query terms are found
  */
 function searchQueryWithEqualsAndWildcard (form, equals, wildcard, ignoreSelectedDate) {
+	var queryString = '';
 	var queries = selectedQueriesInFormWithWildcard(form, wildcard);
-
 	if (queries.length > 0) {
-		var queryString = oredSearchQueries(queries, '', '');
-		queryString = queryString.replace(/=/g, equals);
+		queryString = oredSearchQueries(queries, '', '').replace(/=/g, equals);
 		if (!ignoreSelectedDate) {
 			var dates = [];
 			var searchTerms = jQuery('.pz2-months :selected', form)[0].value.split(',');
 			addSearchTermsToList(searchTerms, dates, wildcard);
-			var NELQueryString = oredSearchQueries(dates, 'nel', equals);
-			queryString += ' and ' + NELQueryString;
+			if (dates.length > 0) {
+				var NELQueryString = oredSearchQueries(dates, 'nel', equals);
+				queryString += ' and ' + NELQueryString;
+			}
 		}
 	}
 
@@ -397,7 +420,7 @@ function searchQueryWithEqualsAndWildcard (form, equals, wildcard, ignoreSelecte
 
 
 
-/*
+/**
  * oredSearchQueries
  *
  * Helper function for preparing search queries.
@@ -409,13 +432,13 @@ function searchQueryWithEqualsAndWildcard (form, equals, wildcard, ignoreSelecte
  */
 function oredSearchQueries (queryTerms, key, equals) {
 	var query = '(' + key + equals + queryTerms.join(' or ' + key + equals) + ')';
-	
+
 	return query;
 }
 
 
 
-/*
+/**
  * addSearchTermsToList
  *
  * Helper function adding the elements of an array to a given array,
@@ -440,10 +463,10 @@ function addSearchTermsToList (searchTerms, list, wildcard) {
 
 
 
-/*
+/**
  * atomURL
  *
- * Creates the URL to the Atom feed for the query if the form contains a 
+ * Creates the URL to the Atom feed for the query if the form contains a
  * selection.
  *
  * Assumes that the script / redirect providing the Atom feed is available at
@@ -454,16 +477,23 @@ function addSearchTermsToList (searchTerms, list, wildcard) {
  */
 function atomURL (form) {
 	var searchQuery = searchQueryWithEqualsAndWildcard(form, ' ', '*', true);
-	var atomURL = '';
+	var atomURLString = '';
 
 	if (searchQuery) {
 		searchQuery = searchQuery.replace(/ /g, '+');
 		searchQuery = encodeURI(searchQuery);
 
 		var atomBaseURL = document.baseURI + 'opac.atom?q=';
-		atomURL = atomBaseURL + searchQuery;
+		atomURLString = atomBaseURL + searchQuery;
 	}
 
-	return atomURL;
+	return atomURLString;
 }
- 
+
+
+/*
+ * Register event handlers.
+ */
+jQuery(document)
+	.on('click', '.pz2-neuerwerbungenForm input[type="checkbox"]', checkboxClicked)
+	.on('change','.pz2-neuerwerbungenForm .pz2-months', monthChanged);

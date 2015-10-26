@@ -234,16 +234,16 @@ The script expects specific DOM Elements containing its search form and serving 
 
 		<div class="pz2-clear"></div>
 
-		<div id="pz2-recordView">
+		<div class="pz2-recordView">
 			<div class="pz2-pager pz2-top">
 				<div class="pz2-progressIndicator"></div>
 				<div class="pz2-pageNumbers"></div>
 				<span class="pz2-recordCount" onclick="toggleStatus();"></span>
-				<div id="pz2-targetView" style="display: none">No information available yet.</div>
+				<div class="pz2-targetView" style="display: none">No information available yet.</div>
 			</div>
 
-			<div id="pz2-termLists"></div>
-			<div id="pz2-results"></div>
+			<div class="pz2-termLists"></div>
+			<div class="pz2-results"></div>
 
 			<div class="pz2-pager pz2-bottom">
 				<div class="pz2-pageNumbers"></div>
@@ -264,9 +264,9 @@ The markup consists of the following blocks inside the `div.pazpar2`:
 		* `.pz2-progressIndicator`: An element that expands from nearly zero width to full width to reflect the process of the pazpar2 search
 		* `.pz2-pageNumbers`: Links for paging appear in here`
 		* `.pz2-recordCount`: The number of results with a hint of status information appear in here
-		* `#pz2-targetView`: Extended status infomration that is revealed/hidden by clicking `.pz2-recordCount`
-	* `#pz2-termLists`: Facets will appear in here
-	* `#pz2-results`: The result list will appear in here
+		* `.pz2-targetView`: Extended status infomration that is revealed/hidden by clicking `.pz2-recordCount`
+	* `.pz2-termLists`: Facets will appear in here
+	* `.pz2-results`: The result list will appear in here
 	* `.pz2-pager.pz2-bottom`: The pager is repeated at the bottom of the page
 		* `.pz2-pageNumbers`
 
