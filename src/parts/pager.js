@@ -45,7 +45,7 @@ pz2_client.prototype.updatePagers = function () {
 
 		for(var pageNumber = 1; pageNumber <= pages; pageNumber++) {
 			if (pageNumber <= blockSize ||
-					Math.abs(pageNumber - that.currentView.page) < Math.floor(blockSize / 2) ||
+					Math.abs(pageNumber - that.currentView.page) <= Math.floor(blockSize / 2) ||
 					pages < pageNumber + blockSize) {
 				var pageItem = document.createElement('li');
 				pageList.appendChild(pageItem);
